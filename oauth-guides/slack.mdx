@@ -1,0 +1,44 @@
+---
+title: "Slack"
+description: "How to create OAuth credentials for Slack."
+---
+
+Slack supports OAuth 2.0 for building integrations. You create a Slack App through the Slack API dashboard to obtain credentials and configure permissions.
+
+## Steps
+
+1. **Create a Slack App**
+   - Go to the [Slack API Dashboard](https://api.slack.com/apps)
+   - Click **Create New App** → Choose **From scratch**
+   - Enter your **App Name** and select your Slack **workspace**
+   - Click **Create App**
+
+2. **Configure Redirect URLs**
+   - Open **OAuth & Permissions** from the left sidebar
+   - Scroll to **Redirect URLs** and click **Add New Redirect URL**
+   - Add your application's OAuth callback URL
+   - Click **Add**, then **Save URLs**
+
+3. **Add OAuth Scopes**
+   - In the same **OAuth & Permissions** section, scroll to **Scopes**
+   - Add scopes under **Bot Token Scopes** (app-level access) or **User Token Scopes** (user-level actions)
+   - Common scopes:
+     - `channels:history` — Read channel messages
+     - `chat:write` — Send messages
+     - `users:read` — Read user info
+     - `channels:read` — Read channel list
+     - `files:read` / `files:write` — File access
+
+4. **Get Client ID and Client Secret**
+   - In the left sidebar, click **Basic Information**
+   - Scroll to **App Credentials**
+   - Copy the **Client ID** and **Client Secret**
+
+## Key Details
+
+- **Developer Portal**: [https://api.slack.com/apps](https://api.slack.com/apps)
+- **Base API URL**: `https://slack.com/api`
+- **Auth Type**: OAuth 2.0
+- **Credentials Location**: Basic Information → App Credentials
+- **Common Scopes**: `channels:read`, `channels:history`, `chat:write`, `chat:write.public`, `users:read`, `users:read.email`, `files:read`, `files:write`, `groups:read`, `groups:history`, `im:read`, `im:write`, `reactions:read`, `reactions:write`, `search:read`, `team:read`, `pins:read`, `pins:write`, `bookmarks:read`, `bookmarks:write`
+- **Note**: Slack separates **Bot Token Scopes** (app-level) and **User Token Scopes** (user-level)

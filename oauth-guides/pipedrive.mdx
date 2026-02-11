@@ -1,0 +1,49 @@
+---
+title: "Pipedrive"
+description: "How to create OAuth credentials for Pipedrive."
+---
+
+Pipedrive is a sales CRM that supports OAuth 2.0 for API integrations. You create applications through the Pipedrive Developer Hub, with options for public or private apps.
+
+## Steps
+
+1. **Create a Pipedrive Application**
+   - Go to the [Pipedrive Developer Hub](https://app.pipedrive.com/developer-hub) (use a developer sandbox account)
+   - Click **Create an app**
+   - Choose the app type:
+     - **Public Application**: Available to all Pipedrive users (requires review/approval)
+     - **Private Application**: Only for selected users (no review needed)
+
+2. **Configure Basic Info**
+   - Go to the **Basic Info** tab
+   - Fill in:
+     - **App name** (must be unique for public apps)
+     - **Callback URL**: Your OAuth callback URL
+   - Click **Save**
+
+3. **Get OAuth Credentials**
+   - Go to the **OAuth and access scopes** tab
+   - Scroll down to find:
+     - **Client ID**
+     - **Client Secret**
+   - Copy both values
+
+4. **Configure Scopes**
+   - In the same **OAuth and access scopes** tab, find the **Access Scopes** section
+   - By default, Pipedrive only provides basic read access
+   - Select scopes with either **Read only** or **Full access** for each resource:
+     - Contacts, Leads, Mail, Activities, Products, Projects
+   - Common full-access scopes: `contacts:full`, `leads:full`, `mail:full`, `activities:full`, `products:full`, `projects:full`
+
+5. **Submit for Review** (public apps only)
+   - Go to the **App review info** tab and submit for review
+   - Private applications don't require review
+
+## Key Details
+
+- **Developer Hub**: [https://app.pipedrive.com/developer-hub](https://app.pipedrive.com/developer-hub)
+- **Auth Type**: OAuth 2.0
+- **Base API URL**: `https://api.pipedrive.com/v1`
+- **Credentials Location**: App → OAuth and access scopes tab
+- **Common Scopes**: `contacts:full`, `leads:full`, `mail:full`, `activities:full`, `products:full`, `projects:full`
+- **Scope Levels**: `Read only` or `Full access` per resource

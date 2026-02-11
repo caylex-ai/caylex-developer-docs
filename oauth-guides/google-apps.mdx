@@ -1,0 +1,53 @@
+---
+title: "Google Apps"
+description: "How to create OAuth credentials for Google Apps."
+---
+
+Google uses OAuth 2.0 via Google Cloud Platform (GCP) for accessing APIs like Gmail, Google Sheets, Calendar, Drive, and more. You create an OAuth 2.0 Client ID through the GCP Console.
+
+## Steps
+
+1. **Create a Google Cloud Project** (if needed)
+   - Go to [https://console.cloud.google.com](https://console.cloud.google.com)
+   - Create a new project (or select an existing one)
+
+2. **Enable the Required API**
+   - Navigate to **APIs & Services → Library**
+   - Search for and enable the API you need (e.g., Gmail API, Google Sheets API, Google Calendar API, Google Drive API)
+
+3. **Configure the OAuth Consent Screen**
+   - Go to **APIs & Services → OAuth consent screen**
+   - Click **Get Started** and follow the wizard:
+     - **App Information**: Enter App Name and user support email
+     - **Audience**: Select **Internal** (org-only) or **External** (any Google user)
+     - **Contact Information**: Add developer contact details
+     - Review and click **Create**
+
+4. **Create OAuth Client Credentials**
+   - On the Consent Screen Overview, click **Create OAuth Client**
+   - Configure the client:
+     - **Application type**: Web application
+     - **Client name**: Choose any name
+     - **Authorized JavaScript origins**: Your app's origin URL
+     - **Authorized redirect URIs**: Your OAuth callback URL
+   - Click **Create**
+
+5. **Get Client ID and Client Secret**
+   - Google will display your **Client ID** and **Client Secret** after creation
+   - You can also find them later on the **Clients** page
+
+6. **Set App Status**
+   - **Testing Mode**: Add specific test users (emails) while developing
+   - **Production Mode**: Set to "In production" for all users (may require Google verification)
+
+## Key Details
+
+- **Developer Console**: [https://console.cloud.google.com](https://console.cloud.google.com)
+- **Auth Type**: OAuth 2.0
+- **Credentials Location**: APIs & Services → Credentials → OAuth 2.0 Client IDs
+- **Common Scopes**:
+  - Gmail: `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.send`
+  - Sheets: `https://www.googleapis.com/auth/spreadsheets`
+  - Calendar: `https://www.googleapis.com/auth/calendar`
+  - Drive: `https://www.googleapis.com/auth/drive`
+- **Note**: The same OAuth Client can be reused across multiple Google services — just enable additional APIs and add the corresponding scopes

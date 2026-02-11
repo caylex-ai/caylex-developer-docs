@@ -1,0 +1,64 @@
+---
+title: "Salesforce"
+description: "How to create OAuth credentials for Salesforce."
+---
+
+Salesforce supports OAuth 2.0 via either **External Client Apps** (newer) or **Connected Apps** (traditional). Both approaches generate a Client ID (Consumer Key) and Client Secret (Consumer Secret).
+
+## Option A: External Client Apps (Default for New Orgs)
+
+1. **Log in to Salesforce Setup**
+   - Click the gear icon → **Setup**
+   - In Quick Find, search for **App Manager** and click it
+
+2. **Create an External Client App**
+   - Click **New External Client App** in the top-right corner
+   - Fill in:
+     - **App Name**: e.g., `My Integration`
+     - **API Name**: auto-fills
+     - **Contact Email**: your email
+     - **Distribution State**: keep as Local
+
+3. **Enable OAuth Settings**
+   - Expand **OAuth Settings** and check **Enable OAuth**
+   - Add your **Callback URL** (redirect URI)
+   - Select OAuth Scopes:
+     - `full` — Full access
+     - `api` — Access and manage your data
+     - `refresh_token, offline_access` — Perform requests at any time
+     - `openid` — (Optional) For ID tokens
+   - In Security: keep **Require Secret for Web Server Flow** checked, uncheck **Require PKCE** if not needed
+
+4. **Get Credentials**
+   - After saving, find the **Client ID (Consumer Key)** and **Client Secret (Consumer Secret)** in Settings → OAuth Settings → Consumer Key and Secret page
+
+## Option B: Connected Apps (Traditional)
+
+1. **Enable Connected Apps Creation**
+   - In Quick Find, search **External Client App Settings**
+   - Enable **Allow creation of Connected Apps**
+
+2. **Create a Connected App**
+   - Click **New Connected App**
+   - Fill in: Connected App Name, Contact Email
+   - Expand **API (Enable OAuth Settings)** → check **Enable OAuth**
+   - Add Callback URL, select scopes
+   - Under OAuth Policies: enable Web Server Flow and Refresh Token Flow
+   - Save (Salesforce may take ~10 minutes to provision)
+
+3. **Get Credentials**
+   - Go to **App Manager** → find your app → click dropdown → **View**
+   - Click **Manage Consumer Details** (may require identity verification)
+   - Copy **Consumer Key** (Client ID) and **Consumer Secret**
+
+## Key Details
+
+- **Developer Signup**: [https://developer.salesforce.com/signup](https://developer.salesforce.com/signup)
+- **Auth Type**: OAuth 2.0 (Authorization Code / Web Server flow)
+- **Common Scopes**: `full`, `api`, `refresh_token`, `offline_access`, `openid`, `id`, `profile`, `email`, `chatter_api`, `web`
+- **Auth Endpoints**:
+  - Production: `https://login.salesforce.com/services/oauth2/authorize`
+  - Sandbox: `https://test.salesforce.com/services/oauth2/authorize`
+- **Token Endpoint**: `https://login.salesforce.com/services/oauth2/token`
+- **Base API URL**: `https://{your-instance}.salesforce.com/services/data/v{version}/`
+- **Note**: Your Salesforce subdomain can be found in Setup → My Domain

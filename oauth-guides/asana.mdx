@@ -1,0 +1,43 @@
+---
+title: "Asana"
+description: "How to create OAuth credentials for Asana."
+---
+
+Asana is a project management platform that supports OAuth 2.0 for API integrations. Apps are created through the Asana Developer Console.
+
+## Steps
+
+1. **Create an Asana Developer App**
+   - Go to the [Asana Developer Apps page](https://asana.com/developers)
+   - Log in with your Asana account
+   - Click **+ New App** in the developer console
+
+2. **Configure the App**
+   - Fill in:
+     - **App Name**: e.g., `My Asana Integration`
+     - **App Website**: (optional)
+     - **Redirect URL**: Your OAuth callback URL
+   - Save the app
+
+3. **Get Client ID and Client Secret**
+   - After creation, Asana will provide the **Client ID** and **Client Secret**
+   - Copy them and store securely
+
+4. **Configure OAuth Scopes**
+   - Asana requires the `default` scope for basic access
+   - Granular scopes are also available:
+     - `tasks:read` / `tasks:write` — Task data
+     - `projects:read` / `projects:write` — Project data
+     - `workspaces:read` — Workspace information
+   - Configure scopes in your OAuth authorization request
+
+## Key Details
+
+- **Developer Portal**: [https://asana.com/developers](https://asana.com/developers)
+- **App Console**: [https://app.asana.com/0/developer-console](https://app.asana.com/0/developer-console)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://app.asana.com/-/oauth_authorize`
+- **Token URL**: `https://app.asana.com/-/oauth_token`
+- **Base API URL**: `https://app.asana.com/api/1.0`
+- **Credentials Location**: Developer Console → App settings
+- **Common Scopes**: `default`, `tasks:read`, `tasks:write`, `projects:read`, `projects:write`, `workspaces:read`

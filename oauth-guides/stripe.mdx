@@ -1,0 +1,53 @@
+---
+title: "Stripe"
+description: "How to create OAuth credentials for Stripe."
+---
+
+Stripe supports two authentication methods: **API Keys** (simplest) and **OAuth 2.0 via Stripe Connect** (recommended for multi-user/SaaS apps). Both are managed through the Stripe Dashboard.
+
+## Option 1: API Key (Simplest)
+
+1. **Log in to the Stripe Dashboard**
+   - Go to [https://dashboard.stripe.com](https://dashboard.stripe.com)
+
+2. **Find Your API Keys**
+   - Navigate to **Developers → API Keys** in the left menu
+   - Under **Standard keys**, you'll see:
+     - **Publishable key** (starts with `pk_...`) — for client-side use
+     - **Secret key** (starts with `sk_test_...` or `sk_live_...`) — for server-side use
+   - Copy the **Secret Key** (keep it secure, never expose in client-side code)
+
+## Option 2: OAuth 2.0 via Stripe Connect (Multi-User)
+
+1. **Create a Stripe Connect Integration**
+   - Go to Stripe Dashboard → **Settings → Connect**
+   - Scroll to **Integration settings** and click **+ Add Integration**
+
+2. **Register Your OAuth App**
+   - Fill in:
+     - **Name**: e.g., `My Integration`
+     - **Redirect URL**: Your OAuth callback URL
+     - **Website / Privacy Policy / EULA**: Optional
+
+3. **Get OAuth Credentials**
+   - After saving, Stripe generates:
+     - **Client ID** (starts with `ca_...`)
+     - **Client Secret**
+   - Copy both values
+
+4. **Configure Scopes**
+   - Stripe OAuth supports two scopes:
+     - `read_only` — Read access to the connected account
+     - `read_write` — Full access to the connected account
+
+## Key Details
+
+- **Dashboard**: [https://dashboard.stripe.com](https://dashboard.stripe.com)
+- **Auth Type**: API Key or OAuth 2.0 (Stripe Connect)
+- **Base API URL**: `https://api.stripe.com/v1`
+- **Authorization URL**: `https://connect.stripe.com/oauth/authorize`
+- **Token URL**: `https://connect.stripe.com/oauth/token`
+- **Credentials Location**:
+  - API Keys: Developers → API Keys
+  - OAuth: Settings → Connect → Integration settings
+- **OAuth Scopes**: `read_only`, `read_write`

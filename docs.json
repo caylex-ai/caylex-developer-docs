@@ -67,6 +67,34 @@
               "server-foundry/overview",
               "server-foundry/building-a-server"
             ]
+          },
+          {
+            "group": "OAuth Guides",
+            "pages": [
+              "oauth-guides/google-apps",
+              "oauth-guides/slack",
+              "oauth-guides/hubspot",
+              "oauth-guides/salesforce",
+              "oauth-guides/jira",
+              "oauth-guides/outlook",
+              "oauth-guides/zoom",
+              "oauth-guides/shopify",
+              "oauth-guides/linkedin",
+              "oauth-guides/airtable",
+              "oauth-guides/asana",
+              "oauth-guides/canva",
+              "oauth-guides/confluence",
+              "oauth-guides/dropbox",
+              "oauth-guides/facebook",
+              "oauth-guides/gitlab",
+              "oauth-guides/monday",
+              "oauth-guides/pipedrive",
+              "oauth-guides/strava",
+              "oauth-guides/stripe",
+              "oauth-guides/xero",
+              "oauth-guides/zendesk",
+              "oauth-guides/zoho"
+            ]
           }
         ]
       }

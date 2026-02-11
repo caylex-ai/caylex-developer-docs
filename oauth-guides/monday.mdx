@@ -1,0 +1,49 @@
+---
+title: "Monday.com"
+description: "How to create OAuth credentials for Monday.com."
+---
+
+Monday.com is a work management platform that supports OAuth 2.0 for API integrations. Apps are created through the Monday.com Developer Console.
+
+## Steps
+
+1. **Create a Monday.com Developer App**
+   - Go to [https://monday.com/developers/apps](https://monday.com/developers/apps)
+   - Log in with your Monday.com account
+   - Click **Create App** in the developer console
+
+2. **Configure the App**
+   - Give your app a name (e.g., `My Monday Integration`)
+   - Monday.com will automatically generate:
+     - **Client ID**
+     - **Client Secret**
+     - **Signing Secret**
+   - Copy the Client ID and Client Secret immediately
+
+3. **Set the Redirect URI**
+   - In the app settings, find the **Redirect URLs** section
+   - Add your OAuth callback URL
+   - Ensure no trailing slash and `https` protocol
+
+4. **Configure OAuth Scopes**
+   - Monday.com requires you to specify scopes for API access
+   - Common scopes:
+     - `boards:read` / `boards:write` — Board data
+     - `workspaces:read` / `workspaces:write` — Workspace info
+     - `users:read` / `users:write` — User data
+     - `me:read` — Current user info
+     - `updates:read` / `updates:write` — Updates/comments
+     - `docs:read` / `docs:write` — Documents
+     - `tags:read` — Tags
+     - `teams:read` / `teams:write` — Teams
+     - `notifications:write` — Send notifications
+     - `webhooks:read` / `webhooks:write` — Webhooks
+     - `assets:read` — Assets
+
+## Key Details
+
+- **Developer Console**: [https://monday.com/developers/apps](https://monday.com/developers/apps)
+- **Auth Type**: OAuth 2.0
+- **Base API URL**: `https://api.monday.com/v2` (GraphQL API)
+- **Credentials Location**: App settings page (auto-generated on creation)
+- **All Available Scopes**: `account:read`, `assets:read`, `boards:read`, `boards:write`, `docs:read`, `docs:write`, `me:read`, `notifications:write`, `tags:read`, `teams:read`, `teams:write`, `updates:read`, `updates:write`, `users:read`, `users:write`, `webhooks:read`, `webhooks:write`, `workspaces:read`, `workspaces:write`

@@ -1,0 +1,53 @@
+---
+title: "Zoho CRM"
+description: "How to create OAuth credentials for Zoho CRM."
+---
+
+Zoho CRM supports OAuth 2.0 for secure API access. Applications are created through the Zoho API Console. You need a **Server-based Application** for backend integrations.
+
+## Steps
+
+1. **Create an Application in the Zoho API Console**
+   - Go to the [Zoho API Console](https://api-console.zoho.com/)
+   - Create a **Server-based Application** (for backend redirect URIs)
+   - Note: For browser-based apps, choose **Client-based Application** instead
+
+2. **Fill Out Application Details**
+   - **Client Name**: e.g., `My CRM Integration`
+   - **Homepage URL**: Your application's base URL
+   - **Authorized Redirect URIs**: Your OAuth callback URL
+
+3. **Get Client ID and Client Secret**
+   - After saving, Zoho will generate your **Client ID** and **Client Secret**
+   - Copy both values immediately
+
+4. **Configure Scopes**
+   - Zoho's Developer Console doesn't have a manual scope selector
+   - Scopes are specified when making the authorization request
+   - Default/common scopes:
+     - `ZohoCRM.modules.ALL` — Access all modules
+     - `ZohoCRM.settings.ALL` — Access all settings
+     - `ZohoCRM.notifications.ALL` — Access notifications
+     - `ZohoCRM.users.ALL` — Access user management
+   - Additional scopes:
+     - `ZohoCRM.contacts.ALL` — Contact management
+     - `ZohoCRM.deals.ALL` — Deal/sales pipeline
+     - `ZohoCRM.tasks.ALL` — Task management
+     - `ZohoCRM.reports.ALL` — Reports and analytics
+     - `ZohoCRM.org.ALL` — Organization details
+     - `ZohoCRM.bulk.ALL` — Bulk read/write APIs
+     - `ZohoCRM.files.ALL` — Attachments and files
+     - `ZohoCRM.coql.READ` — COQL queries
+     - `ZohoCRM.functions.ALL` — Custom functions/workflows
+
+## Key Details
+
+- **API Console**: [https://api-console.zoho.com/](https://api-console.zoho.com/)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://accounts.zoho.com/oauth/v2/auth`
+- **Token URL**: `https://accounts.zoho.com/oauth/v2/token`
+- **Base API URL**: `https://www.zohoapis.com/crm/v2/`
+- **Credentials Location**: API Console → Application details
+- **OAuth Terminology Reference**: [https://www.zoho.com/accounts/protocol/oauth-terminology.html](https://www.zoho.com/accounts/protocol/oauth-terminology.html)
+- **Scopes Documentation**: [https://www.zoho.com/crm/developer/docs/api/v2/scopes.html](https://www.zoho.com/crm/developer/docs/api/v2/scopes.html)
+- **Note**: Zoho has regional data centers — ensure your API base URL matches your account region (e.g., `.com`, `.eu`, `.in`, `.com.au`)

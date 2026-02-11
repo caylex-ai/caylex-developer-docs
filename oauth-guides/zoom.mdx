@@ -1,0 +1,35 @@
+---
+title: "Zoom"
+description: "How to create OAuth credentials for Zoom."
+---
+
+Zoom supports OAuth 2.0 for integrating with its meeting, webinar, and team chat APIs. You create an app through the Zoom Marketplace developer portal.
+
+## Steps
+
+1. **Create an Application**
+   - Go to the [Zoom App Creation Portal](https://marketplace.zoom.us/develop/create)
+   - Create a **General** application (or **Server-to-Server** depending on use case)
+
+2. **Get Client ID and Client Secret**
+   - Navigate to your newly created application
+   - Under the **Basic Information** tab → **App Credentials**, find the **Client ID** and **Client Secret**
+   - Optionally configure app details (name, developer info) for Development and Production environments separately
+
+3. **Configure the Redirect URI**
+   - In the **OAuth Information** section (below the credentials), add your OAuth callback URL
+
+4. **Configure Scopes**
+   - Go to the **Scopes** tab under **Build your app**
+   - Click **+ Add Scopes** to see available products and their scopes
+   - Select the scopes your integration needs (e.g., team chat, meetings, webinars)
+   - Zoom does not enable any scopes by default — you must add them manually
+
+## Key Details
+
+- **Developer Portal**: [https://marketplace.zoom.us](https://marketplace.zoom.us)
+- **App Creation**: [https://marketplace.zoom.us/develop/create](https://marketplace.zoom.us/develop/create)
+- **Base API URL**: `https://api.zoom.us/v2`
+- **Auth Type**: OAuth 2.0
+- **Credentials Location**: App → Basic Information → App Credentials
+- **Tip**: When starting out, you can select all scopes in the development environment and remove unnecessary ones before moving to production

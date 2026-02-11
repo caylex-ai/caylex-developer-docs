@@ -1,0 +1,43 @@
+---
+title: "Shopify"
+description: "How to create OAuth credentials for Shopify."
+---
+
+Shopify supports OAuth 2.0 for custom app integrations. Apps are created through the Shopify Admin Dashboard and the Dev Dashboard, giving you a Client ID and Client Secret.
+
+## Steps
+
+1. **Create a Shopify Account** (if needed)
+   - Go to [https://www.shopify.com](https://www.shopify.com) and start a free trial or log in
+
+2. **Access the App Development Dashboard**
+   - Log in to your Shopify Admin Dashboard
+   - Search for **App Development** in the search bar
+   - On the development page, click **Build apps in Dev Dashboard** to open the dedicated development environment
+
+3. **Create Your App**
+   - In the Dev Dashboard, click **Create App** in the top-right corner
+   - Enter a descriptive **App Name** and click **Create**
+
+4. **Configure App Settings**
+   - On the version configuration page, set:
+     - **App URL**: Your application's main URL
+     - **Scope Selections**: Choose API scopes based on your needs
+       - Essential: `read_orders`, `write_orders`, `read_products`, `write_products`
+       - Additional: `read_customers`, `write_customers`, `read_inventory`, `write_inventory`
+     - **Redirect URL**: Your OAuth callback URL
+   - Click **Release** to finalize the app version
+
+5. **Get OAuth Credentials**
+   - Navigate to the **Settings** page from the left sidebar
+   - Copy the **Client ID** and **Client Secret**
+   - Keep the Client Secret secure
+
+## Key Details
+
+- **Developer Dashboard**: [https://partners.shopify.com](https://partners.shopify.com)
+- **Admin Dashboard**: `https://{your-store}.myshopify.com/admin`
+- **Auth Type**: OAuth 2.0
+- **Credentials Location**: App Settings page → Client ID & Client Secret
+- **Common Scopes**: `read_orders`, `write_orders`, `read_products`, `write_products`, `read_customers`, `write_customers`, `read_inventory`, `write_inventory`
+- **Note**: When connecting, you'll need your store's subdomain (e.g., if your store URL is `https://mystore.myshopify.com`, the subdomain is `mystore`)

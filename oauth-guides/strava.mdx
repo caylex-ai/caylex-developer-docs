@@ -1,0 +1,50 @@
+---
+title: "Strava"
+description: "How to create OAuth credentials for Strava."
+---
+
+Strava supports OAuth 2.0 for accessing its fitness and activity APIs. You create an application through the Strava settings page.
+
+## Steps
+
+1. **Log in to Strava**
+   - Go to [https://www.strava.com](https://www.strava.com) and sign in
+
+2. **Navigate to the API Settings**
+   - Go to [https://www.strava.com/settings/api](https://www.strava.com/settings/api)
+   - Click **Create & Manage Your Apps**
+   - Click **Create Application**
+
+3. **Register Your OAuth App**
+   - Fill in the required fields:
+     - **App Name**: A recognizable name for your app
+     - **Website**: Your website or app URL
+     - **Callback Domain**: Must match the domain of your redirect URI
+
+4. **Configure the Redirect URI**
+   - Set your callback domain/URI correctly
+   - Must be `https`, no trailing slash
+
+5. **Get OAuth Credentials**
+   - After creation, Strava will display:
+     - **Client ID**
+     - **Client Secret**
+   - Copy and keep them secure
+   - To view later: go to **Settings → My API Application**
+
+## Key Details
+
+- **API Settings**: [https://www.strava.com/settings/api](https://www.strava.com/settings/api)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://www.strava.com/oauth/authorize`
+- **Token URL**: `https://www.strava.com/oauth/token`
+- **Base API URL**: `https://www.strava.com/api/v3`
+- **Credentials Location**: Settings → My API Application
+- **Available Scopes**:
+  - `read` — Default access to profile and public data
+  - `read_all` — Read all user data (including private)
+  - `profile:read_all` — Read detailed profile
+  - `profile:write` — Update user profile
+  - `activity:read` — Read public activity data
+  - `activity:read_all` — Read all activity data (including private)
+  - `activity:write` — Create/edit/delete activities

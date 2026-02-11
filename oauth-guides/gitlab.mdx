@@ -1,0 +1,51 @@
+---
+title: "GitLab"
+description: "How to create OAuth credentials for GitLab."
+---
+
+GitLab supports OAuth 2.0 for accessing its APIs. OAuth applications are created directly from your GitLab account settings (or from a self-hosted GitLab instance).
+
+## Steps
+
+1. **Log in to GitLab**
+   - Go to [https://gitlab.com](https://gitlab.com) and sign in
+   - Click your profile avatar in the top-right corner
+   - Select **Edit profile**
+
+2. **Navigate to Applications**
+   - In the left sidebar, scroll down and click **Applications**
+   - Direct link: `https://gitlab.com/-/profile/applications`
+
+3. **Create a New OAuth Application**
+   - Click **New Application**
+   - Fill in:
+     - **Name**: e.g., `My GitLab Integration`
+     - **Redirect URI**: Your OAuth callback URL (must be exact, no trailing `/`)
+     - **Scopes**: Select the permissions your app needs:
+       - `read_user` — Read user profile info
+       - `api` — Full API access
+       - `read_api` — Read-only API access
+       - `read_repository` — Read repo data
+       - `write_repository` — Write repo data
+       - `openid` — OpenID Connect
+       - `profile` — User profile via OpenID
+       - `email` — User email via OpenID
+
+4. **Save and Copy Credentials**
+   - Click **Save application**
+   - GitLab will display:
+     - **Application ID** → This is your **Client ID**
+     - **Secret** → This is your **Client Secret**
+   - Copy the secret immediately — GitLab only shows it once!
+
+## Key Details
+
+- **GitLab.com**: [https://gitlab.com](https://gitlab.com)
+- **Applications Page**: [https://gitlab.com/-/profile/applications](https://gitlab.com/-/profile/applications)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://gitlab.com/oauth/authorize`
+- **Token URL**: `https://gitlab.com/oauth/token`
+- **Base API URL**: `https://gitlab.com/api/v4`
+- **Credentials Location**: User Settings → Applications → Application ID & Secret
+- **Available Scopes**: `api`, `read_api`, `read_user`, `read_repository`, `write_repository`, `read_registry`, `write_registry`, `openid`, `profile`, `email`, `sudo`
+- **Note**: For self-hosted GitLab instances, replace `gitlab.com` with your instance domain in all URLs

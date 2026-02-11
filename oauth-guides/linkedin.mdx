@@ -1,0 +1,44 @@
+---
+title: "LinkedIn"
+description: "How to create OAuth credentials for LinkedIn."
+---
+
+LinkedIn supports OAuth 2.0 for accessing its APIs. You create an application through the LinkedIn Developer Solutions portal to get your Client ID and Client Secret.
+
+## Steps
+
+1. **Create a LinkedIn Developer Application**
+   - Go to [https://developer.linkedin.com](https://developer.linkedin.com)
+   - Click **Create app**
+   - Enter the required details:
+     - **App name**
+     - **Company page URL** (LinkedIn company page)
+     - **App logo**
+   - Read and agree to the legal terms
+   - Click **Create App**
+
+2. **Get Client ID and Client Secret**
+   - Navigate to the application you just created
+   - Go to the **Auth** tab
+   - Under **Application credentials**, find the **Client ID** and **Client Secret**
+   - Copy and save both values securely
+
+3. **Configure the Redirect URI**
+   - In the **Auth** tab, scroll to **OAuth 2.0 Settings** (below Application Credentials)
+   - Add your OAuth callback URL
+
+4. **Configure Scopes / Products**
+   - LinkedIn scopes are tied to **Products** that you request access to
+   - Go to the **Products** tab and request access to the products you need (e.g., Sign In with LinkedIn, Share on LinkedIn, Marketing Developer Platform)
+   - Available scopes depend on which products are approved
+
+## Key Details
+
+- **Developer Portal**: [https://developer.linkedin.com](https://developer.linkedin.com)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://www.linkedin.com/oauth/v2/authorization`
+- **Token URL**: `https://www.linkedin.com/oauth/v2/accessToken`
+- **Base API URL**: `https://api.linkedin.com/v2`
+- **Credentials Location**: App → Auth tab → Application Credentials
+- **Common Scopes**: `r_liteprofile`, `r_emailaddress`, `w_member_social`, `r_organization_social`, `rw_organization_admin`
+- **Note**: Scopes are granted based on which Products you've been approved for
