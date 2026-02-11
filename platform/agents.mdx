@@ -1,0 +1,109 @@
+---
+title: "Agents & Permissions"
+description: "Create agents, generate API keys, and configure fine-grained tool permissions."
+icon: "robot"
+---
+
+Agents in Caylex represent the AI agents that connect to your MCP servers through the proxy. You define an Agent Identity once and deploy it across multiple projects with different configurations.
+
+## Create an agent
+
+<Steps>
+  <Step title="Navigate to Agents">
+    In the Caylex dashboard, go to the **Agents** page from the sidebar.
+  </Step>
+  <Step title="Create an Agent Identity">
+    Click **Create Agent** and provide:
+
+    - **Name** (required) — a descriptive name (e.g., "Customer Support Bot", "Data Analyst")
+    - **Description** (optional) — what this agent does
+
+    This creates an **Agent Identity** — a reusable template that can be deployed in multiple projects.
+  </Step>
+  <Step title="Connect to a project">
+    On the agent's detail page, click **Add Connection** and select the project where you want to deploy this agent.
+
+    This creates an **Agent Instance** — a project-scoped deployment of the agent with its own API key and permissions.
+  </Step>
+</Steps>
+
+## Generate an API key
+
+Each Agent Instance needs an API key to authenticate with the Caylex proxy.
+
+<Steps>
+  <Step title="Go to the Agent Instance">
+    Navigate to the Agent Instance (from the Agents page or from within a project).
+  </Step>
+  <Step title="Create an API key">
+    Click **Create API Key** and provide:
+
+    - **Name** (required) — a label for this key (e.g., "Production Key", "Dev Key")
+    - **Description** (optional) — what this key is used for
+    - **Expiration** (optional) — when the key should expire
+  </Step>
+  <Step title="Copy and store the key">
+    Copy the generated API key immediately. It is in the format `ck_{id}.{secret}`.
+
+    <Warning>
+    The API key secret is only shown once at creation time. Store it securely — you cannot retrieve it later.
+    </Warning>
+  </Step>
+</Steps>
+
+You can create multiple API keys per Agent Instance for key rotation or different environments.
+
+## Configure tool permissions
+
+By default, an Agent Instance has access to **all tools** from all Server Instances in its project. You can restrict access at two levels:
+
+### Server-level restrictions
+
+Block an Agent Instance from accessing an entire server's tools.
+
+Navigate to the Agent Instance's **Permissions** tab and toggle off any servers you want to restrict. When a server is restricted:
+
+- None of that server's tools are exposed to the agent
+- The restriction applies to all tools on that server
+
+### Tool-level restrictions
+
+Block an Agent Instance from accessing specific individual tools while keeping access to the rest of a server's tools.
+
+On the Agent Instance's **Permissions** tab, expand a server to see its individual tools. Toggle off specific tools you want to restrict.
+
+<Tip>
+Follow the **principle of least privilege** — restrict your agents to only the tools they need. This reduces the risk of unintended actions and improves tool selection accuracy by narrowing the agent's focus.
+</Tip>
+
+<Info>
+Restrictions work as a deny list. All tools are enabled by default, and you selectively disable the ones you want to restrict.
+</Info>
+
+## Configure proxy capabilities
+
+Each Agent Instance can be configured with additional proxy capabilities that enhance your agent's effectiveness:
+
+### Dynamic tool suggestions
+
+When enabled, the proxy exposes the `suggest_tools` MCP tool to your agent. This provides **intelligent, RAG-based tool discovery** — your agent describes what it wants to do, and the proxy returns ranked tool recommendations based on semantic similarity and historical usage.
+
+Toggle **Dynamic Suggestions** on the Agent Instance settings page.
+
+<Card title="Learn more about Tool Suggestions" icon="wand-magic-sparkles" href="/proxy/tool-suggestions">
+  Understand how personalized tool suggestions work and when to enable them.
+</Card>
+
+### Context Maps
+
+When enabled, the proxy exposes the `get_context_map` MCP tool. This gives your agent a **semantic overview of what information exists** across all connected servers — helping it understand where to look before making queries.
+
+Toggle **Context Maps** on the Agent Instance settings page.
+
+<Note>
+Context Maps require at least 2 server instances with extraction enabled in the project.
+</Note>
+
+<Card title="Learn more about Context Maps" icon="map" href="/proxy/context-maps">
+  Understand how Context Maps work and how to configure them.
+</Card>

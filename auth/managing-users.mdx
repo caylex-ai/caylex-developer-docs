@@ -1,0 +1,93 @@
+---
+title: "Managing Users"
+description: "View user authentication status, monitor activity, and manage access to servers."
+icon: "users"
+---
+
+The Users section in your project gives you visibility into which users have authenticated with which servers, how actively they are using the system, and the ability to revoke access when needed.
+
+## View authenticated users
+
+Navigate to your project and open the **Users** tab. The user list shows:
+
+| Column | Description |
+| --- | --- |
+| **Email** | The user's email address (matches the `x-user-email` header sent by your agent) |
+| **Authenticated servers** | Which servers the user has authenticated with |
+| **Queries this week** | Number of queries the user has triggered in the past 7 days |
+| **Tool calls this week** | Number of tool calls executed on the user's behalf in the past 7 days |
+| **Last active** | When the user last interacted with the system |
+
+## User detail view
+
+Click on a user to see their full authentication and activity details:
+
+### Authentication status
+
+See which servers the user has authenticated with and which are still pending. For each server, the status shows:
+
+- **Authenticated** — the user has valid credentials for this server
+- **Not authenticated** — the user has not yet provided credentials
+
+This is useful for troubleshooting when a user reports that tools for a specific server are not working — they may not have completed authentication for that server.
+
+### User analytics
+
+The user detail view includes activity metrics:
+
+- **Sessions over time** — a timeline of the user's session activity
+- **Top tools used** — which tools the user's agent interactions use most
+- **Top servers accessed** — which servers the user accesses most frequently
+- **Error rate** — the percentage of tool calls that resulted in errors
+
+## Revoke user access
+
+If you need to remove a user's access to specific servers:
+
+<Steps>
+  <Step title="Navigate to the user">
+    Go to your project's **Users** tab and click on the user.
+  </Step>
+  <Step title="Revoke server access">
+    Select the servers you want to revoke access for and click **Revoke**. This:
+    - Removes the user's stored credentials for those servers
+    - Revokes any OAuth tokens that were granted
+    - Prevents the proxy from executing tools on those servers on behalf of this user
+  </Step>
+</Steps>
+
+<Warning>
+Revoking access is immediate. If the user's agent is currently connected, subsequent tool calls to the revoked servers will fail with an authentication error. The user will need to re-authenticate via a new auth link to regain access.
+</Warning>
+
+## Delete a user
+
+To completely remove a user from a project:
+
+<Steps>
+  <Step title="Navigate to the user">
+    Go to your project's **Users** tab and click on the user.
+  </Step>
+  <Step title="Delete the user">
+    Click **Delete User**. This:
+    - Removes all of the user's credentials for all servers in the project
+    - Revokes all OAuth tokens
+    - Removes the user's session history and analytics
+    - The user will no longer appear in the project's user list
+  </Step>
+</Steps>
+
+<Note>
+Deleting a user from one project does not affect their access in other projects. Each project maintains independent user credentials.
+</Note>
+
+## Userbase summary
+
+At the top of the Users tab, a summary section shows aggregate statistics:
+
+- **Total users** — total number of users who have authenticated in this project
+- **Weekly active users (WAU)** — users who triggered at least one session in the past 7 days
+- **Monthly active users (MAU)** — users who triggered at least one session in the past 30 days
+- **Inactive users** — users who have authenticated but have no recent activity
+
+These metrics help you understand adoption and identify users who may need support getting started.

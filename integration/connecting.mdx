@@ -1,0 +1,115 @@
+---
+title: "Connecting Your Agent"
+description: "Understand how to connect your AI agent to the Caylex Proxy using MCP."
+icon: "plug"
+---
+
+Caylex exposes a single MCP endpoint that your agent connects to. Through this one connection, your agent gains access to all tools across all servers in its project.
+
+## Endpoint and transport
+
+| Setting | Value |
+| --- | --- |
+| **Endpoint URL** | `https://proxy.caylex.ai/mcp` |
+| **Transport** | Streamable HTTP (MCP standard) |
+| **Protocol** | Model Context Protocol (MCP) |
+
+Any MCP-compatible agent framework can connect to Caylex — no custom SDKs or adapters required.
+
+## Required headers
+
+Every request to the Caylex Proxy must include two authentication headers:
+
+### `x-api-key`
+
+Your Agent Instance's API key. This tells Caylex which agent and project the request belongs to.
+
+- Format: `ck_{id}.{secret}`
+- Generated on the Agent Instance page in the Caylex dashboard
+- See [Agents & Permissions](/platform/agents) for how to create API keys
+
+### `x-user-email`
+
+The email address of the end user currently interacting with your agent. This tells Caylex which user's credentials to use when executing tools.
+
+- Must match the email the user used when authenticating via an [Auth Link](/auth/auth-links)
+- Determines which credentials the proxy injects when calling external MCP servers
+- Used for per-user analytics and access control
+
+<Warning>
+The `x-user-email` must exactly match the email the user authenticated with. If it does not match, tool calls to servers requiring authentication will fail.
+</Warning>
+
+## How it works at runtime
+
+When your agent connects and makes tool calls, here is what happens:
+
+<Steps>
+  <Step title="Agent connects to the proxy">
+    Your agent opens an MCP connection to `https://proxy.caylex.ai/mcp` with the `x-api-key` and `x-user-email` headers.
+  </Step>
+  <Step title="Proxy identifies context">
+    The proxy validates the API key and resolves:
+    - Which **Agent Instance** the key belongs to
+    - Which **Project** the agent is deployed in
+    - Which **user** the email corresponds to
+    - Which **tool restrictions** and **proxy capabilities** are configured
+  </Step>
+  <Step title="Agent discovers tools">
+    The proxy returns the available MCP tools based on the agent's configuration:
+    - `suggest_tools` (if Dynamic Suggestions is enabled)
+    - `get_tool_schemas`
+    - `invoke_tools`
+    - `get_context_map` (if Context Maps is enabled)
+  </Step>
+  <Step title="Agent invokes tools">
+    When the agent calls `invoke_tools`, the proxy:
+    1. Looks up the target server and tool
+    2. Retrieves the user's credentials for that server
+    3. Injects the credentials into the request
+    4. Executes the tool call on the external MCP server
+    5. Returns the result to the agent
+  </Step>
+</Steps>
+
+## Integration examples
+
+Choose your agent framework for a complete integration guide:
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Agents SDK" icon="bolt" href="/integration/openai-agents">
+    Python integration using the OpenAI Agents SDK.
+  </Card>
+  <Card title="LangChain" icon="link" href="/integration/langchain">
+    Python integration using LangChain MCP Adapters.
+  </Card>
+  <Card title="Claude Agent SDK" icon="message-bot" href="/integration/claude-sdk">
+    Python integration using the Claude Agent SDK.
+  </Card>
+  <Card title="Claude Desktop" icon="desktop" href="/integration/claude-desktop">
+    JSON configuration for the Claude Desktop app.
+  </Card>
+</CardGroup>
+
+## Environment variables
+
+We recommend storing your credentials as environment variables rather than hardcoding them:
+
+```bash
+export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+export CAYLEX_USER_EMAIL="user@example.com"
+```
+
+<Warning>
+Never commit API keys to version control. Use environment variables, secret managers, or `.env` files (with `.gitignore`) to manage credentials.
+</Warning>
+
+## Any MCP-compatible framework
+
+Caylex works with any framework that supports the MCP Streamable HTTP transport. The connection pattern is always the same:
+
+1. Point at `https://proxy.caylex.ai/mcp`
+2. Set the `x-api-key` and `x-user-email` headers
+3. Let the framework handle MCP tool discovery and invocation
+
+If your framework supports MCP but is not listed in our integration guides, follow its documentation for connecting to a remote MCP server with custom headers.

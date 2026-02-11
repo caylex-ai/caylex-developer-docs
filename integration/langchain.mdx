@@ -1,0 +1,129 @@
+---
+title: "LangChain"
+description: "Integrate Caylex with LangChain using MCP Adapters."
+icon: "link"
+---
+
+This guide shows you how to connect your LangChain agent to Caylex using the `langchain-mcp-adapters` package.
+
+## Prerequisites
+
+- Python 3.10+
+- A Caylex Agent Instance with an API key ([create one here](/platform/agents))
+- Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
+
+## Installation
+
+```bash
+pip install langchain-mcp-adapters langchain-openai langgraph
+```
+
+## Full example
+
+```python main.py
+import asyncio
+import os
+
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.prebuilt import create_react_agent
+from langchain_openai import ChatOpenAI
+
+
+async def main() -> None:
+    api_key = os.environ["CAYLEX_API_KEY"]
+    user_email = os.environ["CAYLEX_USER_EMAIL"]
+
+    # Connect to Caylex via MCP
+    async with MultiServerMCPClient(
+        {
+            "caylex": {
+                "transport": "streamable_http",
+                "url": "https://proxy.caylex.ai/mcp",
+                "headers": {
+                    "x-api-key": api_key,
+                    "x-user-email": user_email,
+                },
+            }
+        }
+    ) as client:
+        # Get all available tools from Caylex
+        tools = client.get_tools()
+
+        # Create a ReAct agent with the tools
+        model = ChatOpenAI(model="gpt-5.2")
+        agent = create_react_agent(model, tools)
+
+        # Run the agent
+        response = await agent.ainvoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Summarize my calendar for this week and draft follow-up emails for any meetings that need action items.",
+                    }
+                ]
+            }
+        )
+
+        # Print the final response
+        for message in response["messages"]:
+            if message.type == "ai" and message.content:
+                print(message.content)
+
+
+asyncio.run(main())
+```
+
+## Step-by-step
+
+<Steps>
+  <Step title="Set environment variables">
+    ```bash
+    export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+    export CAYLEX_USER_EMAIL="user@example.com"
+    export OPENAI_API_KEY="your-openai-key"
+    ```
+  </Step>
+  <Step title="Create the MCP client">
+    Use `MultiServerMCPClient` with the Caylex endpoint and headers. The `"streamable_http"` transport is recommended.
+
+    ```python
+    async with MultiServerMCPClient(
+        {
+            "caylex": {
+                "transport": "streamable_http",
+                "url": "https://proxy.caylex.ai/mcp",
+                "headers": {
+                    "x-api-key": api_key,
+                    "x-user-email": user_email,
+                },
+            }
+        }
+    ) as client:
+        tools = client.get_tools()
+    ```
+  </Step>
+  <Step title="Create an agent with the tools">
+    Pass the Caylex tools to LangGraph's `create_react_agent` or any LangChain agent constructor.
+
+    ```python
+    model = ChatOpenAI(model="gpt-5.2")
+    agent = create_react_agent(model, tools)
+    ```
+  </Step>
+  <Step title="Run the agent">
+    Invoke the agent with a user message.
+
+    ```python
+    response = await agent.ainvoke(
+        {"messages": [{"role": "user", "content": "Your query here."}]}
+    )
+    ```
+  </Step>
+</Steps>
+
+## Further reading
+
+- [LangChain MCP Adapters documentation](https://github.com/langchain-ai/langchain-mcp-adapters)
+- [Connecting Your Agent](/integration/connecting) — details on how the proxy works
+- [Authentication Model](/auth/overview) — understand user-level vs project-level auth

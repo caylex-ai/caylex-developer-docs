@@ -1,0 +1,152 @@
+---
+title: "Analytics & Session Logs"
+description: "Monitor tool usage, performance, errors, and user activity across your agent deployments."
+icon: "chart-line"
+---
+
+Caylex provides real-time analytics and detailed session logs for every interaction that passes through the proxy. Use these to monitor agent performance, debug issues, and understand how your tools are being used.
+
+## Dashboard overview
+
+The analytics dashboard is accessible from the main navigation in the Caylex platform. It provides a high-level view of your platform's activity with the following metrics:
+
+### Key metrics
+
+| Metric | Description |
+| --- | --- |
+| **Sessions processed** | Total number of sessions (agent interactions) processed |
+| **Tool calls** | Total number of individual tool calls executed |
+| **Error rate** | Percentage of tool calls that resulted in errors |
+| **Average latency** | Average time for the proxy to process a tool call |
+| **Average runtime** | Average execution time of tool calls on external servers |
+| **Active users** | Weekly active users (WAU) and monthly active users (MAU) |
+| **Tool calls per session** | Average number of tool calls per session (indicates session complexity) |
+
+All metrics include **period-over-period comparisons** — you can see how the current period compares to the previous one (e.g., this week vs last week) to identify trends.
+
+### Time-series graphs
+
+The dashboard includes interactive graphs for:
+
+- **Sessions over time** — visualize session volume trends
+- **Tool calls over time** — track tool execution volume
+- **Error rate over time** — monitor error trends and spikes
+- **Error types over time** — see the breakdown of error categories (authentication, rate limit, timeout, execution errors)
+- **Latency over time** — track proxy processing time trends
+- **Runtime over time** — monitor external server response times
+- **Tool calls per session over time** — observe session complexity trends
+
+<Tip>
+Use the time window selector to view data over different periods: last hour, last day, last week, or last month. You can also adjust the aggregation frequency (per minute, hour, day, week, or month) for more or less granularity.
+</Tip>
+
+### Top tools and servers
+
+The dashboard also shows:
+
+- **Top tools** — the most frequently used tools, ranked by call count
+- **Servers** — which servers are being accessed and how often
+- **Agent-tool connections** — which agents are using which tools, visualized as a relationship map
+
+## Filtering
+
+All analytics can be filtered by:
+
+| Filter | Description |
+| --- | --- |
+| **Project** | Scope to a specific project |
+| **Agent** | Scope to a specific agent instance |
+| **Server** | Scope to a specific server instance |
+| **User** | Scope to a specific user |
+| **Time window** | Select the date range to analyze |
+
+Combine filters to drill down into specific areas. For example, filter by a specific agent and server to see how that agent uses a particular integration.
+
+## Session logs
+
+Session logs provide a detailed view of every session processed by the proxy. Navigate to a project and open the **Session Logs** tab to see all sessions.
+
+Each session log entry shows:
+
+| Column | Description |
+| --- | --- |
+| **Session Summary** | The original query or intent that started the session |
+| **Tool Calls** | Total number of tool calls executed in the session |
+| **Errors** | Number of tool calls that failed |
+| **Servers Invoked** | Icons showing which servers were accessed |
+| **Agent** | Which agent instance processed the session |
+| **User** | Which user triggered the session |
+| **Timestamp** | When the session was received |
+
+You can filter sessions by agent, server, and date range. Sort by newest or oldest first.
+
+### Session details
+
+Click on any session to open the **Session Details** drawer with three sections:
+
+#### Session summary
+
+The full text of the original query or intent.
+
+#### Statistics
+
+An overview of the session including the user, total tool calls, error count, timestamp, and which servers were invoked.
+
+#### Tool trace
+
+A visual timeline showing every tool call executed in the session, displayed as a vertical step-by-step trace. The trace shows:
+
+- **Individual tool calls** — each displayed with the tool name, timestamp, and server icon
+- **Parallel tool calls** — grouped together and labeled as "Parallel" with the number of tools executed simultaneously
+- **Error indicators** — failed tool calls are highlighted with a red icon
+
+For each tool call in the trace, you can see:
+
+| Field | Description |
+| --- | --- |
+| **Tool** | The name of the tool that was called |
+| **From Server** | Which server the tool belongs to |
+| **Latency** | How long the call took |
+| **Timestamp** | When the call was executed |
+
+If a tool call failed, you can click **View Error Message** to see the full error details, including any contextual error recovery information with examples of previous successful calls to the same tool.
+
+<Tip>
+Session traces are invaluable for debugging. If an agent is not behaving as expected, the trace shows exactly which tools were called, on which servers, and in what order — making it easy to pinpoint where things went wrong.
+</Tip>
+
+## User analytics
+
+Per-user analytics are available in the project's **Users** tab. For each user, you can see:
+
+- **Activity timeline** — sessions and tool calls over time
+- **Top tools** — the tools used most by this user's agent interactions
+- **Top servers** — the servers accessed most on behalf of this user
+- **Error rate** — the percentage of tool calls that failed for this user
+
+See [Managing Users](/auth/managing-users) for more on the user view.
+
+## Efficiency analytics
+
+The agent instance analytics drawer includes two metrics that measure how effectively your agent uses the proxy's tool suggestion system. These appear under **Efficiency Analytics** on the agent instance's Analytics tab.
+
+| Metric | Description |
+| --- | --- |
+| **Tool Discovery Efficiency** | The ratio of tool invocations to tool discovery operations (`suggest_tools` + `get_tool_schemas` calls). Higher values mean your agent is invoking more tools per discovery operation — indicating efficient tool selection with less overhead. |
+| **Tool Suggestion Spread** | The ratio of tool invocations to the total number of suggested tools. Higher values mean a larger proportion of suggested tools are actually being invoked, indicating that the suggestions are relevant and high quality. |
+
+These metrics are scoped to the selected time window (hour, day, week, or month) and are filtered by project and agent instance.
+
+## Error monitoring
+
+The error analytics section categorizes errors by type:
+
+| Error type | Description |
+| --- | --- |
+| **Authentication** | Credential issues — user not authenticated, expired tokens |
+| **Rate limit** | External server rate limiting |
+| **Timeout** | Tool call exceeded the configured timeout |
+| **Execution** | Errors returned by the external MCP server |
+| **Query** | Errors in the query processing itself |
+
+Use error type trends to identify systemic issues. For example, a spike in authentication errors might indicate expired OAuth tokens that need renewal, while timeout errors might suggest a server performance problem.

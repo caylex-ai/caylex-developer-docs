@@ -1,0 +1,150 @@
+---
+title: "OpenAI Agents SDK"
+description: "Integrate Caylex with the OpenAI Agents SDK for Python."
+icon: "bolt"
+---
+
+This guide shows you how to connect your OpenAI Agents SDK agent to Caylex using Streamable HTTP transport.
+
+## Prerequisites
+
+- Python 3.10+
+- A Caylex Agent Instance with an API key ([create one here](/platform/agents))
+- Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
+
+## Installation
+
+```bash
+pip install openai-agents
+```
+
+## Full example
+
+```python main.py
+import asyncio
+import os
+
+from agents import Agent, Runner
+from agents.mcp import MCPServerStreamableHttp
+
+
+async def main() -> None:
+    # Load credentials from environment variables
+    api_key = os.environ["CAYLEX_API_KEY"]
+    user_email = os.environ["CAYLEX_USER_EMAIL"]
+
+    # Connect to Caylex MCP via Streamable HTTP
+    async with MCPServerStreamableHttp(
+        name="Caylex",
+        params={
+            "url": "https://proxy.caylex.ai/mcp",
+            "headers": {
+                "x-api-key": api_key,
+                "x-user-email": user_email,
+            },
+        },
+    ) as server:
+        # Create an agent with Caylex tools
+        agent = Agent(
+            name="Assistant",
+            model="gpt-5.2",
+            instructions="You are a helpful assistant that can access external systems using Caylex.",
+            mcp_servers=[server],
+        )
+
+        # Run the agent with a user query
+        result = await Runner.run(
+            agent,
+            "Read through my recent emails, get the latest updates on my customer accounts, and update the CRM with any important changes.",
+        )
+        print(result.final_output)
+
+
+asyncio.run(main())
+```
+
+## Step-by-step
+
+<Steps>
+  <Step title="Set environment variables">
+    ```bash
+    export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+    export CAYLEX_USER_EMAIL="user@example.com"
+    ```
+  </Step>
+  <Step title="Create the MCP server connection">
+    Use `MCPServerStreamableHttp` to connect to the Caylex proxy. The `params` dict must include the `url` and `headers` with your API key and user email.
+
+    ```python
+    async with MCPServerStreamableHttp(
+        name="Caylex",
+        params={
+            "url": "https://proxy.caylex.ai/mcp",
+            "headers": {
+                "x-api-key": api_key,
+                "x-user-email": user_email,
+            },
+        },
+    ) as server:
+        # server is now connected
+    ```
+  </Step>
+  <Step title="Create an agent with Caylex tools">
+    Pass the Caylex server to your agent's `mcp_servers` list. The agent automatically discovers all available tools through MCP.
+
+    ```python
+    agent = Agent(
+        name="Assistant",
+        model="gpt-5.2",
+        instructions="Your agent instructions here.",
+        mcp_servers=[server],
+    )
+    ```
+  </Step>
+  <Step title="Run the agent">
+    Use `Runner.run()` to execute the agent with a user query. The agent uses Caylex tools to interact with external systems.
+
+    ```python
+    result = await Runner.run(agent, "Your query here.")
+    print(result.final_output)
+    ```
+  </Step>
+</Steps>
+
+## Dynamic user email
+
+In a production application, the user email typically comes from your application's authentication context rather than an environment variable:
+
+```python
+async def handle_user_request(user_email: str, query: str) -> str:
+    api_key = os.environ["CAYLEX_API_KEY"]
+
+    async with MCPServerStreamableHttp(
+        name="Caylex",
+        params={
+            "url": "https://proxy.caylex.ai/mcp",
+            "headers": {
+                "x-api-key": api_key,
+                "x-user-email": user_email,  # Dynamic per user
+            },
+        },
+    ) as server:
+        agent = Agent(
+            name="Assistant",
+            model="gpt-5.2",
+            instructions="You are a helpful assistant.",
+            mcp_servers=[server],
+        )
+        result = await Runner.run(agent, query)
+        return result.final_output
+```
+
+<Tip>
+The `x-api-key` stays the same for all users (it identifies your agent), but the `x-user-email` changes per user (it determines which credentials the proxy uses).
+</Tip>
+
+## Further reading
+
+- [OpenAI Agents SDK MCP documentation](https://openai.github.io/openai-agents-python/mcp/)
+- [Connecting Your Agent](/integration/connecting) — details on how the proxy works
+- [Authentication Model](/auth/overview) — understand user-level vs project-level auth

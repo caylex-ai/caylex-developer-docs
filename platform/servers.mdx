@@ -1,0 +1,129 @@
+---
+title: "Servers"
+description: "Add MCP servers from the Caylex Catalog or connect your own custom servers."
+icon: "server"
+---
+
+Servers are the MCP integrations that provide tools to your agents. Caylex supports two ways to add servers: from the **Caylex Catalog** of pre-configured servers, or as **custom servers** that you manage.
+
+## Add a server from the Caylex Catalog
+
+The Caylex Catalog contains pre-configured MCP servers for popular platforms. These servers come with pre-defined endpoints, transport settings, and authentication methods — so you can add them with minimal configuration.
+
+<Steps>
+  <Step title="Browse the catalog">
+    Navigate to the **Servers** page and click **Add Server**. Browse the catalog by category or search for a specific platform (e.g., GitHub, Slack, Linear, Notion, Gmail).
+  </Step>
+  <Step title="Select a server">
+    Click on the server you want to add. Review the server details including available tools, authentication method, and description.
+  </Step>
+  <Step title="Add to your tenant">
+    Click **Add Server** to add it to your organization. The server is now available to connect to any of your projects.
+  </Step>
+</Steps>
+
+## Add a custom server
+
+If the server you need is not in the catalog, you can add your own MCP server by providing its connection details.
+
+<Steps>
+  <Step title="Choose your auth method">
+    Navigate to **Servers** and click **Add Server**, then select **Custom Server**. Choose the authentication method your server uses:
+
+    - **OAuth** — for servers that use OAuth 2.0 (e.g., Google APIs, Microsoft Graph)
+    - **Header** — for servers that authenticate via HTTP headers (e.g., API keys, Bearer tokens)
+    - **Path** — for servers that embed credentials in the URL path
+    - **Query** — for servers that pass credentials as URL query parameters
+    - **No Auth** — for servers that do not require authentication
+  </Step>
+  <Step title="Configure the server">
+    Provide the connection details:
+
+    - **Name** — a unique name for the server
+    - **Endpoint URL** — the MCP server's endpoint
+    - **Transport type** — Streamable HTTP (recommended) or SSE
+    - **Auth configuration** — specific to the auth method you selected (see below)
+  </Step>
+  <Step title="Save and verify">
+    Save the server. Caylex automatically discovers the available tools from the server endpoint and registers them.
+
+    <Check>
+    Your custom server appears in the servers list, ready to be connected to projects.
+    </Check>
+  </Step>
+</Steps>
+
+### Auth method details
+
+<AccordionGroup>
+  <Accordion title="OAuth">
+    Provide your OAuth application credentials:
+    - **Client ID** and **Client Secret**
+    - **Authorization URL** and **Token URL**
+    - **Scopes** required by your application
+
+    Caylex uses PKCE by default for enhanced security. When users authenticate via an auth link, they go through the standard OAuth flow and Caylex securely manages their tokens.
+  </Accordion>
+
+  <Accordion title="Header">
+    Define the HTTP headers your server requires:
+    - **Header name** (e.g., `X-API-Key`, `Authorization`)
+    - **Value prefix** (optional, e.g., `Bearer ` for Authorization headers)
+
+    Users provide their header values when authenticating via an auth link. Values are stored securely in AWS Parameter Store.
+  </Accordion>
+
+  <Accordion title="Path">
+    Define the URL path parameters your server requires:
+    - Use `<PARAM_NAME>` or `{PARAM_NAME}` placeholders in your endpoint URL
+    - List each parameter that users need to provide
+
+    Example endpoint: `https://api.example.com/<workspace_id>/mcp`
+  </Accordion>
+
+  <Accordion title="Query">
+    Define the query parameters your server requires:
+    - **Parameter name** (e.g., `api_key`)
+    - Users provide parameter values when authenticating
+
+    Values are appended to the endpoint URL at runtime.
+  </Accordion>
+
+  <Accordion title="No Auth">
+    No authentication configuration needed. The server is accessible without credentials.
+  </Accordion>
+</AccordionGroup>
+
+## Connect a server to a project
+
+After adding a server to your organization, connect it to a project to create a **Server Instance**.
+
+<Steps>
+  <Step title="Go to your project">
+    Navigate to the project where you want to add the server.
+  </Step>
+  <Step title="Add a server instance">
+    Click **Add Server** on the project page and select the server you want to connect. This creates a Server Instance — a project-scoped deployment of that server.
+  </Step>
+  <Step title="Configure authentication">
+    If the server requires authentication, set up an [Auth Link](/auth/auth-links) so that users (or a service account) can provide credentials for this project.
+  </Step>
+</Steps>
+
+## Pause and unpause server instances
+
+You can temporarily disable a Server Instance by **pausing** it. When paused:
+
+- The server's tools are not exposed to agents in that project
+- Existing credentials are preserved
+- You can unpause at any time to restore access
+
+This is useful for maintenance windows or temporarily restricting access to certain integrations.
+
+## Build a server from an API spec
+
+If you have an API that is not available as an MCP server, you can use **Server Foundry** to generate one from an OpenAPI specification. The AI-powered Designer Agent guides you through selecting endpoints, optimizing tool definitions, and deploying a production-ready MCP server.
+
+<Card title="Server Foundry" icon="hammer" href="/server-foundry/overview">
+  Learn how to build custom MCP servers from any OpenAPI spec.
+</Card>
