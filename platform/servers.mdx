@@ -57,12 +57,18 @@ If the server you need is not in the catalog, you can add your own MCP server by
 
 <AccordionGroup>
   <Accordion title="OAuth">
-    Provide your OAuth application credentials:
-    - **Client ID** and **Client Secret**
-    - **Authorization URL** and **Token URL**
-    - **Scopes** required by your application
+    Caylex automates most of the OAuth setup for you:
 
-    Caylex uses PKCE by default for enhanced security. When users authenticate via an auth link, they go through the standard OAuth flow and Caylex securely manages their tokens.
+    1. Enter your MCP server's endpoint URL
+    2. Click **Discover OAuth** — Caylex automatically discovers the server's OAuth metadata (authorization endpoint, token endpoint, supported scopes) using standard protocols (RFC 9728, RFC 8414, OIDC Discovery)
+    3. If the server supports **Dynamic Client Registration (DCR)**, Caylex automatically registers an OAuth client — no credentials needed from you
+    4. If DCR is not available, you are prompted to provide a **Client ID** and **Client Secret** manually
+
+    For **catalog servers**, OAuth credentials are pre-configured — no discovery or manual setup required.
+
+    <Tip>
+    Most catalog servers have OAuth fully pre-configured. For custom servers, Caylex tries automatic discovery and registration first, and only asks for manual credentials as a fallback.
+    </Tip>
   </Accordion>
 
   <Accordion title="Header">
