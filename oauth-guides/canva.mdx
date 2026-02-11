@@ -1,0 +1,38 @@
+---
+title: "Canva"
+description: "How to create OAuth credentials for Canva."
+---
+
+Canva supports OAuth 2.0 for integrating with its design platform APIs. Integrations are created through the Canva Developer Portal.
+
+## Steps
+
+1. **Create a Canva Integration**
+   - Log in to the [Canva Developer Portal](https://www.canva.com/developers/)
+   - Go to [Your Integrations](https://www.canva.com/developers/integrations)
+   - Click **Create an integration**
+   - Choose integration type:
+     - **Public Integration**: Available to all Canva users (requires Canva team approval)
+     - **Private Integration**: Team-only access (requires Canva Enterprise Plan)
+
+2. **Get Client ID and Client Secret**
+   - Navigate to your newly created integration
+   - Under the **Configuration** tab → **Credentials**, find the **Client ID** and **Client Secret**
+   - Copy both values
+
+3. **Configure the Redirect URI**
+   - Go to the **Authentication** tab
+   - Under **Authorized Redirects**, add your OAuth callback URL
+
+4. **Configure Scopes**
+   - Go to the **Scopes** tab
+   - Select the scopes your integration needs
+   - Submit the integration for review (for public integrations)
+
+## Key Details
+
+- **Developer Portal**: [https://www.canva.com/developers/](https://www.canva.com/developers/)
+- **Integrations Page**: [https://www.canva.com/developers/integrations](https://www.canva.com/developers/integrations)
+- **Auth Type**: OAuth 2.0 (no Bearer Token support)
+- **Credentials Location**: Integration → Configuration tab → Credentials
+- **Note**: Public integrations require approval from the Canva team; private integrations require an Enterprise Plan

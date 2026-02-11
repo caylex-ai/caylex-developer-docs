@@ -1,0 +1,37 @@
+---
+title: "Airtable"
+description: "How to create OAuth credentials for Airtable."
+---
+
+Airtable is a cloud-based database/spreadsheet platform that supports OAuth 2.0 for secure API access. You create an OAuth integration through the Airtable Developer Portal.
+
+## Steps
+
+1. **Access the Developer Portal**
+   - Go to [https://airtable.com/developers/web/api](https://airtable.com/developers/web/api)
+   - Sign in with your Airtable account
+
+2. **Create an OAuth Integration**
+   - In the left-hand menu, click **OAuth integrations** (in the Guide section)
+   - Click **+ New OAuth Integration** in the top-right corner
+   - Fill in the app details: name, description (website is optional)
+
+3. **Get Client ID and Client Secret**
+   - After saving, Airtable will display the **Client ID** and **Client Secret**
+   - Copy both values and store them securely
+
+4. **Configure the Redirect URI**
+   - In the Redirect URLs section of your OAuth app, add your callback URL
+   - Ensure there is no trailing slash and the protocol is `https`
+
+5. **Configure Scopes**
+   - Airtable provides granular scopes for different data access levels
+   - Select the scopes that match your integration needs during the OAuth flow
+
+## Key Details
+
+- **Developer Portal**: [https://airtable.com/developers/web/api](https://airtable.com/developers/web/api)
+- **Base API URL**: `https://api.airtable.com/v0`
+- **Auth Type**: OAuth 2.0
+- **Credentials Location**: OAuth integration settings page
+- **Note**: During authorization, users select which bases/workspaces to grant access to

@@ -1,0 +1,50 @@
+---
+title: "Zendesk"
+description: "How to create OAuth credentials for Zendesk."
+---
+
+Zendesk supports OAuth 2.0 for secure access to its support, ticketing, and customer service APIs. OAuth clients are created through the Zendesk Admin Center.
+
+## Steps
+
+1. **Log in to Zendesk Admin Center**
+   - In the left sidebar, click **Apps and integrations**
+   - Select **APIs**
+   - Open the **OAuth clients** tab
+
+2. **Create an OAuth Client**
+   - Click **Add OAuth client**
+   - Fill in:
+     - **Client Name**: e.g., `My Integration`
+     - **Description**: (optional)
+     - **Redirect URLs**: Your OAuth callback URL
+
+3. **Get Client ID and Client Secret**
+   - After saving, Zendesk will generate:
+     - **Client ID (Identifier)**
+     - **Client Secret**
+   - Copy and store them securely
+
+4. **Configure Redirect URI**
+   - Ensure your callback URL is listed in the OAuth client settings
+   - No trailing slash, must use `https`
+
+5. **Understanding Scopes**
+   - Zendesk does **not** provide a UI to configure scopes in the Admin Center
+   - Scopes are **requested at authorization time** as part of the OAuth flow
+   - Zendesk supports these OAuth scopes:
+     - `read` — Read access to Zendesk resources
+     - `write` — Create and update resources
+     - `delete` — Delete resources
+   - Permissions are also constrained by the user's role (agent, admin, etc.)
+
+## Key Details
+
+- **Admin Center**: `https://{your-subdomain}.zendesk.com/admin`
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://{your-subdomain}.zendesk.com/oauth/authorizations/new`
+- **Token URL**: `https://{your-subdomain}.zendesk.com/oauth/tokens`
+- **Base API URL**: `https://{your-subdomain}.zendesk.com/api/v2/`
+- **Credentials Location**: Admin Center → Apps and integrations → APIs → OAuth clients
+- **Available Scopes**: `read`, `write`, `delete`
+- **Note**: Replace `{your-subdomain}` with your Zendesk account subdomain in all URLs

@@ -1,0 +1,49 @@
+---
+title: "Dropbox"
+description: "How to create OAuth credentials for Dropbox."
+---
+
+Dropbox supports OAuth 2.0 for secure API access to files, folders, and user data. You create an app through the Dropbox App Console.
+
+## Steps
+
+1. **Create a Dropbox App**
+   - Log in to your Dropbox account
+   - Go to the [Dropbox App Console](https://www.dropbox.com/developers/apps)
+   - Click **Create app**
+   - For **Choose an API**, select **Scoped access**
+   - Choose the access type:
+     - **App folder** — Access only to a specific folder
+     - **Full Dropbox** — Access to all files
+   - Enter an app name and click **Create app**
+
+2. **Get Client ID and Client Secret**
+   - On the app's settings page, find:
+     - **App key** → This is your **Client ID**
+     - **App secret** → This is your **Client Secret**
+   - Copy both values and save them securely
+
+3. **Configure Redirect URI**
+   - Scroll to the **OAuth 2** section on the settings page
+   - Under **Redirect URIs**, click **Add** and enter your callback URL
+   - The redirect URI must match exactly
+
+4. **Configure OAuth Scopes (Permissions)**
+   - Go to the **Permissions** tab
+   - Check the permissions your integration needs:
+     - `files.metadata.read` — Read file metadata
+     - `files.content.read` — Read file contents
+     - `files.content.write` — Modify/upload files
+     - `sharing.read` / `sharing.write` — Sharing features
+   - Click **Submit** to save
+
+## Key Details
+
+- **App Console**: [https://www.dropbox.com/developers/apps](https://www.dropbox.com/developers/apps)
+- **Auth Type**: OAuth 2.0
+- **Base API URL**: `https://api.dropboxapi.com/2/`
+- **Content API URL**: `https://content.dropboxapi.com/2/` (for file content operations)
+- **Authorization URL**: `https://www.dropbox.com/oauth2/authorize`
+- **Token URL**: `https://api.dropboxapi.com/oauth2/token`
+- **Credentials Location**: App Settings → App key (Client ID) & App secret (Client Secret)
+- **Common Scopes**: `files.metadata.read`, `files.metadata.write`, `files.content.read`, `files.content.write`, `sharing.read`, `sharing.write`, `account_info.read`, `file_requests.read`, `file_requests.write`, `openid`, `email`, `profile`

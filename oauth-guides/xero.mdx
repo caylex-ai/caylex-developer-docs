@@ -1,0 +1,48 @@
+---
+title: "Xero"
+description: "How to create OAuth credentials for Xero."
+---
+
+Xero is an accounting platform that supports OAuth 2.0 for accessing its Accounting, Payroll, and Files APIs. Apps are created through the Xero Developer Portal.
+
+## Steps
+
+1. **Log in to the Xero Developer Portal**
+   - Go to [https://developer.xero.com](https://developer.xero.com)
+   - Sign in with your Xero account
+
+2. **Create a New App**
+   - Click **New app** in the top-right corner
+   - Fill in:
+     - **App name**: e.g., `My Accounting Integration`
+     - **Company or application URL**: Your website or app URL
+     - **Integration type**: Select **Web app**
+     - **Redirect URI**: Your OAuth callback URL
+   - Click **Create app**
+
+3. **Get Client ID and Client Secret**
+   - After creation, Xero will show the **Client ID**
+   - Click **Generate a secret** to create the **Client Secret**
+   - Copy both values immediately and store securely
+
+4. **Verify the Redirect URI**
+   - Ensure your callback URL is correctly set in the app settings
+   - No trailing slash, must be `https`
+
+## Key Details
+
+- **Developer Portal**: [https://developer.xero.com](https://developer.xero.com)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://login.xero.com/identity/connect/authorize`
+- **Token URL**: `https://identity.xero.com/connect/token`
+- **Base API URLs**:
+  - Accounting: `https://api.xero.com/api.xro/2.0/`
+  - Payroll AU: `https://api.xero.com/payroll.xro/1.0/`
+  - Payroll UK/NZ: `https://api.xero.com/payroll.xro/2.0/`
+  - Files: `https://api.xero.com/files.xro/1.0/`
+- **Credentials Location**: App settings page
+- **Common Scopes**:
+  - **Accounting**: `accounting.transactions`, `accounting.contacts`, `accounting.settings`, `accounting.reports.read`
+  - **Payroll**: `payroll.employees`, `payroll.payruns`, `payroll.timesheets`
+  - **Files**: `files`
+  - **Other**: `offline_access` (required for refresh tokens), `openid`, `profile`, `email`

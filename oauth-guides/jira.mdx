@@ -1,0 +1,46 @@
+---
+title: "Jira"
+description: "How to create OAuth credentials for Jira."
+---
+
+Jira (Atlassian) supports OAuth 2.0 (3LO — three-legged OAuth) via the Atlassian Developer Console. This applies to Jira Cloud.
+
+## Steps
+
+1. **Log in to the Atlassian Developer Console**
+   - Go to [https://developer.atlassian.com/console/myapps/](https://developer.atlassian.com/console/myapps/)
+   - Sign in with your Jira/Atlassian account (sign up free if needed)
+
+2. **Create a New OAuth 2.0 App**
+   - On the dashboard, click **Create App**
+   - Select **OAuth 2.0 (3LO)**
+   - Enter an **App Name** (e.g., `My Jira Integration`)
+
+3. **Configure the Redirect URL**
+   - Add your OAuth callback URL in the redirect URL field
+
+4. **Configure Permissions (Scopes)**
+   - Select the scopes your integration requires. Common Jira scopes:
+     - `read:jira-user` — Read user data
+     - `read:jira-work` — Read issues, projects, boards
+     - `write:jira-work` — Create/update issues
+     - `manage:jira-project` — Manage project settings
+     - `manage:jira-configuration` — Manage Jira configuration
+     - `offline_access` — Refresh tokens
+   - Additional scopes: `read:sprint:jira-software`, `write:sprint:jira-software`, `read:board-scope:jira-software`, `read:project:jira`, `read:issue-type-scheme:jira`
+   - Click **Save**
+
+5. **Retrieve OAuth Credentials**
+   - Go to the **Settings** page of your app
+   - Copy the **Client ID** and **Client Secret**
+   - Store the secret securely
+
+## Key Details
+
+- **Developer Console**: [https://developer.atlassian.com/console/myapps/](https://developer.atlassian.com/console/myapps/)
+- **Auth Type**: OAuth 2.0 (3LO)
+- **Token URL**: `https://auth.atlassian.com/oauth/token`
+- **Authorization URL**: `https://auth.atlassian.com/authorize`
+- **Base API URL**: `https://api.atlassian.com/ex/jira/{cloudId}`
+  - Replace `{cloudId}` with your Jira Cloud site ID (found in the Developer Console)
+- **Credentials Location**: App → Settings → Client ID & Client Secret

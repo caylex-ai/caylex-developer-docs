@@ -1,0 +1,57 @@
+---
+title: "Outlook (Microsoft)"
+description: "How to create OAuth credentials for Outlook (Microsoft)."
+---
+
+Microsoft Outlook uses OAuth 2.0 via **Azure App Registrations** and the **Microsoft Graph API**. The same app registration can be used for Outlook, OneDrive, Teams, SharePoint, and other Microsoft services.
+
+## Steps
+
+1. **Create an Azure App Registration**
+   - Go to the [Azure Portal](https://portal.azure.com)
+   - Search for **App registrations** in the left-hand menu
+   - Click **+ New registration**
+   - Fill in:
+     - **Name**: e.g., `Outlook Integration`
+     - **Supported account types**: Choose **Accounts in any organizational directory and personal Microsoft accounts** (for broadest access)
+     - **Redirect URI**: Select **Web** and enter your OAuth callback URL
+   - Click **Register**
+
+2. **Get the Client ID**
+   - After registration, you'll be on the app's **Overview** page
+   - Copy the **Application (client) ID** — this is your **Client ID**
+
+3. **Generate a Client Secret**
+   - In the sidebar, go to **Certificates & secrets**
+   - Click **+ New client secret**
+   - Add a description and set expiry (6 or 12 months recommended)
+   - Copy the generated **Client Secret** immediately (you won't see it again)
+
+4. **Configure API Permissions**
+   - In the sidebar, click **API Permissions** → **+ Add a permission**
+   - Select **Microsoft Graph** → **Delegated permissions**
+   - Add the required scopes:
+     - `Mail.Read` — Read user's emails
+     - `Mail.Send` — Send emails
+     - `offline_access` — Enable refresh tokens
+     - `openid`, `profile`, `email` — Basic login profile
+   - Click **Add permissions**
+
+5. **Verify Redirect URIs**
+   - In the sidebar, open **Authentication**
+   - Confirm your callback URL is listed under **Redirect URIs**
+   - Optionally enable **Allow public client flows** for testing
+
+## Key Details
+
+- **Azure Portal**: [https://portal.azure.com](https://portal.azure.com)
+- **Auth Type**: OAuth 2.0
+- **Base API URL**: `https://graph.microsoft.com/v1.0`
+- **Authorization Endpoint**: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize`
+- **Token Endpoint**: `https://login.microsoftonline.com/common/oauth2/v2.0/token`
+- **Common Outlook Scopes**: `Mail.Read`, `Mail.Send`, `Mail.ReadWrite`, `Calendars.ReadWrite`, `offline_access`, `openid`, `profile`, `email`
+- **Scopes for Other Microsoft Services**:
+  - OneDrive: `Files.ReadWrite`, `Files.Read.All`
+  - Teams: `Channel.ReadWrite.All`
+  - SharePoint: `Sites.Read.All`
+- **Note**: A single Azure app registration can serve multiple Microsoft services — just add the corresponding scopes

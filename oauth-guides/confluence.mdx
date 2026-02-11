@@ -1,0 +1,50 @@
+---
+title: "Confluence"
+description: "How to create OAuth credentials for Confluence."
+---
+
+Confluence (by Atlassian) supports OAuth 2.0 for secure API access. You create an OAuth 2.0 Integration app through the Atlassian Developer Console, the same portal used for Jira.
+
+## Steps
+
+1. **Create an Atlassian Developer Account**
+   - Go to the [Atlassian Developer Portal](https://developer.atlassian.com/console)
+   - Sign up or sign in with your Atlassian account
+
+2. **Create an OAuth 2.0 Application**
+   - Go to [Atlassian Apps Console](https://developer.atlassian.com/console/myapps)
+   - Create a new app of type **OAuth 2.0 Integration**
+   - Name your application and click **Create**
+
+3. **Configure the Callback URL**
+   - Go to the **Authorization** tab in the left sidebar
+   - Click **Configure**
+   - Enter your OAuth callback URL in the input field
+
+4. **Configure Scopes (Permissions)**
+   - Go to the **Permissions** tab in the left sidebar
+   - Configure scopes under **User Identity API** and **Confluence API**
+   - Select either Classic or Granular scopes based on your needs
+   - Common scopes include:
+     - `read:confluence-content.all` — Read all content
+     - `write:confluence-content` — Create/update content
+     - `read:confluence-space.summary` — Read space summaries
+     - `read:confluence-user` — Read user data
+     - `offline_access` — Refresh tokens
+   - Click **Save**
+
+5. **Copy OAuth Credentials**
+   - Go to the **Settings** tab
+   - Under **Authentication Details**, find the **Client ID** and **Client Secret**
+   - Copy both values
+
+## Key Details
+
+- **Developer Console**: [https://developer.atlassian.com/console/myapps](https://developer.atlassian.com/console/myapps)
+- **Auth Type**: OAuth 2.0
+- **Authorization URL**: `https://auth.atlassian.com/authorize`
+- **Token URL**: `https://auth.atlassian.com/oauth/token`
+- **Base API URL**: `https://api.atlassian.com/ex/confluence/{cloudId}`
+- **Credentials Location**: App → Settings → Authentication Details
+- **Common Granular Scopes**: `read:page:confluence`, `write:page:confluence`, `read:space:confluence`, `read:content:confluence`, `write:content:confluence`, `read:attachment:confluence`, `read:comment:confluence`, `write:comment:confluence`, `offline_access`
+- **Note**: Your Confluence subdomain is the part before `.atlassian.net` in your URL

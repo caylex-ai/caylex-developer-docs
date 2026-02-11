@@ -1,0 +1,45 @@
+---
+title: "Facebook (Meta)"
+description: "How to create OAuth credentials for Facebook (Meta)."
+---
+
+Facebook uses OAuth 2.0 via the Meta for Developers platform. The same process applies to other Meta apps (WhatsApp, Instagram). You need a developer account linked to a business portfolio.
+
+## Steps
+
+1. **Create a Facebook Developer Account**
+   - Go to [https://developers.facebook.com](https://developers.facebook.com)
+   - Create a developer account (requires a Facebook account)
+   - Link it to a [business portfolio](https://developers.facebook.com/apps/creation/)
+
+2. **Create an Application**
+   - In the top-right corner, click **Create App**
+   - Enter basic app details
+   - Select relevant **use cases** based on your workflow
+   - Select your business on the business tab
+   - Fill in remaining details and create the app
+
+3. **Get Client ID (App ID) and Client Secret (App Secret)**
+   - Navigate to your application
+   - Go to **App Settings → Basic**
+   - Find the **App ID** (Client ID) and **App Secret** (Client Secret)
+   - Copy both values
+
+4. **Configure the Redirect URI**
+   - In **App Settings → Advanced**
+   - Add your OAuth callback URL to the **redirect allow list**
+
+5. **Publish the Application**
+   - Configure any additional settings needed
+   - Publish the application to make it live
+
+## Key Details
+
+- **Developer Portal**: [https://developers.facebook.com](https://developers.facebook.com)
+- **Auth Type**: OAuth 2.0 (no Bearer Token support)
+- **Authorization URL**: `https://www.facebook.com/v18.0/dialog/oauth`
+- **Token URL**: `https://graph.facebook.com/v18.0/oauth/access_token`
+- **Base API URL**: `https://graph.facebook.com`
+- **Credentials Location**: App Settings → Basic → App ID (Client ID) & App Secret (Client Secret)
+- **Note**: The same Meta developer platform handles Facebook, Instagram, and WhatsApp OAuth — use the appropriate scopes for each service
+- **Common Scopes**: `email`, `public_profile`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`

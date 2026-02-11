@@ -1,0 +1,38 @@
+---
+title: "HubSpot"
+description: "How to create OAuth credentials for HubSpot."
+---
+
+HubSpot is a CRM and marketing platform that supports OAuth 2.0 for secure API access. You need a **developer account** and a **public app** to obtain OAuth credentials.
+
+## Steps
+
+1. **Create a HubSpot Developer Account**
+   - Go to [https://developers.hubspot.com/get-started](https://developers.hubspot.com/get-started)
+   - Sign up for a developer account (required for creating public apps)
+
+2. **Create a Public App**
+   - In your developer account, navigate to **Apps** in the main navigation bar
+   - Click **Create App** in the top-right corner
+   - Enter app details: name, description, logo, and support information
+   - These details are shown to users during the OAuth consent flow
+
+3. **Get Client ID and Client Secret**
+   - In your app settings, click the **Auth** tab
+   - Copy the **Client ID** and **Client Secret** displayed on this page
+
+4. **Configure the Redirect URI**
+   - In the Auth tab, scroll to the **Redirect URLs** section (below the credentials)
+   - Add your application's OAuth callback URL
+
+5. **Configure Scopes**
+   - Still in the Auth tab, select the scopes your integration needs
+   - HubSpot scopes are granular and tied to specific API endpoints
+
+## Key Details
+
+- **Developer Portal**: [https://developers.hubspot.com](https://developers.hubspot.com)
+- **App Dashboard**: [https://app.hubspot.com/developer](https://app.hubspot.com/developer)
+- **Base API URL**: `https://api.hubapi.com`
+- **Auth Type**: OAuth 2.0 (Authorization Code flow)
+- **Credentials Location**: App → Auth tab → Client ID & Client Secret
