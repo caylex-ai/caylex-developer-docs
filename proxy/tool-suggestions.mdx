@@ -1,0 +1,94 @@
+---
+title: "Tool Suggestions"
+description: "Enable intelligent, RAG-based tool discovery so your agents reliably choose the right tools."
+icon: "wand-magic-sparkles"
+---
+
+When your agent is connected to many servers with dozens or hundreds of tools, choosing the right tool for a given task becomes a challenge. **Tool Suggestions** solve this by providing intelligent, intent-based tool discovery powered by vector similarity search.
+
+## What it does
+
+When enabled, the proxy exposes a `suggest_tools` MCP tool to your agent. Instead of scanning through a long list of tools, your agent describes what it wants to accomplish, and the proxy returns a **ranked list of the most relevant tools** across all connected servers.
+
+For example, if your agent says *"I want to create a new issue"*, the proxy might return:
+
+1. `create_issue` from Linear MCP (relevance: 0.94)
+2. `create_issue` from GitHub MCP (relevance: 0.91)
+3. `create_task` from Notion MCP (relevance: 0.78)
+
+Your agent can then pick the right tool based on its context and proceed with the call.
+
+## How to enable
+
+<Steps>
+  <Step title="Navigate to Agent Instance settings">
+    Go to the **Agents** page, select your agent, and open the Agent Instance for your project.
+  </Step>
+  <Step title="Enable Dynamic Suggestions">
+    Toggle **Dynamic Suggestions** to on. This enables the `suggest_tools` tool for this Agent Instance.
+  </Step>
+</Steps>
+
+When Dynamic Suggestions is enabled, your agent's MCP tool list includes `suggest_tools` alongside `get_tool_schemas`, `invoke_tools`, and optionally `get_context_map`.
+
+## How it works
+
+The tool suggestion system uses **RAG (Retrieval-Augmented Generation)** with pre-computed vector embeddings:
+
+1. **Embedding generation** — when tools are added to a project, Caylex generates vector embeddings from each tool's name, description, and input schema. These embeddings capture the semantic meaning of what each tool does.
+
+2. **Historical enrichment** — as tools are used over time, successful query-tool pairs are embedded and added to the search index. This means the system learns from real usage patterns and improves its recommendations.
+
+3. **Intent matching** — when your agent calls `suggest_tools` with an intent (e.g., "I want to list active incidents"), the proxy embeds the intent and performs a vector similarity search against all available tools.
+
+4. **Ranked results** — tools are ranked by a weighted similarity score that considers:
+   - Tool description similarity (primary signal)
+   - Historical intent similarity (how similar intents were resolved before)
+   - Bootstrap embeddings (initial seeding for new tools)
+
+5. **Adaptive thresholds** — if the initial search doesn't return enough results, the system automatically retries with a lower similarity threshold to capture broader matches.
+
+## The `suggest_tools` interface
+
+Your agent calls `suggest_tools` with a list of **intents** — each describing a specific action:
+
+```json
+{
+  "tool_intents": [
+    {
+      "intent": "I want to create a new issue",
+      "tag": "create_issue",
+      "server_names": ["Linear", "GitHub"]
+    },
+    {
+      "intent": "I want to list active incidents",
+      "tag": "list_incidents",
+      "server_names": ["Linear"]
+    }
+  ]
+}
+```
+
+Each intent includes:
+- **intent** — a natural language description of the desired action
+- **tag** — a unique identifier for tracking which tools match which intent
+- **server_names** — optional filter to limit suggestions to specific servers
+
+The response includes ranked tool recommendations with descriptions, server names, and relevance tags.
+
+<Tip>
+Intents should focus on the **action**, not specific parameter values. Write "I want to create a new issue" instead of "I want to create an issue titled 'Fix login bug'".
+</Tip>
+
+## When to enable tool suggestions
+
+| Scenario | Recommendation |
+| --- | --- |
+| Agent connects to 3+ servers with many tools | **Enable** — helps the agent find the right tools efficiently |
+| Agent has a focused set of 5-10 tools | **Optional** — the agent can manage a small tool set directly |
+| Agent needs to handle diverse, unpredictable user requests | **Enable** — intent-based discovery handles open-ended queries well |
+| Agent performs a fixed workflow with known tools | **Disable** — direct tool access is simpler for fixed workflows |
+
+<Note>
+When Dynamic Suggestions is disabled, your agent receives the full list of tools directly via the standard MCP tool discovery mechanism. This is the simpler mode and works well for agents with a small, known set of tools.
+</Note>

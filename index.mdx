@@ -1,98 +1,52 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Welcome to Caylex"
+description: "Empower your AI agents to skillfully interact with any external system through a single MCP interface."
 ---
 
-## Setting up
+Caylex provides an **MCP Proxy** that connects your AI agents to hundreds of external platforms through a single interface. Connect to pre-built servers from the Caylex Catalog, or build custom integrations with Server Foundry. Your agents gain the ability to skillfully navigate their entire information network — all from one MCP connection.
 
-Get your documentation site up and running in minutes.
+On the Caylex platform, you can inspect granular tool traces, monitor tool-use analytics, and manage tool authorizations — all in one place.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## What Caylex provides
 
-## Make it yours
+- **Unified access** — A single MCP connection point for all your servers. Your agent connects once to Caylex and gets access to every tool across every connected server.
+- **Auth and permissions** — User-level authentication for external services and agent-level tool restrictions for fine-grained access control.
+- **Intelligent tool navigation** — Dynamic tool suggestions so agents reliably choose the right actions, and Context Maps so agents understand where information lives across your connected systems.
+- **Usage analytics** — Track tool usage, performance, error rates, and user activity across your entire agent deployment.
 
-Design a docs site that looks great and empowers your users.
+## How it works
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<Steps>
+  <Step title="Connect your MCP servers">
+    Add servers from the Caylex Catalog (GitHub, Slack, Linear, Notion, and more) or bring your own custom MCP servers. Use Server Foundry to build new servers from any OpenAPI spec.
+  </Step>
+  <Step title="Create projects">
+    Organize your deployments into projects — one per customer, team, or environment. Each project has its own server instances, agent instances, and user credentials.
+  </Step>
+  <Step title="Configure agents">
+    Create agents and configure which tools and servers each agent can access. Generate API keys for programmatic access.
+  </Step>
+  <Step title="Integrate with your agent framework">
+    Connect Caylex to your AI agent using the OpenAI Agents SDK, LangChain, Claude Agent SDK, Claude Desktop, or any MCP-compatible framework.
+  </Step>
+  <Step title="Your agents navigate all connected systems">
+    Your agents discover and use tools across all connected servers through Caylex's unified proxy — with automatic authentication, intelligent tool suggestions, and full observability.
+  </Step>
+</Steps>
+
+## Explore the docs
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Go from zero to a working agent integration in 5 minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Core Concepts" icon="sitemap" href="/core-concepts">
+    Understand Projects, Servers, Agents, and how they work together.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Agent Integration" icon="plug" href="/integration/connecting">
+    Connect Caylex to your agent framework with code examples.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Server Foundry" icon="hammer" href="/server-foundry/overview">
+    Build custom MCP servers from any OpenAPI spec using AI.
   </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
-<!-- test -->
+</CardGroup>

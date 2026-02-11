@@ -1,0 +1,88 @@
+---
+title: "Claude Desktop"
+description: "Configure Claude Desktop to use Caylex as an MCP server."
+icon: "desktop"
+---
+
+Claude Desktop supports MCP servers natively. You can add Caylex as an MCP server in the Claude Desktop configuration file to give Claude access to all your connected tools.
+
+## Configuration
+
+Add the following to your `claude_desktop_config.json` file:
+
+<Tabs>
+  <Tab title="macOS">
+    Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "caylex": {
+          "url": "https://proxy.caylex.ai/mcp",
+          "headers": {
+            "x-api-key": "ck_abc123.your-secret-key",
+            "x-user-email": "you@example.com"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Edit `%APPDATA%\Claude\claude_desktop_config.json`:
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "caylex": {
+          "url": "https://proxy.caylex.ai/mcp",
+          "headers": {
+            "x-api-key": "ck_abc123.your-secret-key",
+            "x-user-email": "you@example.com"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Replace `ck_abc123.your-secret-key` with your actual Agent Instance API key and `you@example.com` with your email.
+
+## Setup
+
+<Steps>
+  <Step title="Get your API key">
+    Go to your Agent Instance in the Caylex dashboard and create or copy an API key. See [Agents & Permissions](/platform/agents) for details.
+  </Step>
+  <Step title="Authenticate with servers">
+    Make sure you have authenticated with the servers in your project via an [Auth Link](/auth/auth-links). Use the same email address you put in the configuration file.
+  </Step>
+  <Step title="Edit the config file">
+    Open the `claude_desktop_config.json` file and add the Caylex MCP server configuration shown above.
+  </Step>
+  <Step title="Restart Claude Desktop">
+    Restart Claude Desktop for the configuration to take effect. You should see Caylex listed as an available MCP server.
+
+    <Check>
+    Claude Desktop now has access to all tools from your Caylex project. Try asking Claude to interact with one of your connected services.
+    </Check>
+  </Step>
+</Steps>
+
+## Limitations
+
+<Note>
+Claude Desktop uses a **static configuration** — the `x-user-email` is fixed in the config file. This means:
+
+- The same user credentials are used for all conversations
+- You cannot dynamically switch users without editing the config file
+- This is best suited for personal use or development/testing
+
+For production applications where you need to support multiple users, use a programmatic integration like the [OpenAI Agents SDK](/integration/openai-agents), [LangChain](/integration/langchain), or [Claude Agent SDK](/integration/claude-sdk) where you can set `x-user-email` dynamically per request.
+</Note>
+
+## Further reading
+
+- [Connecting Your Agent](/integration/connecting) — details on headers and runtime flow
+- [Authentication Model](/auth/overview) — understand user-level vs project-level auth

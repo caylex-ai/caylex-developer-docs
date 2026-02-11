@@ -1,80 +1,116 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Go from zero to a working agent integration in 5 minutes."
+icon: "rocket"
 ---
 
-## Get started in three steps
+This guide walks you through setting up your first project, connecting a server, creating an agent, and running your first query — all in under 5 minutes.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+- A Caylex account ([sign up at app.caylex.ai](https://app.caylex.ai))
+- Python 3.10+ installed
+- An MCP server to connect (or use one from the Caylex Catalog)
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Setup
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Create a project">
+    In the Caylex dashboard, navigate to **Projects** and click **Create Project**. Give it a name (e.g., "My First Project") and an optional description.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    A project is an isolation boundary for your deployment — it contains its own servers, agents, and user credentials.
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Add a server from the catalog">
+    Go to the **Servers** page and click **Add Server**. Browse the Caylex Catalog and select a server to add (e.g., GitHub, Slack, or Notion).
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    Once added, go to your project and connect the server by adding it as a **Server Instance**. This links the server to your project.
+  </Step>
 
-### Step 3: Go live
+  <Step title="Create an agent">
+    Navigate to the **Agents** page and click **Create Agent**. Provide a name and description for your agent (e.g., "My Assistant").
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    Then connect the agent to your project — this creates an **Agent Instance**. On the agent instance page, click **Create API Key** and copy the generated key. You will need this to authenticate your agent with the proxy.
+
+    <Warning>
+    Store your API key securely. It is only shown once at creation time.
+    </Warning>
+  </Step>
+
+  <Step title="Set up user authentication">
+    If your server requires authentication (most do), create an **Auth Link** for your project. Go to the project's **Auth Links** section and create a new link. Visit the link yourself to authenticate with the server using your credentials.
+
+    See [Auth Links](/auth/auth-links) for a detailed guide.
+  </Step>
+
+  <Step title="Connect your agent">
+    Install your preferred agent framework and connect to Caylex. Here is an example using the OpenAI Agents SDK:
+
+    ```bash
+    pip install openai-agents
+    ```
+
+    ```python main.py
+    import asyncio
+    import os
+
+    from agents import Agent, Runner
+    from agents.mcp import MCPServerStreamableHttp
+
+    async def main() -> None:
+        api_key = os.environ["CAYLEX_API_KEY"]
+        user_email = os.environ["CAYLEX_USER_EMAIL"]
+
+        async with MCPServerStreamableHttp(
+            name="Caylex",
+            params={
+                "url": "https://proxy.caylex.ai/mcp",
+                "headers": {
+                    "x-api-key": api_key,
+                    "x-user-email": user_email,
+                },
+            },
+        ) as server:
+            agent = Agent(
+                name="Assistant",
+                model="gpt-5.2",
+                instructions="You are a helpful assistant that can access external systems using Caylex.",
+                mcp_servers=[server],
+            )
+
+            result = await Runner.run(agent, "What tools do you have access to?")
+            print(result.final_output)
+
+    asyncio.run(main())
+    ```
+
+    Set the environment variables and run:
+
+    ```bash
+    export CAYLEX_API_KEY="your-api-key-here"
+    export CAYLEX_USER_EMAIL="you@example.com"
+    python main.py
+    ```
+
+    <Check>
+    Your agent should discover all available tools from the servers connected to your project and list them.
+    </Check>
+  </Step>
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Core Concepts" icon="sitemap" href="/core-concepts">
+    Understand the Project, Server, and Agent model in depth.
+  </Card>
+  <Card title="More Frameworks" icon="plug" href="/integration/connecting">
+    See integration examples for LangChain, Claude SDK, and Claude Desktop.
+  </Card>
+  <Card title="Configure Permissions" icon="shield" href="/platform/agents">
+    Restrict which tools your agent can access.
+  </Card>
+  <Card title="Analytics" icon="chart-line" href="/analytics/overview">
+    Monitor tool usage, errors, and performance.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

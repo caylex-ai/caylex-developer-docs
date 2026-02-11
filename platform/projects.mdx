@@ -1,0 +1,79 @@
+---
+title: "Projects"
+description: "Create and manage projects to organize your agent deployments."
+icon: "folder"
+---
+
+A Project is the primary organizational unit in Caylex. It represents a single deployment of your agent system — whether that's a deployment for a specific customer, a team, or an environment.
+
+## What a project contains
+
+Each project is a self-contained environment with:
+
+- **Server Instances** — the MCP servers connected to this project, each with project-specific credentials
+- **Agent Instances** — the agents deployed in this project, each with their own API keys and tool permissions
+- **User Credentials** — authentication credentials for users who interact with agents in this project
+- **API Keys** — keys used to authenticate agent instances with the Caylex proxy
+- **Auth Links** — shareable links that allow users to authenticate with the project's servers
+
+Projects provide **complete isolation**. Servers, agents, credentials, and analytics are all scoped to a single project. This means you can safely deploy the same agents and servers across different customers or teams without any cross-contamination.
+
+## Create a project
+
+<Steps>
+  <Step title="Navigate to Projects">
+    In the Caylex dashboard, go to the **Projects** page from the sidebar navigation.
+  </Step>
+  <Step title="Click Create Project">
+    Click the **Create Project** button to open the creation form.
+  </Step>
+  <Step title="Configure your project">
+    Provide the following details:
+
+    - **Name** (required) — a descriptive name for the project (e.g., "Acme Corp Production", "Internal Team Dev")
+    - **Description** (optional) — a brief description of the project's purpose
+    - **Icon** (optional) — a visual identifier for the project
+
+    <Check>
+    Your project is created and ready for you to add servers and agents.
+    </Check>
+  </Step>
+</Steps>
+
+## Manage your project
+
+Once created, your project dashboard shows:
+
+- **Server Instances** — all connected servers and their status (active or paused)
+- **Agent Instances** — all deployed agents with their configurations
+- **Session Logs** — a filterable log of all sessions processed in this project
+- **Auth Links** — links for user authentication
+- **API Keys** — keys for agent authentication
+
+## Webhooks
+
+You can configure **webhooks** at the project level to receive real-time notifications about tool execution events. Webhooks fire for:
+
+- `query.created` — when a new query is received
+- `tool_call.completed` — when a tool call finishes successfully
+- `tool_call.error` — when a tool call fails
+
+Configure webhooks in your project settings by providing a webhook URL. Caylex signs all webhook payloads with HMAC for verification and supports Slack-formatted messages out of the box.
+
+<Note>
+Webhook notifications are not sent for playground sessions.
+</Note>
+
+## When to create multiple projects
+
+Common patterns for project organization:
+
+| Pattern | Example |
+| --- | --- |
+| **Per customer** | "Acme Corp", "Widget Inc" — each customer gets isolated servers and credentials |
+| **Per team** | "Engineering", "Sales", "Support" — each team gets their own agent configurations |
+| **Per environment** | "Development", "Staging", "Production" — separate credentials and permissions per environment |
+
+<Tip>
+Start with a single project for development and testing. As you scale, create additional projects to isolate different customers or teams.
+</Tip>

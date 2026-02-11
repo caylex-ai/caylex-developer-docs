@@ -1,0 +1,117 @@
+---
+title: "Auth Links"
+description: "Create shareable links that let users authenticate with MCP servers in your project."
+icon: "link"
+---
+
+Auth Links are shareable URLs that allow users to authenticate with the MCP servers in your project. When a user visits an auth link, they see which servers need authentication and provide their credentials through a guided flow.
+
+## Types of auth links
+
+Caylex supports two types of auth links, corresponding to the two levels of server authentication:
+
+### User auth links
+
+User auth links let **individual users** authenticate with their own credentials. They are designed for broad distribution.
+
+- **Domain restriction** — restricted by email domain (e.g., anyone with `@company.com` can use the link)
+- **Unlimited uses** — multiple users can authenticate through the same link
+- **User-level credentials** — each user provides and stores their own credentials
+
+**Use for:** distributing authentication to many users in an organization (e.g., "All engineers at Acme Corp can authenticate their GitHub accounts").
+
+### Project auth links
+
+Project auth links let a specific person provide **shared credentials** for the entire project. They are designed for one-time admin setup.
+
+- **Email restriction** — restricted to a specific email address
+- **Single use** — the link can only be used once
+- **Project-level credentials** — credentials are shared across all users in the project
+
+**Use for:** setting up service accounts or shared API keys (e.g., "The admin provides the company CRM API key").
+
+## Create an auth link
+
+<Steps>
+  <Step title="Navigate to your project">
+    Go to the **Projects** page and select the project where you want to create the auth link.
+  </Step>
+  <Step title="Open Auth Links">
+    Click on the **Auth Links** tab in the project view.
+  </Step>
+  <Step title="Create a new auth link">
+    Click **Create Auth Link** and select the type:
+
+    <Tabs>
+      <Tab title="User auth link">
+        Configure the following:
+        - **Servers** — select which server instances to include in the link
+        - **Domain restriction** — the email domain users must belong to (e.g., `company.com`)
+        - **Expiration** — when the link expires
+      </Tab>
+      <Tab title="Project auth link">
+        Configure the following:
+        - **Servers** — select which server instances to include
+        - **Email restriction** — the specific email address that can use this link
+        - **Expiration** — when the link expires
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Share the link">
+    Copy the generated link and share it with the intended user(s).
+
+    <Check>
+    The auth link is active and ready for users to authenticate.
+    </Check>
+  </Step>
+</Steps>
+
+## The user authentication experience
+
+When a user visits an auth link, they go through a guided authentication flow:
+
+<Steps>
+  <Step title="Sign in">
+    The user signs in with their email. The system validates that their email matches the link's restrictions (domain for user links, exact email for project links).
+  </Step>
+  <Step title="Review servers">
+    The user sees which servers need authentication and what method each requires:
+    - **OAuth servers** — a "Connect" button that starts the OAuth authorization flow
+    - **Header servers** — a form to enter API keys or Bearer tokens
+    - **Path servers** — a form to enter URL path parameter values
+    - **Query servers** — a form to enter query parameter values
+  </Step>
+  <Step title="Provide credentials">
+    The user authenticates with each server:
+    - For **OAuth** — they click "Connect", authorize with the external provider, and return to Caylex
+    - For **Header/Path/Query** — they enter the required values in the form
+
+    <Note>
+    Users can authenticate with a subset of servers. They do not need to complete all servers at once.
+    </Note>
+  </Step>
+  <Step title="Credentials stored securely">
+    Once completed:
+    - **OAuth tokens** are stored by the identity provider (never in Caylex's database)
+    - **Header, Path, and Query values** are encrypted and stored in AWS Parameter Store
+
+    The user is now authenticated and the proxy can use their credentials when executing tools on their behalf.
+  </Step>
+</Steps>
+
+## Manage auth links
+
+From the Auth Links tab in your project, you can:
+
+- **View all links** — see active and expired links with their type, expiration, and usage
+- **View authenticated users** — see which users have completed authentication through each link
+- **Edit links** — update domain/email restrictions or expiration
+- **Delete links** — remove a link (does not revoke existing user credentials)
+
+## Playground auth links
+
+Caylex also supports **playground auth links** for testing and development. These work like user auth links but are scoped to the platform's built-in playground environment, allowing you to test agent behavior with your own credentials.
+
+<Warning>
+Auth links contain sensitive access. Set appropriate expiration dates and restrict them to the minimum necessary audience. Deleting an auth link does not revoke credentials that were already provided through it — use the [Managing Users](/auth/managing-users) page to revoke individual user access.
+</Warning>

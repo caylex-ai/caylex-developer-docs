@@ -1,0 +1,104 @@
+---
+title: "Claude Agent SDK"
+description: "Integrate Caylex with the Claude Agent SDK for Python."
+icon: "message-bot"
+---
+
+This guide shows you how to connect a Claude-powered agent to Caylex using the Claude Agent SDK.
+
+## Prerequisites
+
+- Python 3.10+
+- A Caylex Agent Instance with an API key ([create one here](/platform/agents))
+- Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
+
+## Installation
+
+```bash
+pip install claude-agent-sdk
+```
+
+## Full example
+
+```python main.py
+import asyncio
+import os
+
+from claude_agent_sdk import query, ClaudeAgentOptions, MCPServerStreamableHttp
+
+
+async def main() -> None:
+    api_key = os.environ["CAYLEX_API_KEY"]
+    user_email = os.environ["CAYLEX_USER_EMAIL"]
+
+    # Connect to Caylex MCP
+    caylex_server = MCPServerStreamableHttp(
+        name="Caylex",
+        url="https://proxy.caylex.ai/mcp",
+        headers={
+            "x-api-key": api_key,
+            "x-user-email": user_email,
+        },
+    )
+
+    # Run the agent with Caylex tools
+    async for message in query(
+        prompt="Check my Linear issues, find any blockers, and post updates to the relevant Slack channels.",
+        options=ClaudeAgentOptions(
+            model="claude-opus-4-5",
+            mcp_servers=[caylex_server],
+        ),
+    ):
+        if hasattr(message, "result"):
+            print(message.result)
+
+
+asyncio.run(main())
+```
+
+## Step-by-step
+
+<Steps>
+  <Step title="Set environment variables">
+    ```bash
+    export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+    export CAYLEX_USER_EMAIL="user@example.com"
+    export ANTHROPIC_API_KEY="your-anthropic-key"
+    ```
+  </Step>
+  <Step title="Create the MCP server connection">
+    Use `MCPServerStreamableHttp` with the Caylex endpoint and authentication headers.
+
+    ```python
+    caylex_server = MCPServerStreamableHttp(
+        name="Caylex",
+        url="https://proxy.caylex.ai/mcp",
+        headers={
+            "x-api-key": api_key,
+            "x-user-email": user_email,
+        },
+    )
+    ```
+  </Step>
+  <Step title="Run the agent with streaming">
+    Use the `query` function with `ClaudeAgentOptions` to run the agent. The response streams as the agent works through its reasoning and tool calls.
+
+    ```python
+    async for message in query(
+        prompt="Your query here.",
+        options=ClaudeAgentOptions(
+            model="claude-opus-4-5",
+            mcp_servers=[caylex_server],
+        ),
+    ):
+        if hasattr(message, "result"):
+            print(message.result)
+    ```
+  </Step>
+</Steps>
+
+## Further reading
+
+- [Claude Agent SDK MCP documentation](https://platform.claude.com/docs/en/agent-sdk/mcp)
+- [Connecting Your Agent](/integration/connecting) — details on how the proxy works
+- [Authentication Model](/auth/overview) — understand user-level vs project-level auth

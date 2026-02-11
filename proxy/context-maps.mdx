@@ -1,0 +1,118 @@
+---
+title: "Context Maps"
+description: "Give your agents a semantic overview of what information exists across all connected servers."
+icon: "map"
+---
+
+When your agent is connected to multiple servers, it may not know what information is available in each one. **Context Maps** solve this by providing a structured, semantic overview of the data landscape across all connected servers.
+
+## What it does
+
+When enabled, the proxy exposes a `get_context_map` MCP tool to your agent. Calling this tool returns a set of **cards** — each summarizing the type of information available in a connected server — along with **relations** between cards that highlight cross-server connections.
+
+For example, a Context Map might tell your agent:
+
+- **Slack** has recent engineering discussions about deployment issues and customer feedback from the past 7 days
+- **Linear** has active sprint items including 3 bug reports and 12 feature requests from the past 14 days
+- **Relation**: Slack engineering discussions reference Linear issues, with a 0.82 similarity score
+
+This helps your agent understand **where to look** before making queries, rather than blindly trying tools until it finds the right data.
+
+## How to enable
+
+<Steps>
+  <Step title="Ensure extraction is configured">
+    Context Maps require at least **2 server instances** in the project with data extraction enabled. Extraction configuration is managed per server instance and defines which tools to use for data exploration and how frequently to update.
+  </Step>
+  <Step title="Enable Context Maps on the Agent Instance">
+    Go to the Agent Instance settings and toggle **Context Maps** to on.
+  </Step>
+</Steps>
+
+<Note>
+The `get_context_map` tool only appears in your agent's tool list if the project has 2 or more context map cards available. If fewer than 2 servers have been explored, the tool is hidden.
+</Note>
+
+## How it works
+
+Context Maps are built through a background extraction process:
+
+1. **Data exploration** — Caylex uses read-only tools on each server to explore what data is available. For example, it might list recent Slack channels, browse Linear issues, or search Notion pages.
+
+2. **Card generation** — for each server, Caylex generates a **card** summarizing the information found. Each card includes:
+   - **Title** — a descriptive name (e.g., "Engineering Issue Tracking")
+   - **Summary** — a 2-4 sentence overview of what information exists
+   - **Sample entities** — example items discovered (e.g., teams, projects, channels)
+   - **Freshness** — how recently the card was updated
+   - **Coverage** — the time span of data covered (e.g., "last 7 days")
+
+3. **Relation detection** — Caylex compares cards using semantic similarity to find cross-server connections. Relations describe how information in one server relates to information in another.
+
+4. **Periodic updates** — cards are refreshed on a configurable cadence (default: every 7 days) to keep the map current.
+
+## The `get_context_map` response
+
+When your agent calls `get_context_map`, the response includes:
+
+```json
+{
+  "cards": [
+    {
+      "server_name": "Slack",
+      "title": "Team Communication",
+      "summary": "Recent messages across 5 active channels covering engineering discussions, customer support, and product planning.",
+      "sample_entities_found": {
+        "channels": ["#engineering", "#support", "#product"],
+        "topics": ["deployment", "bug fixes", "Q1 planning"]
+      },
+      "card_information_freshness": "2 hours ago",
+      "coverage_note": "Last 7 days"
+    },
+    {
+      "server_name": "Linear",
+      "title": "Engineering Issue Tracking",
+      "summary": "Active sprint with 15 issues across 2 teams. Includes bug reports, feature requests, and infrastructure tasks.",
+      "sample_entities_found": {
+        "teams": ["Platform", "Frontend"],
+        "labels": ["bug", "feature", "infrastructure"]
+      },
+      "card_information_freshness": "1 day ago",
+      "coverage_note": "Last 14 days"
+    }
+  ],
+  "relations": [
+    {
+      "from_card": "Slack",
+      "to_card": "Linear",
+      "description": "Engineering discussions in Slack frequently reference Linear issues and sprint progress.",
+      "similarity": 0.82
+    }
+  ]
+}
+```
+
+## Extraction configuration
+
+Each server instance can be configured with extraction settings that control how Context Maps explore the server:
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| **Extraction instructions** | Guidance for how to explore the server | Auto-generated |
+| **Time window** | How far back to look for data | 7 days |
+| **Max tool calls** | Maximum number of tool calls per extraction run | 20 |
+| **Max responses to keep** | Number of significant responses to retain | 10 |
+| **Update cadence** | How often to refresh the card | 7 days |
+| **Read-only tools** | Which tools to use for exploration (read-only only) | Auto-detected |
+
+<Tip>
+For servers with large amounts of data, increasing the time window and max tool calls gives Context Maps a broader view of available information. For frequently changing data, reduce the update cadence to keep cards fresh.
+</Tip>
+
+## When to enable Context Maps
+
+| Scenario | Recommendation |
+| --- | --- |
+| Agent connects to 3+ diverse servers (e.g., Slack + Linear + Notion) | **Enable** — helps the agent navigate across information silos |
+| Agent connects to a single server | **Disable** — not useful with only one source of information |
+| Agent handles open-ended research or analysis queries | **Enable** — the agent benefits from knowing what data is available before diving in |
+| Agent performs targeted, specific operations | **Optional** — may not need a high-level overview |

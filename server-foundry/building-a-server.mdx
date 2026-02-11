@@ -1,0 +1,189 @@
+---
+title: "Building a Server"
+description: "Step-by-step guide to building an MCP server with the Designer Agent."
+icon: "list-check"
+---
+
+This guide walks you through the complete Server Foundry workflow — from uploading your API spec to deploying a production-ready MCP server.
+
+## Prerequisites
+
+- An OpenAPI specification (JSON or YAML) for the API you want to expose
+- A Caylex account with access to the Server Foundry
+
+## Phase 1: Upload your API spec
+
+<Steps>
+  <Step title="Open Server Foundry">
+    Navigate to **Server Foundry** in the Caylex dashboard. You are presented with the Designer Agent workspace.
+  </Step>
+  <Step title="Upload your spec">
+    Drag and drop your OpenAPI spec file (JSON or YAML) into the upload area, or click to browse. Caylex analyzes the spec and extracts metadata including endpoints, schemas, and server URLs.
+  </Step>
+  <Step title="Configure server URL (if needed)">
+    If your spec defines multiple server URLs or uses URL variables, you are prompted to select and configure them:
+
+    - **Select a server URL** — choose the base URL for your API
+    - **Set variables** — provide values for any URL template variables (e.g., `{region}`, `{version}`)
+  </Step>
+  <Step title="Start the conversation">
+    The Designer Agent greets you and begins analyzing your API. It has full context on your spec's endpoints, schemas, and structure.
+  </Step>
+</Steps>
+
+## Phase 2: Use case discovery
+
+The Designer Agent analyzes your API and identifies the key use cases it supports.
+
+<Steps>
+  <Step title="Review extracted use cases">
+    The agent presents a list of use cases it identified from your spec. These appear in the workspace panel on the right. Examples:
+
+    - "Manage customer records (create, update, search)"
+    - "Track orders and fulfillment status"
+    - "Generate and download reports"
+  </Step>
+  <Step title="Confirm or refine">
+    Chat with the agent to refine the use cases. You can:
+
+    - Confirm the use cases are correct
+    - Ask to add missing use cases
+    - Ask to remove irrelevant ones
+    - Provide additional context about how your API is used
+  </Step>
+</Steps>
+
+<Tip>
+The more context you give the agent about how your API is actually used, the better it can group endpoints into useful templates in the next phase.
+</Tip>
+
+## Phase 3: Template generation
+
+Once use cases are confirmed, the agent generates **workflow templates** — logical groupings of endpoints that support each use case.
+
+<Steps>
+  <Step title="Wait for generation">
+    Template generation takes a moment depending on the size of your spec. A progress indicator shows the estimated time.
+  </Step>
+  <Step title="Review templates">
+    The workspace switches to the **Template Selector** view. Templates are organized as groups of related tools (e.g., "Customer Management" might include `list_customers`, `get_customer`, `create_customer`, `update_customer`).
+  </Step>
+</Steps>
+
+## Phase 4: Tool selection
+
+Choose which tools to include in your generated server.
+
+<Steps>
+  <Step title="Browse templates and tools">
+    The Template Selector shows two views:
+
+    - **Templates tab** — workflow groups with checkboxes to select entire groups
+    - **All Tools tab** — every available tool with individual checkboxes
+
+    You can search and filter tools by name or HTTP method.
+  </Step>
+  <Step title="Select your tools">
+    Check the tools you want to include. The right panel shows a preview of your selected tools.
+
+    <Tip>
+    Start with a focused set of tools for your primary use case. You can always generate additional servers for other use cases later.
+    </Tip>
+  </Step>
+  <Step title="Save and validate">
+    Click **Save & Validate**. Caylex runs automatic validation that checks for:
+
+    - Parameter usability issues (e.g., endpoints that require IDs but no way to discover them)
+    - Missing dependencies between endpoints
+    - Other potential agent usability problems
+
+    Review any validation warnings and adjust your selection if needed.
+  </Step>
+</Steps>
+
+## Phase 5: Tool optimization
+
+The Designer Agent optimizes your tool names and descriptions for AI agent consumption.
+
+<Steps>
+  <Step title="Request optimization">
+    Click **Ready to proceed?** or tell the agent you are ready. The agent analyzes your selected tools and applies best practices for AI tool definitions.
+  </Step>
+  <Step title="Review optimizations">
+    The workspace switches to the **Tool Optimizer** view. For each tool, you see:
+
+    - **Original name** and **optimized name** — e.g., `POST /api/customers` becomes `customers_create`
+    - **Original description** and **optimized description** — enhanced with context, parameter guidance, and safety warnings
+    - **Optimization rationale** — why the name or description was changed
+    - **Best practices applied** — which principles guided the optimization
+
+    Optimizations follow industry best practices for AI tool naming:
+    - Namespace by service and resource (e.g., `cal_booking_create`)
+    - Context-rich descriptions with agent-specific guidance
+    - Token-efficient names
+    - Safety warnings for destructive operations (delete, update)
+  </Step>
+  <Step title="Accept, reject, or edit">
+    For each tool, you can:
+
+    - **Accept** — use the optimized name and description
+    - **Reject** — keep the original name and description
+    - **Edit** — modify the optimized values to your preference
+
+    Use **Accept All** or **Reject All** for bulk actions.
+
+    Click **Save** when you are satisfied with the optimizations.
+  </Step>
+</Steps>
+
+## Phase 6: Server preview and generation
+
+Configure your server and deploy it.
+
+<Steps>
+  <Step title="Configure server settings">
+    The workspace switches to the **Server Preview** view. Configure:
+
+    - **Server name** (required) — a descriptive name (3-50 characters, alphanumeric with spaces and hyphens)
+    - **Description** (optional) — what this server does
+    - **Auth level** — User-level or Project-level authentication
+    - **Server URL** — confirm or adjust the base URL and variables
+    - **Auth headers** — configure any authentication headers the server requires
+  </Step>
+  <Step title="Review the final tool list">
+    The preview shows the complete list of tools that will be generated, with their final names (optimized if accepted), endpoints, and schemas.
+  </Step>
+  <Step title="Generate the server">
+    Click **Generate Server**. Caylex:
+
+    1. Generates the MCP server code
+    2. Deploys the server to Caylex's infrastructure
+    3. Registers all tools in the platform
+    4. Creates health check monitoring
+
+    <Check>
+    Your server is generated and appears in the **Servers** list. You can now add it as a Server Instance to any project.
+    </Check>
+  </Step>
+</Steps>
+
+## After generation
+
+Once your server is generated:
+
+1. **Add to a project** — go to your project and add the new server as a Server Instance
+2. **Set up authentication** — create an [Auth Link](/auth/auth-links) for users to provide their credentials (if the server requires authentication)
+3. **Configure agent access** — ensure your Agent Instance has access to the new server's tools
+4. **Test in the playground** — use the Caylex Playground to verify the tools work as expected
+
+## Workspace management
+
+Server Foundry automatically saves your progress. You can:
+
+- **Resume a session** — open the **Saved Workspaces** drawer and click on a previous session to continue where you left off
+- **Start fresh** — click **New Workspace** to begin a new server generation
+- **Delete a workspace** — remove workspaces you no longer need
+
+<Note>
+Changes to earlier phases (like regenerating templates) automatically invalidate later phases (selection, optimization, preview). This ensures your final server always reflects your latest choices.
+</Note>
