@@ -1,0 +1,64 @@
+---
+title: "LeadFuze"
+description: "Email and LinkedIn contact enrichment service"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/leadfuze.jpg"
+---
+
+The LeadFuze MCP Server brings powerful contact and company enrichment capabilities to your Caylex AI agents, enabling them to perform email and LinkedIn-based data lookups for lead generation, sales prospecting, and marketing workflows. By connecting this server to your Caylex project, agents can enrich leads with detailed profile information sourced from email addresses or LinkedIn profiles, helping teams validate contacts and build richer prospect data. The server is designed as a read-only enrichment tool, meaning all operations are safe, non-destructive data retrievals against the LeadFuze API. This makes it well-suited for automated research workflows where agents need to qualify or augment lead data without modifying any records. Authentication is handled via a LeadFuze API key, which must be configured when adding the server to your Caylex project.
+
+<Warning>
+**Prerequisites:**
+- A valid LeadFuze account with API access enabled is required to authenticate this server.
+- An API key from your LeadFuze account must be provided as the authentication credential when adding this server in Caylex.
+</Warning>
+
+<Note>
+**Important API details:**
+- All tools are read-only and non-destructive — no data is written or modified through this server.
+- Input validation is enforced via schema checks, so malformed email addresses or LinkedIn URLs will be rejected before reaching the API.
+- No explicit rate limit information is documented in the source; consult your LeadFuze account plan for applicable API usage limits.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Sales Engagement, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **LeadFuze** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Hunter" href="/server-catalog/hunter" icon="https://d338mlbnszozgc.cloudfront.net/logos/hunter.svg" />
+  <Card title="LinkedIn Research" href="/server-catalog/linkedin-research" icon="https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg" />
+  <Card title="Dropcontact" href="/server-catalog/dropcontact" icon="https://d338mlbnszozgc.cloudfront.net/logos/dropcontact.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://github.com/leadfuze/mcp-server" href="https://github.com/leadfuze/mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

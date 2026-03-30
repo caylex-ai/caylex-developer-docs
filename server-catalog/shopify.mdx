@@ -1,0 +1,135 @@
+---
+title: "Shopify"
+description: "Manage Shopify store data with GraphQL API"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/shopify.svg"
+---
+
+The Shopify MCP Server provides AI agents with structured access to Shopify store data via GraphQL, enabling seamless management of products, customers, and orders within the Caylex ecosystem. Through this server, AI agents can search a store's product catalog, retrieve and update shopping carts, fetch detailed product information, and look up store policies and FAQs — making it ideal for powering AI shopping assistants and conversational commerce experiences. The server connects to Shopify's Storefront and Checkout APIs, supporting buyer-facing workflows such as product discovery and cart management. Agents interact with live store data, ensuring responses reflect current inventory, pricing, and store configurations.
+
+<Warning>
+**Prerequisites:**
+- A Shopify store with Storefront API access enabled; obtain client credentials (client ID and secret) from the Shopify Dev Dashboard under the Catalog section.
+- A valid API access token with appropriate Storefront API scopes configured for your store.
+- The target Shopify shop domain is required to route requests to the correct merchant store.
+</Warning>
+
+<Note>
+**Important API details:**
+- All data access is performed via Shopify's GraphQL API; queries are subject to Shopify's standard GraphQL cost-based rate limits (typically 1,000 cost points per second for Storefront API).
+- Authentication uses a Bearer token (JWT) with a 60-minute TTL; tokens must be refreshed before expiry to maintain uninterrupted agent access.
+- Cart operations (get_cart, update_cart) are scoped to individual buyer sessions and require a valid cart or session identifier to function correctly.
+- Store policies and FAQ search results are limited to content published and accessible via the Storefront API; unpublished or draft content will not be returned.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | E-Commerce Platforms, E-Commerce & Payments |
+
+## Authentication
+
+<Info>
+  This server does not require authentication.
+</Info>
+
+## Server Configuration
+
+The following parameters can be set in the server URL when adding this server to your Caylex project:
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `shop-domain` | url_template | The domain of the Shopify store to connect to (e.g., your-store.myshopify.com). This routes all API requests to the correct merchant storefront. | `your-store.myshopify.com` |
+
+## Available Tools
+
+This server provides **5** tools:
+
+### Search
+
+<AccordionGroup>
+  <Accordion title="search_shop_catalog">
+    Search for products from the online store, hosted on Shopify.
+
+This tool can be used to search for products using natural language queries, specific filter criteria, or both.
+
+Best practices:
+<ul>
+<li>Searches return available_filters which can be used for refined follow-up searches</li>
+<li>When filtering, use ONLY the filters from available_filters in follow-up searches</li>
+<li>For specific filter searches (category, variant option, product type, etc.), use simple terms without the filter name (e.g., "red" not "red color")</li>
+<li>For filter-specific searches (e.g., "find burton in snowboards" or "show me all available products in gray / green color"), use a two-step approach:</li>
+</ul>
+  1. Perform a normal search to discover available filters
+  2. If relevant filters are returned, do a second search using the proper filter (productType, category, variantOption, etc.) with just the specific search term
+<ul>
+<li>Results are paginated, with initial results limited to improve experience</li>
+<li>Use the after parameter with endCursor to fetch additional pages when users request more results</li>
+</ul>
+
+The response includes product details, available variants, filter options, and pagination info.
+
+  </Accordion>
+  <Accordion title="search_shop_policies_and_faqs">
+    Used to get facts about the stores policies, products, or services.
+Some examples of questions you can ask are:
+<ul>
+<li>What is your return policy?</li>
+<li>What is your shipping policy?</li>
+<li>What is your phone number?</li>
+<li>What are your hours of operation?"</li>
+</ul>
+
+  </Accordion>
+</AccordionGroup>
+
+### Product
+
+<AccordionGroup>
+  <Accordion title="get_product_details">
+    Look up a product by ID and optionally specify variant options to select a specific variant.
+  </Accordion>
+</AccordionGroup>
+
+### Cart
+
+<AccordionGroup>
+  <Accordion title="get_cart">
+    Get the cart including items, shipping options, discount info, and checkout url for a given cart id
+  </Accordion>
+  <Accordion title="update_cart">
+    Perform updates to a cart, including adding/removing/updating line items, buyer information, shipping details, discount codes, gift cards and notes in one consolidated call. Shipping options become available after adding items and delivery address. When creating a new cart, only addItems is required.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Shopify** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Klaviyo" href="/server-catalog/klaviyo" icon="https://d338mlbnszozgc.cloudfront.net/logos/klaviyo.svg" />
+  <Card title="Mailchimp" href="/server-catalog/mailchimp" icon="https://d338mlbnszozgc.cloudfront.net/logos/mailchimp.svg" />
+  <Card title="QuickBooks" href="/server-catalog/quickbooks" icon="https://d338mlbnszozgc.cloudfront.net/logos/quickbooks.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://shopify.dev/docs/apps/build/devmcp" href="https://shopify.dev/docs/apps/build/devmcp" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/Shopify/dev-mcp" href="https://github.com/Shopify/dev-mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://shopify.dev/docs/agents/checkout/mcp" href="https://shopify.dev/docs/agents/checkout/mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,70 @@
+---
+title: "Neon"
+description: "Manage Neon Postgres databases with natural lan..."
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/neon.svg"
+---
+
+The Neon MCP Server enables AI agents within Caylex to manage Neon Postgres databases entirely through natural language, eliminating the need for manual console or API interactions. Agents can create and manage Neon projects, branches, and databases; run SQL queries; and perform schema changes conversationally. A standout feature is branch-based migrations, which allow safer schema modifications by isolating changes on dedicated database branches before applying them. Authentication is handled via a Neon API key passed as a Bearer token in the Authorization header, making it well-suited for remote agent workflows within Caylex. This server is designed for development and testing workflows, enabling rapid database setup, table management, and project scaffolding driven by AI agents.
+
+<Warning>
+**Prerequisites:**
+- A Neon account is required; a Free Plan is sufficient to get started, though project and branch limits vary by plan.
+- A Neon API key must be generated from the Neon Console (Settings > API Keys) before adding this server to a Caylex project.
+</Warning>
+
+<Note>
+**Important API details:**
+- The Neon MCP Server is intended for development and testing environments only — always review AI-requested actions before they are executed against your database.
+- Authentication requires a valid Neon API key passed as a Bearer token in the Authorization header (e.g., Authorization: Bearer YOUR_NEON_API_KEY).
+- Each use of neonctl init generates a new Neon API key; users should audit and revoke unused keys from the Neon Console under API Keys settings.
+- Branch-based migrations are the recommended approach for schema changes, as they isolate modifications before applying them to the main database branch.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Database, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Neon Authentication guide](/oauth-guides/neon) for step-by-step credential configuration.
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Neon** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Datadog" href="/server-catalog/datadog" icon="https://d338mlbnszozgc.cloudfront.net/logos/datadog.svg" />
+  <Card title="Sentry" href="/server-catalog/sentry" icon="https://d338mlbnszozgc.cloudfront.net/logos/sentry.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://neon.tech/docs/ai/neon-mcp-server" href="https://neon.tech/docs/ai/neon-mcp-server" icon="arrow-up-right-from-square" />
+  <Card title="https://neon.tech/docs/ai/connect-mcp-clients-to-neon" href="https://neon.tech/docs/ai/connect-mcp-clients-to-neon" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/neondatabase-labs/mcp-server-neon" href="https://github.com/neondatabase-labs/mcp-server-neon" icon="arrow-up-right-from-square" />
+</CardGroup>

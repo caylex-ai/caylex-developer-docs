@@ -1,0 +1,78 @@
+---
+title: "Perplexity"
+description: "AI-powered search and reasoning integration"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/perplexity.svg"
+---
+
+The Perplexity MCP Server connects AI assistants to Perplexity's search and reasoning capabilities, enabling real-time web search, research, and enhanced decision-making in workflows.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | AI Platforms & APIs, AI & Machine Learning |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **2** tools:
+
+<AccordionGroup>
+  <Accordion title="perplexity_search_tool">
+    Run a web search using Perplexity Sonar. Use this when you need up-to-date information, facts, or current events.
+
+**When to use:** Research queries, real-time facts, recent news, or any question that benefits from live web data.
+**Input:** A list of messages (each with "role" and "content"). Typically one or more user messages; optional system message for context.
+**Returns:** Answer text plus numbered citations when available.
+
+Args:
+    messages: Array of message objects, e.g. [\{"role": "user", "content": "What is X?"\}]
+
+Returns:
+    Search result text with citations appended if available.
+  </Accordion>
+  <Accordion title="perplexity_reason_tool">
+    Run step-by-step reasoning using Perplexity's reasoning model. Use for analysis, pros/cons, or multi-step logic.
+
+**When to use:** Structured analysis, comparing options, pros and cons, or when you need a reasoned chain of thought.
+**Input:** A list of messages (each with "role" and "content"). Typically a user message with the reasoning task.
+**Returns:** Reasoned response with citations when available.
+
+Args:
+    messages: Array of message objects, e.g. [\{"role": "user", "content": "Reason step by step: ..."\}]
+
+Returns:
+    Reasoned answer text with citations appended if available.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Perplexity** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+  <Card title="Firecrawl" href="/server-catalog/firecrawl" icon="https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg" />
+</CardGroup>

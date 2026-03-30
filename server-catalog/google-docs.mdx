@@ -1,0 +1,398 @@
+---
+title: "Google Docs"
+description: "Automate and manage Google Docs with ease
+"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-docs.svg"
+---
+
+The Google Docs MCP Server connects with the Google Docs API to create, edit, and retrieve documents, allowing AI agents to automate content generation, simplify document workflows, and improve collaboration through natural language understanding.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/documents`, `https://www.googleapis.com/auth/documents.readonly`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Docs Authentication guide](/oauth-guides/google-docs) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **20** tools:
+
+<AccordionGroup>
+  <Accordion title="docs_reply_to_document_comment">
+    Reply to a specific comment in a Google Document.
+
+Use docs_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="docs_get_doc_content">
+    Retrieves content of a Google Doc or a Drive file (like .docx) identified by document_id.
+<ul>
+<li>Native Google Docs: Fetches content via Docs API.</li>
+<li>Office files (.docx, etc.) stored in Drive: Downloads via Drive API and extracts text.</li>
+</ul>
+
+Returns:
+    str: The document content with metadata header.
+  </Accordion>
+  <Accordion title="docs_find_and_replace_doc">
+    Finds and replaces text throughout a Google Doc.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    find_text: Text to search for
+    replace_text: Text to replace with
+    match_case: Whether to match case exactly
+
+Returns:
+    str: Confirmation message with replacement count
+  </Accordion>
+  <Accordion title="docs_insert_doc_image">
+    Inserts an image into a Google Doc from Drive or a URL.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    image_source: Drive file ID or public image URL
+    index: Position to insert image (0-based)
+    width: Image width in points (optional)
+    height: Image height in points (optional)
+
+Returns:
+    str: Confirmation message with insertion details
+  </Accordion>
+  <Accordion title="docs_batch_update_doc">
+    Executes multiple document operations in a single atomic batch update.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    operations: List of operation dictionaries. Each operation should contain:
+<ul>
+<li>type: Operation type ('insert_text', 'delete_text', 'replace_text', 'format_text', 'insert_table', 'insert_page_break')</li>
+<li>Additional parameters specific to each operation type</li>
+</ul>
+
+Example operations:
+    [
+        \{"type": "insert_text", "index": 1, "text": "Hello World"\},
+        \{"type": "format_text", "start_index": 1, "end_index": 12, "bold": true\},
+        \{"type": "insert_table", "index": 20, "rows": 2, "columns": 3\}
+    ]
+
+Returns:
+    str: Confirmation message with batch operation results
+  </Accordion>
+  <Accordion title="docs_debug_table_structure">
+    ESSENTIAL DEBUGGING TOOL - Use this whenever tables don't work as expected.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+USE THIS IMMEDIATELY WHEN:
+<ul>
+<li>Table population put data in wrong cells</li>
+<li>You get "table not found" errors</li>
+<li>Data appears concatenated in first cell</li>
+<li>Need to understand existing table structure</li>
+<li>Planning to use populate_existing_table</li>
+</ul>
+
+WHAT THIS SHOWS YOU:
+<ul>
+<li>Exact table dimensions (rows × columns)</li>
+<li>Each cell's position coordinates (row,col)</li>
+<li>Current content in each cell</li>
+<li>Insertion indices for each cell</li>
+<li>Table boundaries and ranges</li>
+</ul>
+
+HOW TO READ THE OUTPUT:
+<ul>
+<li>"dimensions": "2x3" = 2 rows, 3 columns</li>
+<li>"position": "(0,0)" = first row, first column</li>
+<li>"current_content": What's actually in each cell right now</li>
+<li>"insertion_index": Where new text would be inserted in that cell</li>
+</ul>
+
+WORKFLOW INTEGRATION:
+1. After creating table → Use this to verify structure
+2. Before populating → Use this to plan your data format
+3. After population fails → Use this to see what went wrong
+4. When debugging → Compare your data array to actual table structure
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to inspect
+    table_index: Which table to debug (0 = first table, 1 = second table, etc.)
+
+Returns:
+    str: Detailed JSON structure showing table layout, cell positions, and current content
+  </Accordion>
+  <Accordion title="docs_create_table_with_data">
+    Creates a table and populates it with data in one reliable operation.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+CRITICAL: YOU MUST CALL inspect_doc_structure FIRST TO GET THE INDEX!
+
+MANDATORY WORKFLOW - DO THESE STEPS IN ORDER:
+
+Step 1: ALWAYS call inspect_doc_structure first
+Step 2: Use the 'total_length' value from inspect_doc_structure as your index
+Step 3: Format data as 2D list: [["col1", "col2"], ["row1col1", "row1col2"]]
+Step 4: Call this function with the correct index and data
+
+EXAMPLE DATA FORMAT:
+table_data = [
+    ["Header1", "Header2", "Header3"],    # Row 0 - headers
+    ["Data1", "Data2", "Data3"],          # Row 1 - first data row
+    ["Data4", "Data5", "Data6"]           # Row 2 - second data row
+]
+
+CRITICAL INDEX REQUIREMENTS:
+<ul>
+<li>NEVER use index values like 1, 2, 10 without calling inspect_doc_structure first</li>
+<li>ALWAYS get index from inspect_doc_structure 'total_length' field</li>
+<li>Index must be a valid insertion point in the document</li>
+</ul>
+
+DATA FORMAT REQUIREMENTS:
+<ul>
+<li>Must be 2D list of strings only</li>
+<li>Each inner list = one table row</li>
+<li>All rows MUST have same number of columns</li>
+<li>Use empty strings "" for empty cells, never None</li>
+<li>Use debug_table_structure after creation to verify results</li>
+</ul>
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    table_data: 2D list of strings - EXACT format: [["col1", "col2"], ["row1col1", "row1col2"]]
+    index: Document position (MANDATORY: get from inspect_doc_structure 'total_length')
+    bold_headers: Whether to make first row bold (default: true)
+
+Returns:
+    str: Confirmation with table details and link
+  </Accordion>
+  <Accordion title="docs_search_docs">
+    Searches for Google Docs by name using Drive API (mimeType filter).
+
+Returns:
+    str: A formatted list of Google Docs matching the search query.
+  </Accordion>
+  <Accordion title="docs_list_docs_in_folder">
+    Lists Google Docs within a specific Drive folder.
+
+Returns:
+    str: A formatted list of Google Docs in the specified folder.
+  </Accordion>
+  <Accordion title="docs_create_doc">
+    Creates a new Google Doc and optionally inserts initial content.
+
+Returns:
+    str: Confirmation message with document ID and link.
+  </Accordion>
+  <Accordion title="docs_update_doc_headers_footers">
+    Updates headers or footers in a Google Doc.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    section_type: Type of section to update ("header" or "footer")
+    content: Text content for the header/footer
+    header_footer_type: Type of header/footer ("DEFAULT", "FIRST_PAGE_ONLY", "EVEN_PAGE")
+
+Returns:
+    str: Confirmation message with update details
+  </Accordion>
+  <Accordion title="docs_create_document_comment">
+    Create a new comment on a Google Document.
+
+Use docs_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="docs_export_doc_to_pdf">
+    Exports a Google Doc to PDF format and saves it to Google Drive.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the Google Doc to export
+    pdf_filename: Name for the PDF file (optional - if not provided, uses original name + "_PDF")
+    folder_id: Drive folder ID to save PDF in (optional - if not provided, saves in root)
+
+Returns:
+    str: Confirmation message with PDF file details and links
+  </Accordion>
+  <Accordion title="docs_read_document_comments">
+    Read all comments from a Google Document.
+
+Use docs_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="docs_resolve_document_comment">
+    Resolve a comment in a Google Document.
+
+Use docs_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="docs_get_current_user">
+    Returns the authenticated user's account information for use with Docs tools. Use the returned email as user_google_email when calling docs_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="docs_modify_doc_text">
+    Modifies text in a Google Doc - can insert/replace text and/or apply formatting in a single operation.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    start_index: Start position for operation (0-based)
+    end_index: End position for text replacement/formatting (if not provided with text, text is inserted)
+    text: New text to insert or replace with (optional - can format existing text without changing it)
+    bold: Whether to make text bold (True/False/None to leave unchanged)
+    italic: Whether to make text italic (True/False/None to leave unchanged)
+    underline: Whether to underline text (True/False/None to leave unchanged)
+    font_size: Font size in points
+    font_family: Font family name (e.g., "Arial", "Times New Roman")
+    text_color: Foreground text color (#RRGGBB)
+    background_color: Background/highlight color (#RRGGBB)
+
+Returns:
+    str: Confirmation message with operation details
+  </Accordion>
+  <Accordion title="docs_insert_doc_elements">
+    Inserts structural elements like tables, lists, or page breaks into a Google Doc.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to update
+    element_type: Type of element to insert ("table", "list", "page_break")
+    index: Position to insert element (0-based)
+    rows: Number of rows for table (required for table)
+    columns: Number of columns for table (required for table)
+    list_type: Type of list ("UNORDERED", "ORDERED") (required for list)
+    text: Initial text content for list items
+
+Returns:
+    str: Confirmation message with insertion details
+  </Accordion>
+  <Accordion title="docs_inspect_doc_structure">
+    Essential tool for finding safe insertion points and understanding document structure.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+USE THIS FOR:
+<ul>
+<li>Finding the correct index for table insertion</li>
+<li>Understanding document layout before making changes</li>
+<li>Locating existing tables and their positions</li>
+<li>Getting document statistics and complexity info</li>
+</ul>
+
+CRITICAL FOR TABLE OPERATIONS:
+ALWAYS call this BEFORE creating tables to get a safe insertion index.
+
+WHAT THE OUTPUT SHOWS:
+<ul>
+<li>total_elements: Number of document elements</li>
+<li>total_length: Maximum safe index for insertion</li>
+<li>tables: Number of existing tables</li>
+<li>table_details: Position and dimensions of each table</li>
+</ul>
+
+WORKFLOW:
+Step 1: Call this function
+Step 2: Note the "total_length" value
+Step 3: Use an index < total_length for table insertion
+Step 4: Create your table
+
+Args:
+    user_google_email: User's Google email address
+    document_id: ID of the document to inspect
+    detailed: Whether to return detailed structure information
+
+Returns:
+    str: JSON string containing document structure and safe insertion indices
+  </Accordion>
+  <Accordion title="docs_update_paragraph_style">
+    Apply paragraph-level formatting and/or heading styles to a range in a Google Doc.
+
+Use docs_get_current_user to get the user_google_email or account information.
+
+This tool can apply named heading styles (H1-H6) for semantic document structure,
+and/or customize paragraph properties like alignment, spacing, and indentation.
+Both can be applied in a single operation.
+
+Args:
+    user_google_email: User's Google email address
+    document_id: Document ID to modify
+    start_index: Start position (1-based)
+    end_index: End position (exclusive) - should cover the entire paragraph
+    heading_level: Heading level 0-6 (0 = NORMAL_TEXT, 1 = H1, 2 = H2, etc.)
+                   Use for semantic document structure
+    alignment: Text alignment - 'START' (left), 'CENTER', 'END' (right), or 'JUSTIFIED'
+    line_spacing: Line spacing multiplier (1.0 = single, 1.5 = 1.5x, 2.0 = double)
+    indent_first_line: First line indent in points (e.g., 36 for 0.5 inch)
+    indent_start: Left/start indent in points
+    indent_end: Right/end indent in points
+    space_above: Space above paragraph in points (e.g., 12 for one line)
+    space_below: Space below paragraph in points
+
+Returns:
+    str: Confirmation message with formatting details
+
+Examples:
+    # Apply H1 heading style
+    update_paragraph_style(document_id="...", start_index=1, end_index=20, heading_level=1)
+
+    # Center-align a paragraph with double spacing
+    update_paragraph_style(document_id="...", start_index=1, end_index=50,
+                           alignment="CENTER", line_spacing=2.0)
+
+    # Apply H2 heading with custom spacing
+    update_paragraph_style(document_id="...", start_index=1, end_index=30,
+                           heading_level=2, space_above=18, space_below=12)
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Docs** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Drive" href="/server-catalog/google-drive" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-drive.svg" />
+  <Card title="Google Sheets" href="/server-catalog/google-sheets" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-sheets.svg" />
+  <Card title="Notion" href="/server-catalog/notion" icon="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" />
+</CardGroup>

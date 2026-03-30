@@ -1,0 +1,65 @@
+---
+title: "BetterStack"
+description: "AI-driven log analysis and querying service"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/betterstack.svg"
+---
+
+The BetterStack MCP Server connects AI agents within Caylex to your BetterStack Uptime and Telemetry data through the Model Context Protocol, enabling powerful operational intelligence directly from your AI workflows. Agents can query and analyze logs from multiple sources, support incident management, track errors, and monitor performance metrics — all without leaving the Caylex ecosystem. BetterStack's platform spans log management, uptime monitoring, infrastructure monitoring, error tracking, status pages, and more, giving agents broad visibility into your operational health. Authentication is handled either via OAuth (recommended, with automatic browser-based sign-in) or via an API token for environments where OAuth is not available. Once connected through Caylex, your AI agents gain access to rich observational data to drive faster incident response and deeper performance insights.
+
+<Warning>
+**Prerequisites:**
+- A BetterStack account with access to at least one product (Uptime, Logs, or other Telemetry services).
+- For API token authentication: an API token generated from the BetterStack dashboard via their API authentication guide.
+- For OAuth authentication: your BetterStack account must support browser-based OAuth sign-in (recommended for most users).
+</Warning>
+
+<Note>
+**Important API details:**
+- Authentication supports two methods: OAuth (recommended, browser-prompted) or an API token passed via the Authorization header — Caylex handles the connection, but you must ensure the correct auth method is configured.
+- The server connects to both BetterStack Uptime and Telemetry (log management) data, so the scope of accessible data depends on which BetterStack products are active in your account.
+- No explicit rate limits are documented, but API usage is subject to BetterStack's standard API policies as described in their API authentication guide.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Monitoring & Observability, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **BetterStack** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Datadog" href="/server-catalog/datadog" icon="https://d338mlbnszozgc.cloudfront.net/logos/datadog.svg" />
+  <Card title="Sentry" href="/server-catalog/sentry" icon="https://d338mlbnszozgc.cloudfront.net/logos/sentry.svg" />
+  <Card title="Posthog" href="/server-catalog/posthog" icon="https://d338mlbnszozgc.cloudfront.net/logos/posthog.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://betterstack.com/docs/getting-started/integrations/mcp" href="https://betterstack.com/docs/getting-started/integrations/mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

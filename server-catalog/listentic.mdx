@@ -1,0 +1,62 @@
+---
+title: "Listentic"
+description: "Transform articles and videos into audio podcasts"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/listentic.svg"
+---
+
+The Listentic MCP Server enables AI agents within Caylex to convert articles, documents, websites, and videos into high-quality AI-generated audio podcasts, making content accessible for listening on the go. By integrating this server into a Caylex project, agents can discover supported content formats, submit text-based content for audio synthesis, and process binary files such as documents and media into Listentic audio experiences. The server supports SSML and Speech Synthesis Markup Language for enhanced audio control, giving agents fine-grained influence over how spoken content is rendered. It is well-suited for use cases spanning podcast production, accessibility solutions, educational audio creation, business report narration, and language learning. With three specialized tools, Caylex agents can power end-to-end audio content workflows across a wide range of formats and audiences.
+
+<Warning>
+**Prerequisites:**
+- A Listentic account is required to use the MCP server and access audio content creation features.
+- API authentication credentials from the Listentic platform must be configured when adding the server to your Caylex project.
+</Warning>
+
+<Note>
+**Important API details:**
+- Three tools are available: querying supported MIME types, submitting text content for audio creation, and submitting binary content (audio files, documents, media) for audio creation.
+- SSML and markup formats are preferred input types; plain text and markdown are also supported alongside binary and audio formats.
+- No explicit rate limits or pagination behavior are documented — check the Listentic platform for any usage quotas tied to your account.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | AI Platforms & APIs, AI & Machine Learning |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Listentic Authentication guide](/oauth-guides/listentic) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Listentic** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="ElevenLabs" href="/server-catalog/elevenlabs" icon="https://d338mlbnszozgc.cloudfront.net/logos/elevenlabs.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://www.remote-mcp.com/servers/listenetic" href="https://www.remote-mcp.com/servers/listenetic" icon="arrow-up-right-from-square" />
+</CardGroup>

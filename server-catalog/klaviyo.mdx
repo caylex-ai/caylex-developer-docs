@@ -1,0 +1,207 @@
+---
+title: "Klaviyo"
+description: "AI-driven marketing automation and data insights"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/klaviyo.svg"
+---
+
+The Klaviyo MCP Server connects your Klaviyo account to AI agents within Caylex, providing a secure bridge between Klaviyo's marketing platform and your automated workflows. AI agents can read and manage campaigns, flows, lists, segments, profiles, and email templates, as well as query performance metrics and generate detailed campaign and flow reports. Agents can also take action — creating campaigns, building email templates, managing subscriber preferences, uploading images, and creating or updating customer profiles — all through natural language-driven automation. This integration is designed for B2C marketers who want to accelerate tasks like campaign creation, audience segmentation, performance analysis, and personalized marketing execution without manual setup or custom scripting.
+
+<Warning>
+**Prerequisites:**
+- Requires a Klaviyo account with an Owner, Admin, or Manager role — Viewer or lower roles are not supported.
+- A valid Klaviyo private API key or OAuth credentials must be available to authenticate the server connection in Caylex.
+</Warning>
+
+<Note>
+**Important API details:**
+- Access to the Klaviyo MCP Server requires a Klaviyo account with an Owner, Admin, or Manager role; lower-permission roles cannot authenticate.
+- Authentication is handled via OAuth or a private API key — ensure your Klaviyo account credentials or API key are ready before connecting in Caylex.
+- The server supports both read and write operations; write actions such as creating campaigns, updating profiles, and subscribing/unsubscribing profiles will make live changes to your Klaviyo account.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Marketing Automation, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Klaviyo Authentication guide](/oauth-guides/klaviyo) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **27** tools:
+
+### Account
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_account_details">
+    Get the details of the account. You can view and edit your account details flow in the Klaviyo UI at https://www.klaviyo.com/settings/account
+  </Accordion>
+</AccordionGroup>
+
+### Campaigns
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_campaigns">
+    Returns some or all campaigns based on filters. You can view and edit a campaign in the Klaviyo UI at https://www.klaviyo.com/campaign/\{CAMPAIGN_ID\}/wizard. Do not use this for queries related to the status of campaigns, reporting on campaigns, or campaign performance data. For those use cases, use the get_campaign_report tool.
+  </Accordion>
+  <Accordion title="klaviyo_get_campaign">
+    Returns a specific campaign based on a required id. You can view and edit a campaign in the Klaviyo UI at https://www.klaviyo.com/campaign/\{CAMPAIGN_ID\}/wizard
+  </Accordion>
+  <Accordion title="klaviyo_create_campaign">
+    Creates a new draft campaign. For email campaigns, this can be used with the create_email_template tool for template creation and then assign_template_to_campaign_message to assign the template to the email campaign. You can view and edit a campaign in the Klaviyo UI at https://www.klaviyo.com/campaign/\{CAMPAIGN_ID\}/wizard
+  </Accordion>
+  <Accordion title="klaviyo_assign_template_to_campaign_message">
+    Assigns an email template to a campaign message. This should be used after creating a template with the create_email_template tool and creating an email campaign.
+  </Accordion>
+  <Accordion title="klaviyo_get_campaign_report">
+    Returns metrics data for campaigns with the given filters and within the given timeframe. Can return performance data such as opens, clicks, and conversions, etc. This tool will also give you information about each campaign in the report, such as: audience names and IDs for the campaign (included audiences are audiences sent the campaign, excluded audiences are audiences not sent the campaign), campaign name, send time, send channel, and campaign ID.
+  </Accordion>
+</AccordionGroup>
+
+### Flows
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_flows">
+    Returns some or all flows based on filters. You can view and edit a flow in the Klaviyo UI at https://www.klaviyo.com/flow/\{FLOW_ID\}/edit. Do not use this for queries related to the status of flows, reporting on flows, or flow performance data. For those use cases, use the get_flow_report tool.
+  </Accordion>
+  <Accordion title="klaviyo_get_flow">
+    Returns a flow by ID. You can view and edit a flow in the Klaviyo UI at https://www.klaviyo.com/flow/\{FLOW_ID\}/edit.
+  </Accordion>
+  <Accordion title="klaviyo_get_flow_report">
+    Returns metrics data for flows with the given filters and within the given timeframe. Can return performance data such as opens, clicks, and conversions, etc. This tool will also give you information about each flow in the report, such as: flow name, trigger type, and flow ID.
+  </Accordion>
+</AccordionGroup>
+
+### Lists & Segments
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_lists">
+    Get all lists in an account. To filter by tag, do not use the 'filters' parameter. Instead, call this and look for the 'tags' property in the response. You can view and edit a list in the Klaviyo UI at https://www.klaviyo.com/lists/\{LIST_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_get_list">
+    Get a list with the given list ID. You can view and edit a list in the Klaviyo UI at https://www.klaviyo.com/lists/\{LIST_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_get_segment">
+    Get a segment with the given segment ID. You can view and edit a segment in the Klaviyo UI at https://www.klaviyo.com/lists/\{SEGMENT_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_get_segments">
+    Get all segments in an account. To filter by tag, do not use the 'filters' parameter. Instead, call this and look for the 'tags' property in the response. You can view and edit a segment in the Klaviyo UI at https://www.klaviyo.com/lists/\{SEGMENT_ID\}
+  </Accordion>
+</AccordionGroup>
+
+### Profiles
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_profiles">
+    Get all profiles in an account. You can view and edit a profile in the Klaviyo UI at https://www.klaviyo.com/profile/\{PROFILE_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_get_profile">
+    Get details of the profile with the given profile ID. Includes additional information about their subscriptions. You can view and edit a profile in the Klaviyo UI at https://www.klaviyo.com/profile/\{PROFILE_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_create_profile">
+    Create a new profile. Must include either email, phone_number, or external_id. You can view and edit a profile in the Klaviyo UI at https://www.klaviyo.com/profile/\{PROFILE_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_update_profile">
+    Update the profile with the given profile ID. You can view and edit a profile in the Klaviyo UI at https://www.klaviyo.com/profile/\{PROFILE_ID\}
+  </Accordion>
+  <Accordion title="klaviyo_subscribe_profile_to_marketing">
+    Subscribe a profile to marketing for a given channel. If a profile doesn't already exist, it will be created. Returns 'Success' if successful.
+  </Accordion>
+  <Accordion title="klaviyo_unsubscribe_profile_from_marketing">
+    Unsubscribe a profile from marketing for a given channel. Returns 'Success' if successful.
+  </Accordion>
+</AccordionGroup>
+
+### Email Templates
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_email_template">
+    Get an email template with the given data. Returns attributes including the html or amp. You can view and edit a template in the Klaviyo UI at https://www.klaviyo.com/email-editor/\{TEMPLATE_ID\}/edit.
+  </Accordion>
+  <Accordion title="klaviyo_create_email_template">
+    Create a new email template from the given HTML. Returns the ID of the template. You can view and edit a template in the Klaviyo UI at https://www.klaviyo.com/email-editor/\{TEMPLATE_ID\}/edit.
+  </Accordion>
+</AccordionGroup>
+
+### Metrics & Analytics
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_metrics">
+    Get all metrics in an account. You can view and edit a metric in the Klaviyo UI at https://www.klaviyo.com/metric/\{METRIC_ID\}/\{METRIC_NAME\}
+  </Accordion>
+  <Accordion title="klaviyo_get_metric">
+    Get a metric with the given metric ID. You can view and edit a metric in the Klaviyo UI at https://www.klaviyo.com/metric/\{METRIC_ID\}/\{METRIC_NAME\}
+  </Accordion>
+  <Accordion title="klaviyo_query_metric_aggregates">
+    Query and aggregate event data for a specific metric, with optional grouping by dimensions such as flows, campaigns, messages, etc.
+
+IMPORTANT: This endpoint returns data based on EVENT TIME (when events occurred), NOT send date. For campaign/flow performance data that matches the Klaviyo UI (which uses send date), use get_campaign_report or get_flow_report instead. Only use this tool when:
+<ul>
+<li>You need to aggregate raw event data by dimensions not supported by the Reporting API, but supported by this endpoint</li>
+<li>You need time-series data broken down by hour/day/week/month</li>
+<li>The Reporting API tools (get_campaign_report, get_flow_report) don't fulfill your specific requirements</li>
+<li>You need to query custom metrics or non-standard aggregations</li>
+</ul>
+
+Results from this endpoint are not directly comparable to get_campaign_report or get_flow_report due to different time semantics and uniqueness definitions (not attribution — both use the same attribution framework). If cross-referencing, clearly caveat this to the user.
+
+Examples of appropriate use cases:
+<ul>
+<li>Sum of revenue by flow over a time period (use sum_value measurement with $attributed_flow grouping)</li>
+<li>Count of events per day/week/month for trend analysis</li>
+<li>Unique profile counts grouped by campaign or message</li>
+<li>Custom metric aggregations not available in standard reports</li>
+</ul>
+  </Accordion>
+  <Accordion title="klaviyo_get_events">
+    Get individual event records for a given filter such as a profile ID or metric ID. For aggregated data, prefer get_campaign_report or get_flow_report (performance metrics) or query_metric_aggregates (counts, sums, unique profiles). Only use this tool to inspect specific events or when the other tools don't support the dimension you need — in that case, only a small sample of events can be processed in context, so clearly tell the user the results are based on a limited sample.
+  </Accordion>
+</AccordionGroup>
+
+### Catalog & Media
+
+<AccordionGroup>
+  <Accordion title="klaviyo_get_catalog_items">
+    Get all catalog items in an account. (Also known as products)
+  </Accordion>
+  <Accordion title="klaviyo_upload_image_from_url">
+    Upload an image from a URL or data URI.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Klaviyo** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Mailchimp" href="/server-catalog/mailchimp" icon="https://d338mlbnszozgc.cloudfront.net/logos/mailchimp.svg" />
+  <Card title="Shopify" href="/server-catalog/shopify" icon="https://d338mlbnszozgc.cloudfront.net/logos/shopify.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://developers.klaviyo.com/en/docs/klaviyo_mcp_server" href="https://developers.klaviyo.com/en/docs/klaviyo_mcp_server" icon="arrow-up-right-from-square" />
+  <Card title="https://www.klaviyo.com/blog/introducing-mcp-server" href="https://www.klaviyo.com/blog/introducing-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>
