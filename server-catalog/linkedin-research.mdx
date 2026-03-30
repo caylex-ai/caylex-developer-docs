@@ -1,0 +1,143 @@
+---
+title: "LinkedIn Research"
+description: "AI-driven insights from LinkedIn's professional..."
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg"
+---
+
+The LinkedIn MCP Server bridges AI assistants with LinkedIn’s API, enabling context-aware interactions, profile scraping, job searches, and lead generation for developers and business professionals.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Social Media, Sales & Marketing |
+
+## Authentication
+
+<Info>
+  This server does not require authentication.
+</Info>
+
+## Available Tools
+
+This server provides **31** tools:
+
+<AccordionGroup>
+  <Accordion title="get_linkedin_company_employees">
+    List employees (or people who list the company) on LinkedIn. Use to find who works at one or more companies; companies must be a list of company URNs (e.g. ['company:14064608']). Optionally filter by keywords, first_name, last_name. count limits results per company. Returns employee profiles or summary; use get_linkedin_user_email to find their emails.
+  </Accordion>
+  <Accordion title="get_linkedin_profile">
+    Fetch full LinkedIn profile for one person. Parameters: user (URL/handle/ID), request_timeout, with_experience, with_education, with_skills.
+  </Accordion>
+  <Accordion title="get_linkedin_user_posts">
+    Get recent posts from a LinkedIn user. Parameters: urn, count, posted_after (timestamp), timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_endorsers">
+    Get people who endorsed this user's skills. Parameters: urn, count, timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_companies">
+    Search for companies by keyword or phrase. Combines LinkedIn and company-discovery API when HUNTER_API_KEY is set; results are merged and deduplicated by domain/name. Use when finding companies in an industry, by product, or by description. count is required; keywords optional (if omitted only LinkedIn results). Returns result with companies (name, domain, source, emails_count when available) and total.
+  </Accordion>
+  <Accordion title="get_linkedin_company">
+    Get LinkedIn company page data. Parameters: company (alias/URL/URN), timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_users">
+    Search LinkedIn for people (profiles) by name, job title, company, or free-text keywords. Parameters: keywords, first_name, last_name, title, company_keywords, school_keywords, location, count, request_timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_jobs">
+    Search LinkedIn job listings. Parameters: count, keywords, location, sort, experience_level, job_types, work_types, industry, company, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_email_user">
+    Look up LinkedIn profile(s) by email address. Use when you have an email and need the associated LinkedIn identity or profile data. Reverse of get_linkedin_user_email: email in, LinkedIn info out. count limits how many matches to return (default 5). Returns LinkedIn user/profiles linked to that email.
+  </Accordion>
+  <Accordion title="get_linkedin_user_reactions">
+    Get reactions from a LinkedIn user. Parameters: urn, count, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_comments">
+    Get comments made by a LinkedIn user. Parameters: urn, count, commented_after (timestamp), timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_posts">
+    Search LinkedIn for posts by keyword. Parameters: keywords, count, sort, date_posted, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_post">
+    Fetch a single LinkedIn post by its activity URN. Parameters: urn, request_timeout, include_all_document_images.
+  </Accordion>
+  <Accordion title="get_linkedin_post_comments">
+    Get comments on a LinkedIn post. Parameters: urn, count, sort, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_post_reactions">
+    Get who reacted to a LinkedIn post. Parameters: urn, count, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_post_reposts">
+    Get reposts of a LinkedIn post. Parameters: urn, count, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_company_posts">
+    Get posts from a LinkedIn company page. Parameters: urn, count, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_certificates">
+    Get certifications listed on a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_education">
+    Get education history from a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_experience">
+    Get work experience from a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_skills">
+    Get skills listed on a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_honors">
+    Get honors and awards from a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_patents">
+    Get patents listed on a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_languages">
+    Get language proficiencies from a LinkedIn profile. Parameters: urn, timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_educations">
+    Search educational institutions on LinkedIn. Parameters: name (education name), count, timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_locations">
+    Search locations on LinkedIn for use in filters. Parameters: name (location name), count, timeout.
+  </Accordion>
+  <Accordion title="search_linkedin_industries">
+    Search industries on LinkedIn. Parameters: name (industry name), count, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_group">
+    Get metadata and details for a LinkedIn group. Parameters: group (URL or ID), timeout.
+  </Accordion>
+  <Accordion title="linkedin_sales_navigator_search_users">
+    Advanced B2B-style search for LinkedIn users (Sales Navigator). Use for lead gen or finding decision-makers: filter by current job title, first/last name, or keywords. first_names, last_names, current_titles are lists for multiple values. Returns matching profiles; combine with get_linkedin_user_email for outreach.
+  </Accordion>
+  <Accordion title="get_linkedin_company_employee_stats">
+    Get aggregate employee/headcount statistics for a LinkedIn company. Parameters: company, timeout.
+  </Accordion>
+  <Accordion title="get_linkedin_user_email">
+    Find a person's email address from their LinkedIn profile. Use when you have a LinkedIn URL, handle, or profile ID and need their work/personal email. Tries internal DB first, then REST API, then email-finder fallback when HUNTER_API_KEY is set. Pass profile as LinkedIn URL (e.g. linkedin.com/in/johndoe), handle (johndoe), or internal ID. Returns result with email, and possibly score/verification; on failure returns error with profile and message.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **LinkedIn Research** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="LinkedIn" href="/server-catalog/linkedin" icon="https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg" />
+  <Card title="Hunter" href="/server-catalog/hunter" icon="https://d338mlbnszozgc.cloudfront.net/logos/hunter.svg" />
+  <Card title="Coresignal" href="/server-catalog/coresignal" icon="https://d338mlbnszozgc.cloudfront.net/logos/coresignal.svg" />
+</CardGroup>

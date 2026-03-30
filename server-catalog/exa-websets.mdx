@@ -1,0 +1,287 @@
+---
+title: "Exa Websets"
+description: "Real-time web search for AI models and assistants"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/exa.svg"
+---
+
+Exa Websets connects AI agents to Exa's Websets API, enabling them to build, manage, and enrich structured collections of web entities such as companies, people, and research papers with real-time web data. Within Caylex, agents can create and query Websets — curated datasets assembled from live web searches — and apply enrichments to extract specific attributes like CEO names, funding amounts, employee counts, or key research findings. The server also supports monitors that watch for new entities matching defined criteria, webhooks for event-driven workflows, and imports for bringing in external data. This makes Exa Websets particularly powerful for competitive intelligence, lead generation, academic research, and any workflow requiring continuously updated, structured information sourced from the web.
+
+<Warning>
+**Prerequisites:**
+- An active Exa account with a valid API key, obtainable from the Exa dashboard at dashboard.exa.ai/api-keys.
+- Access to the Exa Websets API, which is tied to your Exa account and API key — no separate plan tier is documented, but API key access is required.
+</Warning>
+
+<Note>
+**Important API details:**
+- An Exa API key must be supplied as the query parameter `exaApiKey` when connecting the server; all tool calls are authenticated through this key.
+- Webset searches and enrichments are asynchronous operations — agents should use `get_search` and `get_enrichment` to poll for completion status after creation.
+- Monitors continuously track web sources for new entities matching your criteria; use `list_monitors` and `get_monitor` to manage active monitors and their results.
+- Webhooks (`create_webhook`, `list_webhooks`) enable event-driven notifications when webset operations complete, allowing agents to react to data changes without polling.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Search & Research, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Query Parameter Authentication
+
+This server requires query parameters to be appended to the server URL. These are typically API keys or tokens.
+
+## Server Configuration
+
+The following parameters can be set in the server URL when adding this server to your Caylex project:
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `exaApiKey` | query | Your Exa API key, used to authenticate all requests made by the MCP server to the Exa Websets API. | `exaApiKey=your_exa_api_key_here` |
+
+## Available Tools
+
+This server provides **30** tools:
+
+### Webset Management
+
+<AccordionGroup>
+  <Accordion title="create_webset">
+    Create a new Webset collection. Websets are collections of web entities (companies, people, papers) that can be automatically searched, verified, and enriched with custom data.
+
+IMPORTANT PARAMETER FORMATS:
+<ul>
+<li>searchCriteria: MUST be array of objects like [\{description: "..."\}] (NOT array of strings)</li>
+<li>enrichments: Each must have description field, optional format and options</li>
+<li>enrichment options: MUST be array of objects like [\{label: "..."\}] (NOT array of strings)</li>
+<li>entity: MUST be an object like \{type: "company"\} — for "custom" type, include description: \{type: "custom", description: "..."\}</li>
+<li>exclude: Array of sources like [\{source: "webset", id: "webset_123"\}]</li>
+</ul>
+
+Example call:
+\{
+  "searchQuery": "AI startups in San Francisco",
+  "searchEntity": \{"type": "company"\},
+  "searchCriteria": [\{"description": "Founded after 2020"\}],
+  "enrichments": [
+    \{"description": "CEO name", "format": "text"\},
+    \{"description": "Company stage", "format": "options", "options": [\{"label": "Seed"\}, \{"label": "Series A"\}]\}
+  ]
+\}
+  </Accordion>
+  <Accordion title="get_webset">
+    Get details about a specific webset by ID or externalId. Returns full webset information including status, searches, enrichments, monitors, imports, and metadata.
+  </Accordion>
+  <Accordion title="update_webset">
+    Update a webset's title and/or metadata.
+  </Accordion>
+  <Accordion title="delete_webset">
+    Delete a webset and all its items. This action is permanent and cannot be undone.
+  </Accordion>
+  <Accordion title="list_websets">
+    List all websets in your account. Returns a paginated list of webset collections with their current status, searches, enrichments, monitors, imports, and metadata.
+  </Accordion>
+  <Accordion title="preview_webset">
+    Preview how a search query will be interpreted before creating a webset. Returns the detected entity type, generated search criteria, and suggested enrichment columns. Useful for understanding what a query will produce before committing.
+  </Accordion>
+</AccordionGroup>
+
+### Search
+
+<AccordionGroup>
+  <Accordion title="create_search">
+    Create a new search to find and add items to a webset. The search will discover entities matching your query and criteria.
+
+IMPORTANT PARAMETER FORMATS:
+<ul>
+<li>entity: MUST be an object like \{type: "company"\} (NOT a string). For "custom" type, include description: \{type: "custom", description: "SaaS tools"\}</li>
+<li>criteria: MUST be array of objects like [\{description: "..."\}] (NOT array of strings)</li>
+<li>exclude: Array of sources like [\{source: "webset", id: "webset_123"\}]</li>
+<li>scope: Object for scoped/hop searches: \{source: "import", id: "import_123", relationship: "investors of these companies"\}</li>
+</ul>
+
+Example call:
+\{
+  "websetId": "webset_123",
+  "query": "AI startups in San Francisco",
+  "entity": \{"type": "company"\},
+  "criteria": [\{"description": "Founded after 2020"\}],
+  "count": 10
+\}
+  </Accordion>
+  <Accordion title="get_search">
+    Get details about a specific search, including its status, progress, and results found.
+  </Accordion>
+  <Accordion title="cancel_search">
+    Cancel a running search operation. This will stop the search from finding more items.
+  </Accordion>
+</AccordionGroup>
+
+### Items
+
+<AccordionGroup>
+  <Accordion title="list_webset_items">
+    List all items in a webset. Returns entities (companies, people, papers) that have been discovered and verified in the collection.
+  </Accordion>
+  <Accordion title="get_item">
+    Get a specific item from a webset by its ID. Returns detailed information about the item including all enrichment data.
+  </Accordion>
+</AccordionGroup>
+
+### Enrichments
+
+<AccordionGroup>
+  <Accordion title="create_enrichment">
+    Create a new enrichment for a webset. Enrichments automatically extract custom data from each item using AI agents (e.g., 'company revenue', 'CEO name', 'funding amount').
+
+IMPORTANT PARAMETER FORMATS:
+<ul>
+<li>options (when format is "options"): MUST be array of objects like [\{label: "..."\}] (NOT array of strings)</li>
+</ul>
+
+Example call (text format):
+\{"websetId": "webset_123", "description": "CEO name", "format": "text"\}
+
+Example call (options format):
+\{"websetId": "webset_123", "description": "Company stage", "format": "options", "options": [\{"label": "Seed"\}, \{"label": "Series A"\}]\}
+  </Accordion>
+  <Accordion title="get_enrichment">
+    Get details about a specific enrichment, including its status and progress.
+  </Accordion>
+  <Accordion title="update_enrichment">
+    Update an enrichment's metadata. You can associate custom key-value pairs with the enrichment.
+  </Accordion>
+  <Accordion title="delete_enrichment">
+    Delete an enrichment from a webset. This will remove all enriched data for this enrichment from all items.
+  </Accordion>
+  <Accordion title="cancel_enrichment">
+    Cancel a running enrichment operation. This will stop the enrichment from processing more items.
+  </Accordion>
+</AccordionGroup>
+
+### Monitors
+
+<AccordionGroup>
+  <Accordion title="create_monitor">
+    Create a monitor to automatically update a webset on a schedule. Monitors run search operations to find new items.
+
+IMPORTANT PARAMETER FORMATS:
+<ul>
+<li>cron: MUST be 5-field format "minute hour day month weekday" (e.g., "0 9 * * 1")</li>
+<li>entity: MUST be an object like \{type: "company"\} (NOT a string)</li>
+<li>criteria: MUST be array of objects like [\{description: "..."\}] (NOT array of strings)</li>
+</ul>
+
+Example call:
+\{
+  "websetId": "webset_123",
+  "cron": "0 9 * * 1",
+  "query": "New AI startups",
+  "entity": \{"type": "company"\},
+  "criteria": [\{"description": "Founded in last 30 days"\}],
+  "count": 10
+\}
+  </Accordion>
+  <Accordion title="get_monitor">
+    Get details about a specific monitor, including its schedule, behavior configuration, and status.
+  </Accordion>
+  <Accordion title="update_monitor">
+    Update a monitor's schedule, behavior, or status (enable/disable).
+  </Accordion>
+  <Accordion title="delete_monitor">
+    Delete a monitor. This stops the scheduled search operations permanently.
+  </Accordion>
+  <Accordion title="list_monitors">
+    List all monitors. Returns a paginated list of monitors with their schedule, status, and configuration.
+  </Accordion>
+</AccordionGroup>
+
+### Webhooks
+
+<AccordionGroup>
+  <Accordion title="create_webhook">
+    Create a webhook to receive real-time HTTP callbacks when events occur in your websets.
+
+Example call:
+\{
+  "url": "https://example.com/webhook",
+  "events": ["webset.search.completed", "webset.enrichment.completed"]
+\}
+  </Accordion>
+  <Accordion title="get_webhook">
+    Get details about a specific webhook. The webhook secret is not returned here for security — it is only shown when the webhook is first created.
+  </Accordion>
+  <Accordion title="update_webhook">
+    Update a webhook's URL, events, or metadata. Changes take effect immediately. The webhook keeps its current status (active/inactive) when updated.
+  </Accordion>
+  <Accordion title="delete_webhook">
+    Delete a webhook. The webhook stops receiving notifications immediately and cannot be recovered.
+  </Accordion>
+  <Accordion title="list_webhooks">
+    List all webhooks in your account. Returns a paginated list of webhooks with their URL, events, status, and metadata.
+  </Accordion>
+</AccordionGroup>
+
+### Imports
+
+<AccordionGroup>
+  <Accordion title="create_import">
+    Create a new import to upload your own data (CSV) into Websets. Imports can be used for enrichment, scoped searches, or excluding known results. Returns an uploadUrl where you can PUT your CSV file.
+
+Example call:
+\{
+  "format": "csv",
+  "size": 1024,
+  "count": 100,
+  "entity": \{"type": "company"\},
+  "title": "My company list"
+\}
+  </Accordion>
+  <Accordion title="get_import">
+    Get details about a specific import, including its status, upload URL, and processing progress.
+  </Accordion>
+  <Accordion title="list_imports">
+    List all imports. Returns a paginated list of imports with their status and metadata.
+  </Accordion>
+</AccordionGroup>
+
+### Events
+
+<AccordionGroup>
+  <Accordion title="list_events">
+    List system events with optional filtering. Events track all state changes across websets, searches, enrichments, monitors, and webhooks.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Exa Websets** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.exa.ai/reference/websets-mcp" href="https://docs.exa.ai/reference/websets-mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/exa-labs/websets-mcp-server" href="https://github.com/exa-labs/websets-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

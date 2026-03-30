@@ -1,0 +1,71 @@
+---
+title: "Enigma"
+description: "Integrate AI for complex business insights"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/enigma.svg"
+---
+
+The Enigma MCP Server brings the full power of Enigma's comprehensive business intelligence platform to AI agents operating within Caylex, enabling them to research, analyze, and act on data spanning millions of U.S. businesses. Agents can search companies, retrieve card revenue and transaction analytics, map corporate structures, investigate compliance risks, and perform sanctions screening — all in real time. The server exposes two major tool sets: Business Intelligence tools for deep company research and due diligence, and Screening & Compliance tools for KYB, sanctions list matching, and decision tracking. This makes it well-suited for Caylex projects in areas such as financial analysis, risk management, vendor onboarding, and competitive intelligence. The Enigma MCP server is currently in beta, so users should expect potential changes to tool behavior and data availability.
+
+<Warning>
+**Prerequisites:**
+- An active Enigma account with API access is required to authenticate and use this server.
+- Access to screening and compliance tools (e.g., sanctions screening) may require specific Enigma plan or feature entitlements beyond standard business intelligence access.
+</Warning>
+
+<Note>
+**Important API details:**
+- The Enigma MCP server is currently in beta — tool interfaces and data availability may change without notice.
+- Card analytics data spans up to 60 months of historical transaction data; revenue and growth figures are based on card transactions and may not reflect all payment methods.
+- The `find_decisions` tool supports pagination and filtering by date range, status, alert, assignee, and tag when retrieving compliance decisions.
+- Screening tools return match confidence scores and source list information (e.g., SDN, Non-SDN) for sanctions and compliance workflows.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Data Processing, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+### OAuth
+**Scopes:** `openid`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Enigma Authentication guide](/oauth-guides/enigma) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Enigma** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://documentation.enigma.com/guides/ai-mcp" href="https://documentation.enigma.com/guides/ai-mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://documentation.enigma.com/guides/ai-mcp/tools" href="https://documentation.enigma.com/guides/ai-mcp/tools" icon="arrow-up-right-from-square" />
+  <Card title="https://mcp-docs.dev.enigma.com/" href="https://mcp-docs.dev.enigma.com/" icon="arrow-up-right-from-square" />
+</CardGroup>

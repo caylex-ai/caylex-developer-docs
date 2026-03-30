@@ -1,0 +1,71 @@
+---
+title: "Fireflies"
+description: "AI-powered meeting insights in minutes"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/fireflies.svg"
+---
+
+The Fireflies MCP Server brings your meeting data directly into Caylex-powered AI agent workflows, enabling agents to query, analyze, and extract insights from meeting transcripts, summaries, and action items stored in your Fireflies.ai account. Agents can answer complex questions across your meeting history — such as identifying recurring objections in sales calls or aggregating product feedback from user interviews — without any manual transcript handling. Authentication is handled via OAuth with your Fireflies account or alternatively using a Fireflies API key passed as a Bearer token. This server is purpose-built for teams that want to automate meeting intelligence workflows within DevOps, product, and cloud management contexts through AI-driven tooling.
+
+<Warning>
+**Prerequisites:**
+- An active Fireflies.ai account is required before connecting this server.
+- To use API key authentication instead of OAuth, retrieve your API key from Fireflies Settings > Developer Settings.
+</Warning>
+
+<Note>
+**Important API details:**
+- Authentication supports two methods: OAuth (recommended) or a Fireflies API key supplied as a Bearer token in the Authorization header.
+- Your Fireflies API key can be obtained from Settings > Developer Settings inside the Fireflies.ai dashboard.
+- The server accesses live Fireflies account data, so agents will only see transcripts and meetings that belong to the authenticated user's account.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Call Recording & Intelligence, Communication & Support |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+### OAuth
+**Scopes:** `profile`, `email`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Fireflies Authentication guide](/oauth-guides/fireflies) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Fireflies** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Fellow AI" href="/server-catalog/fellow-ai" icon="https://d338mlbnszozgc.cloudfront.net/logos/fellowai.jpeg" />
+  <Card title="Granola" href="/server-catalog/granola" icon="https://d338mlbnszozgc.cloudfront.net/logos/granola.svg" />
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.fireflies.ai/getting-started/docs-mcp-server" href="https://docs.fireflies.ai/getting-started/docs-mcp-server" icon="arrow-up-right-from-square" />
+  <Card title="https://docs.fireflies.ai/getting-started/mcp-configuration" href="https://docs.fireflies.ai/getting-started/mcp-configuration" icon="arrow-up-right-from-square" />
+  <Card title="https://docs.fireflies.ai/mcp-tools/overview" href="https://docs.fireflies.ai/mcp-tools/overview" icon="arrow-up-right-from-square" />
+</CardGroup>

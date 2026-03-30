@@ -1,0 +1,66 @@
+---
+title: "Datadog"
+description: "AI-driven insights for monitoring and troublesh..."
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/datadog.svg"
+---
+
+The Datadog MCP Server connects AI agents in your Caylex project to Datadog's full suite of monitoring and observability tools, enabling natural language-driven access to logs, metrics, incidents, traces, and more. Through Caylex Navigators, agents can perform troubleshooting, root cause analysis, and incident response workflows by querying live operational data directly from your Datadog organization. The server is part of Datadog's Bits AI platform, designed to bring AI-assisted observability into automated agent workflows. Users can query log streams, investigate APM traces, review monitor statuses, and manage incidents — all without leaving their AI agent context. This makes it well-suited for on-call automation, SRE workflows, and proactive alerting pipelines built on the Caylex platform.
+
+<Warning>
+**Prerequisites:**
+- An active Datadog account with Bits AI / MCP Server access enabled on your organization.
+- A Datadog API key and Application key with sufficient permissions to access the Datadog features your agents will query (logs, metrics, incidents, APM, etc.).
+- Ensure your Datadog organization is on a plan that supports the MCP Server feature — contact Datadog support or your account team to confirm eligibility.
+</Warning>
+
+<Note>
+**Important API details:**
+- Access is scoped to the permissions of the Datadog API key and Application key used for authentication — ensure the associated user or service account has the necessary Datadog roles for the data being queried.
+- The Datadog MCP Server is part of the Bits AI feature set and may require specific Datadog plan tiers or Bits AI entitlements to be enabled on your Datadog organization.
+- Data access is limited to the Datadog site (e.g., US1, EU, US3) associated with the credentials provided — cross-site queries are not supported within a single server connection.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Monitoring & Observability, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Datadog** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Sentry" href="/server-catalog/sentry" icon="https://d338mlbnszozgc.cloudfront.net/logos/sentry.svg" />
+  <Card title="BetterStack" href="/server-catalog/betterstack" icon="https://d338mlbnszozgc.cloudfront.net/logos/betterstack.svg" />
+  <Card title="Posthog" href="/server-catalog/posthog" icon="https://d338mlbnszozgc.cloudfront.net/logos/posthog.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.datadoghq.com/bits_ai/mcp_server/" href="https://docs.datadoghq.com/bits_ai/mcp_server/" icon="arrow-up-right-from-square" />
+  <Card title="https://docs.datadoghq.com/bits_ai/mcp_server/setup?tab=cursor" href="https://docs.datadoghq.com/bits_ai/mcp_server/setup?tab=cursor" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,65 @@
+---
+title: "Intercom"
+description: "Query and analyze Intercom conversations securely"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/intercom.svg"
+---
+
+The Intercom MCP Server enables AI agents to securely query, search, and analyze your Intercom workspace data — including customer conversations and contacts — through a standardized, authenticated interface. By adding this server to a Caylex project, AI agents gain access to tools for advanced filtering, real-time conversation retrieval, and contact lookups using a flexible query DSL. The server supports use cases such as customer support optimization, trend analysis, and data-driven decision-making by surfacing structured Intercom data on demand. Authentication is handled securely, ensuring all access is scoped to your workspace's permissions. Note that the Intercom MCP Server is currently only supported for US-hosted Intercom workspaces.
+
+<Warning>
+**Prerequisites:**
+- An active Intercom workspace hosted in the US region is required; other regions are not supported.
+- OAuth authentication must be completed to grant the MCP server access to your Intercom workspace data.
+- Sufficient workspace permissions are needed to access conversations and contacts through the API.
+</Warning>
+
+<Note>
+**Important API details:**
+- Only US-hosted Intercom workspaces are currently supported; EU or AU region workspaces cannot use this MCP server.
+- The search tool requires explicitly specifying object_type:conversations or object_type:contacts to target the correct API.
+- Search results return summary objects with type-prefixed IDs (e.g., conversation_* or contact_*), which may need to be used in follow-up tool calls to retrieve full details.
+- The SSE connection method is deprecated; the server uses Streamable HTTP as the recommended transport.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Customer Support, Communication & Support |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Intercom** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://developers.intercom.com/docs/guides/mcp" href="https://developers.intercom.com/docs/guides/mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,614 @@
+---
+title: "Google Sheets"
+description: "Automate and manage Google Sheets with ease"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-sheets.svg"
+---
+
+The Google Sheets MCP Server facilitates seamless integration with Google Sheets, enabling AI agents to create, read, update, and manage spreadsheets through natural language commands for tasks like data organization and automation.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/drive`, `https://www.googleapis.com/auth/spreadsheets`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Sheets Authentication guide](/oauth-guides/google-sheets) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **47** tools:
+
+<AccordionGroup>
+  <Accordion title="sheets_get_spreadsheet_info">
+    Gets information about a specific spreadsheet including its sheets.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet to get info for. Required.
+
+Returns:
+    str: Formatted spreadsheet information including title, locale, and sheets list.
+  </Accordion>
+  <Accordion title="sheets_format_sheet_range">
+    Applies formatting to a range: colors, number formats, text wrapping,
+alignment, and text styling.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Colors accept hex strings (#RRGGBB). Number formats follow Sheets types
+(e.g., NUMBER, CURRENCY, DATE, PERCENT). If no sheet name is provided,
+the first sheet is used.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): A1-style range (optionally with sheet name). Required.
+    background_color (Optional[str]): Hex background color (e.g., "#FFEECC").
+    text_color (Optional[str]): Hex text color (e.g., "#000000").
+    number_format_type (Optional[str]): Sheets number format type (e.g., "DATE").
+    number_format_pattern (Optional[str]): Custom pattern for the number format.
+    wrap_strategy (Optional[str]): Text wrap strategy - WRAP (wrap text within
+        cell), CLIP (clip text at cell boundary), or OVERFLOW_CELL (allow text
+        to overflow into adjacent empty cells).
+    horizontal_alignment (Optional[str]): Horizontal text alignment - LEFT,
+        CENTER, or RIGHT.
+    vertical_alignment (Optional[str]): Vertical text alignment - TOP, MIDDLE,
+        or BOTTOM.
+    bold (Optional[bool]): Whether to apply bold formatting.
+    italic (Optional[bool]): Whether to apply italic formatting.
+    font_size (Optional[int]): Font size in points.
+
+Returns:
+    str: Confirmation of the applied formatting.
+  </Accordion>
+  <Accordion title="sheets_create_spreadsheet">
+    Creates a new Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    title (str): The title of the new spreadsheet. Required.
+    sheet_names (Optional[List[str]]): List of sheet names to create. If not provided, creates one sheet with default name.
+
+Returns:
+    str: Information about the newly created spreadsheet including ID, URL, and locale.
+  </Accordion>
+  <Accordion title="sheets_get_sheet_formulas">
+    Get formulas from a specific sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    range_name (Optional[str]): Cell range in A1 notation (e.g., 'A1:C10'). If not provided, gets all formulas.
+
+Returns:
+    str: The formulas from the specified range.
+  </Accordion>
+  <Accordion title="sheets_find_in_spreadsheet">
+    Find cells containing a specific value in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    query (str): The text to search for. Required.
+    sheet_name (Optional[str]): Sheet name to search in. Searches all sheets if not provided.
+    case_sensitive (bool): Whether search is case-sensitive. Defaults to False.
+    max_results (int): Maximum results. Defaults to 50.
+
+Returns:
+    str: Found cells with location and value.
+  </Accordion>
+  <Accordion title="sheets_add_rows">
+    Add rows to a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    count (int): Number of rows to add. Required.
+    start_row (Optional[int]): 0-based row index to insert at. Adds at the beginning if not provided.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_merge_cells">
+    Merge cells in a range. Options: MERGE_ALL (default), MERGE_COLUMNS, MERGE_ROWS.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): A1-style range with sheet name (e.g., 'Sheet1!A1:C3'). Required.
+    merge_type (str): MERGE_ALL, MERGE_COLUMNS, or MERGE_ROWS. Defaults to MERGE_ALL.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_unmerge_cells">
+    Unmerge cells in a previously merged range.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): A1-style range with sheet name (e.g., 'Sheet1!A1:C3'). Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_sort_range">
+    Sort a range by one or more columns.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): A1-style range with sheet name. Required.
+    sort_specs (Union[str, List[dict]]): List of sort specs or JSON string.
+        Each: \{"dimensionIndex": 0, "sortOrder": "ASCENDING"\}.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_set_row_height">
+    Set the height in pixels for a range of rows.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    start_row_index (int): 0-based index of the first row. Required.
+    end_row_index (int): 0-based index after the last row (exclusive). Required.
+    height_pixels (int): Height in pixels. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_list_sheets">
+    List all sheets (tabs) in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+
+Returns:
+    str: List of sheet names.
+  </Accordion>
+  <Accordion title="sheets_delete_sheet">
+    Permanently delete a sheet tab from a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet to delete. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_duplicate_sheet">
+    Duplicate a sheet within the same Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet to duplicate. Required.
+    new_sheet_name (Optional[str]): Name for the new sheet. Defaults to 'Copy of \{sheet\}'.
+    insert_index (Optional[int]): 0-based index where to insert the new sheet.
+
+Returns:
+    str: Confirmation with new sheet details.
+  </Accordion>
+  <Accordion title="sheets_copy_spreadsheet">
+    Create a copy of an existing Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet to copy. Required.
+    name (Optional[str]): Title for the new copy.
+    folder_id (Optional[str]): Drive folder ID for the copy.
+
+Returns:
+    str: Information about the new spreadsheet.
+  </Accordion>
+  <Accordion title="sheets_list_folders">
+    List folders in Google Drive.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    parent_folder_id (Optional[str]): Parent folder ID. Lists root folders if not provided.
+
+Returns:
+    str: List of folders.
+  </Accordion>
+  <Accordion title="sheets_search_spreadsheets">
+    Search for spreadsheets in Google Drive by name or content.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    query (str): Search query string. Required.
+    max_results (int): Max results. Defaults to 20.
+
+Returns:
+    str: Matching spreadsheets.
+  </Accordion>
+  <Accordion title="sheets_read_spreadsheet_comments">
+    Read all comments from a Google Spreadsheet.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="sheets_create_spreadsheet_comment">
+    Create a new comment on a Google Spreadsheet.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="sheets_resolve_spreadsheet_comment">
+    Resolve a comment in a Google Spreadsheet.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="sheets_read_sheet_values">
+    Reads values from a specific range in a Google Sheet.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): The range to read (e.g., "Sheet1!A1:D10", "A1:D10"). Defaults to "A1:Z1000".
+
+Returns:
+    str: The formatted values from the specified range.
+  </Accordion>
+  <Accordion title="sheets_add_conditional_formatting">
+    Adds a conditional formatting rule to a range.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): A1-style range (optionally with sheet name). Required.
+    condition_type (str): Sheets condition type (e.g., NUMBER_GREATER, TEXT_CONTAINS, DATE_BEFORE, CUSTOM_FORMULA).
+    condition_values (Optional[Union[str, List[Union[str, int, float]]]]): Values for the condition; accepts a list or a JSON string representing a list. Depends on condition_type.
+    background_color (Optional[str]): Hex background color to apply when condition matches.
+    text_color (Optional[str]): Hex text color to apply when condition matches.
+    rule_index (Optional[int]): Optional position to insert the rule (0-based) within the sheet's rules.
+    gradient_points (Optional[Union[str, List[dict]]]): List (or JSON list) of gradient points for a color scale. If provided, a gradient rule is created and boolean parameters are ignored.
+
+Returns:
+    str: Confirmation of the added rule.
+  </Accordion>
+  <Accordion title="sheets_get_current_user">
+    Returns the authenticated user's account information for use with Sheets tools. Use the returned email as user_google_email when calling sheets_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="sheets_delete_columns">
+    Delete columns from a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    start_column (int): 0-based column index of the first column to delete. Required.
+    count (int): Number of columns to delete. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_list_spreadsheets">
+    Lists spreadsheets from Google Drive that the user has access to.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    max_results (int): Maximum number of spreadsheets to return. Defaults to 25.
+
+Returns:
+    str: A formatted list of spreadsheet files (name, ID, modified time).
+  </Accordion>
+  <Accordion title="sheets_modify_sheet_values">
+    Modifies values in a specific range of a Google Sheet - can write, update, or clear values.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (str): The range to modify (e.g., "Sheet1!A1:D10", "A1:D10"). Required.
+    values (Optional[Union[str, List[List[str]]]]): 2D array of values to write/update. Can be a JSON string or Python list. Required unless clear_values=True.
+    value_input_option (str): How to interpret input values ("RAW" or "USER_ENTERED"). Defaults to "USER_ENTERED".
+    clear_values (bool): If True, clears the range instead of writing values. Defaults to False.
+
+Returns:
+    str: Confirmation message of the successful modification operation.
+  </Accordion>
+  <Accordion title="sheets_batch_update_cells">
+    Batch update multiple ranges in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    ranges (Union[str, dict]): Dictionary mapping range strings to 2D arrays, or a JSON string.
+        e.g., \{"A1:B2": [[1, 2], [3, 4]], "D1:E2": [["a", "b"], ["c", "d"]]\}
+
+Returns:
+    str: Confirmation of the batch update.
+  </Accordion>
+  <Accordion title="sheets_get_multiple_sheet_data">
+    Get data from multiple specific ranges in Google Spreadsheets.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    queries (Union[str, List[dict]]): A list of dicts each with 'spreadsheet_id', 'sheet', 'range', or a JSON string.
+
+Returns:
+    str: The fetched data or errors for each query.
+  </Accordion>
+  <Accordion title="sheets_freeze_columns">
+    Freeze the first N columns of a sheet so they stay visible when scrolling.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    frozen_column_count (int): Number of columns to freeze (0 to unfreeze). Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_delete_rows">
+    Delete rows from a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    start_row (int): 0-based row index of the first row to delete. Required.
+    count (int): Number of rows to delete. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_update_conditional_formatting">
+    Updates an existing conditional formatting rule by index on a sheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    range_name (Optional[str]): A1-style range to apply the updated rule (optionally with sheet name). If omitted, existing ranges are preserved.
+    rule_index (int): Index of the rule to update (0-based).
+    condition_type (Optional[str]): Sheets condition type. If omitted, the existing rule's type is preserved.
+    condition_values (Optional[Union[str, List[Union[str, int, float]]]]): Values for the condition.
+    background_color (Optional[str]): Hex background color when condition matches.
+    text_color (Optional[str]): Hex text color when condition matches.
+    sheet_name (Optional[str]): Sheet name to locate the rule when range_name is omitted. Defaults to first sheet.
+    gradient_points (Optional[Union[str, List[dict]]]): If provided, updates the rule to a gradient color scale using these points.
+
+Returns:
+    str: Confirmation of the updated rule and the current rule state.
+  </Accordion>
+  <Accordion title="sheets_rename_sheet">
+    Rename a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): Spreadsheet ID. Required.
+    sheet (str): Current sheet name. Required.
+    new_name (str): New sheet name. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_delete_spreadsheet">
+    Delete a Google Spreadsheet by moving it to trash.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_restore_from_trash">
+    Restore a Google Spreadsheet from trash.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_delete_conditional_formatting">
+    Deletes an existing conditional formatting rule by index on a sheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    rule_index (int): Index of the rule to delete (0-based).
+    sheet_name (Optional[str]): Name of the sheet that contains the rule. Defaults to the first sheet if not provided.
+
+Returns:
+    str: Confirmation of the deletion and the current rule state.
+  </Accordion>
+  <Accordion title="sheets_create_sheet">
+    Creates a new sheet within an existing spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet_name (str): The name of the new sheet. Required.
+
+Returns:
+    str: Confirmation message of the successful sheet creation.
+  </Accordion>
+  <Accordion title="sheets_append_rows">
+    Append rows to the end of a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    data (Union[str, List[List]]): 2D array of values to append, or a JSON string.
+    value_input_option (str): How to interpret input: 'USER_ENTERED' or 'RAW'. Defaults to USER_ENTERED.
+
+Returns:
+    str: Confirmation of the append operation.
+  </Accordion>
+  <Accordion title="sheets_move_spreadsheet">
+    Move a Google Spreadsheet to another folder in Google Drive.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    folder_id (str): The ID of the destination folder. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_get_multiple_spreadsheet_summary">
+    Get a summary of multiple Google Spreadsheets including sheet names, headers, and first rows.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_ids (Union[str, List[str]]): List of spreadsheet IDs, or a JSON string.
+    rows_to_fetch (int): Number of rows (including header) to fetch per sheet. Defaults to 5.
+
+Returns:
+    str: Summary of each spreadsheet.
+  </Accordion>
+  <Accordion title="sheets_share_spreadsheet">
+    Share a Google Spreadsheet with users via email.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    recipients (Union[str, List[dict]]): List of dicts with 'email_address' and 'role' (reader/commenter/writer), or JSON string.
+    send_notification (bool): Whether to send notification emails. Defaults to True.
+
+Returns:
+    str: Results for each recipient.
+  </Accordion>
+  <Accordion title="sheets_batch_update">
+    Execute a batch update on a Google Spreadsheet using the full batchUpdate endpoint.
+Provides access to all operations: addSheet, updateSheetProperties, insertDimension, etc.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    requests (Union[str, List[dict]]): List of request dicts, or a JSON string.
+
+Returns:
+    str: Result of the batch update.
+  </Accordion>
+  <Accordion title="sheets_add_columns">
+    Add columns to a sheet in a Google Spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    count (int): Number of columns to add. Required.
+    start_column (Optional[int]): 0-based column index. Adds at the beginning if not provided.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_freeze_rows">
+    Freeze the first N rows of a sheet so they stay visible when scrolling.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    frozen_row_count (int): Number of rows to freeze (0 to unfreeze). Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_set_column_width">
+    Set the width in pixels for a range of columns.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    sheet (str): The name of the sheet. Required.
+    start_column_index (int): 0-based index of the first column. Required.
+    end_column_index (int): 0-based index after the last column (exclusive). Required.
+    width_pixels (int): Width in pixels. Required.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_copy_sheet">
+    Copy a sheet from one spreadsheet to another, optionally renaming it.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    src_spreadsheet (str): Source spreadsheet ID. Required.
+    src_sheet (str): Source sheet name. Required.
+    dst_spreadsheet (str): Destination spreadsheet ID. Required.
+    dst_sheet (Optional[str]): Name for the sheet in the destination. If not provided, keeps default name.
+
+Returns:
+    str: Confirmation.
+  </Accordion>
+  <Accordion title="sheets_export_spreadsheet">
+    Export a Google Spreadsheet as PDF, XLSX, CSV, ODS, or TSV.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    format (str): One of: pdf, xlsx, csv, ods, tsv. Defaults to pdf.
+
+Returns:
+    str: Base64 content and metadata.
+  </Accordion>
+  <Accordion title="sheets_get_revisions">
+    List revision history for a spreadsheet.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    spreadsheet_id (str): The ID of the spreadsheet. Required.
+    page_size (int): Max revisions to return. Defaults to 50.
+
+Returns:
+    str: Revision history.
+  </Accordion>
+  <Accordion title="sheets_reply_to_spreadsheet_comment">
+    Reply to a specific comment in a Google Spreadsheet.
+
+Use sheets_get_current_user to get the user_google_email or account information.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Sheets** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Drive" href="/server-catalog/google-drive" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-drive.svg" />
+  <Card title="Google Docs" href="/server-catalog/google-docs" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-docs.svg" />
+  <Card title="Google Forms" href="/server-catalog/google-forms" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-forms.svg" />
+</CardGroup>

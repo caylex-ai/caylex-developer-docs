@@ -1,0 +1,92 @@
+---
+title: "Slack"
+description: "Seamless messaging and channel management"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/slack.svg"
+---
+
+The Slack MCP Server integrates with Slack workspaces to enable messaging, channel management, and user interaction, enabling AI agents to assist with communication, task automation, and enhanced collaboration.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **13** tools:
+
+<AccordionGroup>
+  <Accordion title="slack_user_search_messages">
+    Search messages in the workspace. Use to find past messages by keyword or phrase. Optionally restrict to channel_ids. Returns matching messages with context; use sort/sort_dir and count for relevance and pagination.
+  </Accordion>
+  <Accordion title="slack_user_list_channels">
+    List channels the authenticated user can access. Use to discover public channels, private channels the user is in, DMs, and group DMs. Returns channel IDs and names for posting or reading. Paginate with cursor and limit (max 200).
+  </Accordion>
+  <Accordion title="slack_user_reply_to_thread">
+    Reply to a thread in a channel as the user. Use when responding to a specific message. Provide channel_id, thread_ts (from the parent message), and reply text.
+  </Accordion>
+  <Accordion title="slack_get_thread_replies">
+    Get all messages in a thread. Use when you need replies under a message. Parse Slack URLs like https://workspace.slack.com/archives/C123456/p1234567890123456 as channel_id='C123456', thread_ts='1234567890.123456'. Returns parent message and replies.
+  </Accordion>
+  <Accordion title="slack_bot_reply_to_thread">
+    Reply to a thread as the bot. Use when the bot should reply in a thread. Provide channel_id, thread_ts, and reply text. Requires bot token in request.
+  </Accordion>
+  <Accordion title="slack_get_channel_history">
+    Get recent messages from a Slack channel. Use after you have a channel_id (e.g. from slack_user_list_channels or a Slack URL). Returns messages with timestamps and thread_ts for replies.
+  </Accordion>
+  <Accordion title="slack_user_get_info">
+    Get profile and info for a Slack user by user_id. Use to resolve display names, emails, or check if a user exists before messaging or inviting.
+  </Accordion>
+  <Accordion title="slack_bot_post_message">
+    Post a new message to a Slack channel as the bot. Use when the bot should send a message (not the user). Provide channel_id and text. Requires bot token in request.
+  </Accordion>
+  <Accordion title="slack_bot_add_reaction">
+    Add an emoji reaction to a message as the bot. Use when the bot should react to a message. Provide channel_id, message timestamp, and reaction name (e.g. 'thumbsup'). Requires bot token in request.
+  </Accordion>
+  <Accordion title="slack_user_add_reaction">
+    Add an emoji reaction to a message as the user. Use to react to a message (e.g. thumbsup, eyes). Provide channel_id, message timestamp, and reaction name (without colons, e.g. 'thumbsup').
+  </Accordion>
+  <Accordion title="slack_user_post_message">
+    Post a new message to a Slack channel as the authenticated user. Use when sending a message to a channel. Provide channel_id (e.g. C123456) and message text.
+  </Accordion>
+  <Accordion title="slack_invite_users_to_channel">
+    Invite one or more users (or bots) to a Slack channel. Provide channel_id and a list of user IDs. Use when adding people or bots to a channel. Requires invite permission.
+  </Accordion>
+  <Accordion title="slack_list_users">
+    List all users in the Slack workspace. Use to find user IDs for DMs, mentions, or invites. Supports pagination (cursor, limit) and optional team_id for Enterprise Grid.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Slack** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+  <Card title="Linear" href="/server-catalog/linear" icon="https://d338mlbnszozgc.cloudfront.net/logos/linear.svg" />
+  <Card title="Github" href="/server-catalog/github" icon="https://d338mlbnszozgc.cloudfront.net/logos/github.svg" />
+  <Card title="Notion" href="/server-catalog/notion" icon="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" />
+</CardGroup>

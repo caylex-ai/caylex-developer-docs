@@ -1,0 +1,339 @@
+---
+title: "ElevenLabs"
+description: "Text-to-speech and voice cloning services"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/elevenlabs.svg"
+---
+
+The ElevenLabs MCP Server provides advanced text-to-speech and voice cloning capabilities, enabling AI agents to create voice interactions, transcribe audio, and perform outbound calls for applications like customer service and personal assistants.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Speech & Voice, AI & Machine Learning |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **24** tools:
+
+<AccordionGroup>
+  <Accordion title="text_to_speech">
+    Convert text to speech with a given voice. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources..
+    
+    Only one of voice_id or voice_name can be provided. If none are provided, the voice is taken from the x-default-voice-id request header, or cgSgspJ2msm6clMCkdW9 if unset.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+     Args:
+        text (str): The text to convert to speech.
+        voice_name (str, optional): The name of the voice to use.
+        model_id (str, optional): The model ID to use for speech synthesis. Options include:
+<ul>
+<li>eleven_multilingual_v2: High quality multilingual model (29 languages)</li>
+<li>eleven_flash_v2_5: Fastest model with ultra-low latency (32 languages)</li>
+<li>eleven_turbo_v2_5: Balanced quality and speed (32 languages)</li>
+<li>eleven_flash_v2: Fast English-only model</li>
+<li>eleven_turbo_v2: Balanced English-only model</li>
+<li>eleven_monolingual_v1: Legacy English model</li>
+</ul>
+            Defaults to eleven_multilingual_v2 or environment variable ELEVENLABS_MODEL_ID.
+        stability (float, optional): Stability of the generated audio. Determines how stable the voice is and the randomness between each generation. Lower values introduce broader emotional range for the voice. Higher values can result in a monotonous voice with limited emotion. Range is 0 to 1.
+        similarity_boost (float, optional): Similarity boost of the generated audio. Determines how closely the AI should adhere to the original voice when attempting to replicate it. Range is 0 to 1.
+        style (float, optional): Style of the generated audio. Determines the style exaggeration of the voice. This setting attempts to amplify the style of the original speaker. It does consume additional computational resources and might increase latency if set to anything other than 0. Range is 0 to 1.
+        use_speaker_boost (bool, optional): Use speaker boost of the generated audio. This setting boosts the similarity to the original speaker. Using this setting requires a slightly higher computational load, which in turn increases latency.
+        speed (float, optional): Speed of the generated audio. Controls the speed of the generated speech. Values range from 0.7 to 1.2, with 1.0 being the default speed. Lower values create slower, more deliberate speech while higher values produce faster-paced speech. Extreme values can impact the quality of the generated speech. Range is 0.7 to 1.2.
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+        language: ISO 639-1 language code for the voice.
+        output_format (str, optional): Output format of the generated audio. Formatted as codec_sample_rate_bitrate. So an mp3 with 22.05kHz sample rate at 32kbs is represented as mp3_22050_32. MP3 with 192kbps bitrate requires you to be subscribed to Creator tier or above. PCM with 44.1kHz sample rate requires you to be subscribed to Pro tier or above. Note that the μ-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.
+            Defaults to "mp3_44100_128". Must be one of:
+            mp3_22050_32
+            mp3_44100_32
+            mp3_44100_64
+            mp3_44100_96
+            mp3_44100_128
+            mp3_44100_192
+            pcm_8000
+            pcm_16000
+            pcm_22050
+            pcm_24000
+            pcm_44100
+            ulaw_8000
+            alaw_8000
+            opus_48000_32
+            opus_48000_64
+            opus_48000_96
+            opus_48000_128
+            opus_48000_192
+
+    Returns:
+        TextContent with presigned URL and object metadata (binary stored in object storage).
+    
+  </Accordion>
+  <Accordion title="speech_to_text">
+    Transcribe speech from an audio file the MCP host can read. When save_transcript_to_file=True: Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources.. When return_transcript_to_client_directly=True, returns plain text in the tool result (not a resource).
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        input_file_path: Path to the audio input available to the MCP server
+        language_code: ISO 639-3 language code for transcription. If not provided, the language will be detected automatically.
+        diarize: Whether to diarize the audio file. If True, which speaker is currently speaking will be annotated in the transcription.
+        save_transcript_to_file: If True, return the transcript as an MCP embedded resource in the tool response (UTF-8 text in the resource body).
+        return_transcript_to_client_directly: If True, return the transcript as plain TextContent in the tool result.
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata. Applies when save_transcript_to_file is True.
+
+    Returns:
+        TextContent with the transcript, or an MCP embedded resource containing the transcript text.
+    
+  </Accordion>
+  <Accordion title="text_to_sound_effects">
+    Convert text description of a sound effect to sound effect with a given duration. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources..
+    
+    Duration must be between 0.5 and 5 seconds.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        text: Text description of the sound effect
+        duration_seconds: Duration of the sound effect in seconds
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+        loop: Whether to loop the sound effect. Defaults to False.
+        output_format (str, optional): Output format of the generated audio. Formatted as codec_sample_rate_bitrate. So an mp3 with 22.05kHz sample rate at 32kbs is represented as mp3_22050_32. MP3 with 192kbps bitrate requires you to be subscribed to Creator tier or above. PCM with 44.1kHz sample rate requires you to be subscribed to Pro tier or above. Note that the μ-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.
+            Defaults to "mp3_44100_128". Must be one of:
+            mp3_22050_32
+            mp3_44100_32
+            mp3_44100_64
+            mp3_44100_96
+            mp3_44100_128
+            mp3_44100_192
+            pcm_8000
+            pcm_16000
+            pcm_22050
+            pcm_24000
+            pcm_44100
+            ulaw_8000
+            alaw_8000
+            opus_48000_32
+            opus_48000_64
+            opus_48000_96
+            opus_48000_128
+            opus_48000_192
+    
+  </Accordion>
+  <Accordion title="search_voices">
+    
+    Search for existing voices, a voice that has already been added to the user's ElevenLabs voice library.
+    Searches in name, description, labels and category.
+
+    Args:
+        search: Search term to filter voices by. Searches in name, description, labels and category.
+        sort: Which field to sort by. `created_at_unix` might not be available for older voices.
+        sort_direction: Sort order, either ascending or descending.
+
+    Returns:
+        List of voices that match the search criteria.
+    
+  </Accordion>
+  <Accordion title="list_models">
+    List all available models
+  </Accordion>
+  <Accordion title="get_voice">
+    Get details of a specific voice
+  </Accordion>
+  <Accordion title="voice_clone">
+    Create an instant voice clone using audio sample paths the MCP host can read.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+    
+  </Accordion>
+  <Accordion title="isolate_audio">
+    Isolate audio from an input file the MCP host can read. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources..
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        input_file_path: Path to the audio input available to the MCP server
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+    
+  </Accordion>
+  <Accordion title="check_subscription">
+    Check the current subscription status. Could be used to measure the usage of the API.
+  </Accordion>
+  <Accordion title="create_agent">
+    Create a conversational AI agent with custom configuration.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        name: Name of the agent
+        first_message: First message the agent will say i.e. "Hi, how can I help you today?"
+        system_prompt: System prompt for the agent
+        voice_id: ID of the voice to use for the agent. If omitted, uses x-default-voice-id on the request or cgSgspJ2msm6clMCkdW9.
+        language: ISO 639-1 language code for the agent
+        llm: LLM to use for the agent
+        temperature: Temperature for the agent. The lower the temperature, the more deterministic the agent's responses will be. Range is 0 to 1.
+        max_tokens: Maximum number of tokens to generate.
+        asr_quality: Quality of the ASR. `high` or `low`.
+        model_id: ID of the ElevenLabs model to use for the agent.
+        optimize_streaming_latency: Optimize streaming latency. Range is 0 to 4.
+        stability: Stability for the agent. Range is 0 to 1.
+        similarity_boost: Similarity boost for the agent. Range is 0 to 1.
+        turn_timeout: Timeout for the agent to respond in seconds. Defaults to 7 seconds.
+        max_duration_seconds: Maximum duration of a conversation in seconds. Defaults to 600 seconds (10 minutes).
+        record_voice: Whether to record the agent's voice.
+        retention_days: Number of days to retain the agent's data.
+    
+  </Accordion>
+  <Accordion title="add_knowledge_base_to_agent">
+    Add a knowledge base to ElevenLabs workspace. Allowed types are epub, pdf, docx, txt, html.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        agent_id: ID of the agent to add the knowledge base to.
+        knowledge_base_name: Name of the knowledge base.
+        url: URL of the knowledge base.
+        input_file_path: Path to a document the MCP host can read (epub, pdf, docx, txt, html).
+        text: Text to add to the knowledge base.
+    
+  </Accordion>
+  <Accordion title="list_agents">
+    List all available conversational AI agents
+  </Accordion>
+  <Accordion title="get_agent">
+    Get details about a specific conversational AI agent
+  </Accordion>
+  <Accordion title="get_conversation">
+    Gets conversation with transcript. Returns: conversation details and full transcript. Use when: analyzing completed agent conversations.
+
+    Args:
+        conversation_id: The unique identifier of the conversation to retrieve, you can get the ids from the list_conversations tool.
+    
+  </Accordion>
+  <Accordion title="list_conversations">
+    Lists agent conversations. Returns: conversation list with metadata. Use when: asked about conversation history.
+
+    Args:
+        agent_id (str, optional): Filter conversations by specific agent ID
+        cursor (str, optional): Pagination cursor for retrieving next page of results
+        call_start_before_unix (int, optional): Filter conversations that started before this Unix timestamp
+        call_start_after_unix (int, optional): Filter conversations that started after this Unix timestamp
+        page_size (int, optional): Number of conversations to return per page (1-100, defaults to 30)
+        max_length (int, optional): Maximum character length of the response text (defaults to 10000)
+    
+  </Accordion>
+  <Accordion title="speech_to_speech">
+    Transform audio from one voice to another. Input audio must be at a path the MCP host can read. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources..
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        input_file_path: Path to the audio input available to the MCP server
+        voice_name: Target voice name to convert toward
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+    
+  </Accordion>
+  <Accordion title="text_to_voice">
+    Create voice previews from a text prompt. Creates three previews with slight variations. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources..
+
+    If no text is provided, the tool will auto-generate text.
+
+    Each preview is uploaded to object storage; the tool response lists presigned URLs (default 1-day validity). Filenames follow the pattern voice_design_(generated_voice_id)_(timestamp).mp3 (e.g. voice_design_Ya2J5uIa5Pq14DNPsbC1_20250403_164949.mp3).
+
+    Args:
+        voice_description: Natural-language description of the desired voice
+        text (str, optional): Sample text for the preview; if omitted, text is auto-generated
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+    
+  </Accordion>
+  <Accordion title="create_voice_from_preview">
+    Add a generated voice to the voice library. Uses the voice ID from the `text_to_voice` tool.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+    
+  </Accordion>
+  <Accordion title="make_outbound_call">
+    Make an outbound call using an ElevenLabs agent. Automatically detects provider type (Twilio or SIP trunk) and uses the appropriate API.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        agent_id: The ID of the agent that will handle the call
+        agent_phone_number_id: The ID of the phone number to use for the call
+        to_number: The phone number to call (E.164 format: +1xxxxxxxxxx)
+
+    Returns:
+        TextContent containing information about the call
+    
+  </Accordion>
+  <Accordion title="search_voice_library">
+    Search for a voice across the entire ElevenLabs voice library.
+
+    Args:
+        page: Page number to return (0-indexed)
+        page_size: Number of voices to return per page (1-100)
+        search: Search term to filter voices by
+
+    Returns:
+        TextContent containing information about the shared voices
+    
+  </Accordion>
+  <Accordion title="list_phone_numbers">
+    List all phone numbers associated with the ElevenLabs account
+  </Accordion>
+  <Accordion title="play_audio">
+    Play audio from a path the MCP host can read (WAV or MP3). Synthesis tools return presigned object-storage URLs for generated audio, not inline binary.
+  </Accordion>
+  <Accordion title="compose_music">
+    Convert a prompt to music. Binary output is uploaded to S3-compatible object storage; the tool returns a presigned download URL and metadata (default link lifetime and object expiration policy: 1 day). Plain-text artifacts (e.g. transcripts) are still returned as MCP embedded text resources.
+
+    Args:
+        prompt: Prompt to convert to music. Must provide either prompt or composition_plan.
+        output_directory (str, optional): Optional subdirectory segment under the object-storage prefix for binary artifacts (S3 key layout only). For text transcripts, still used in the embedded resource URI path metadata.
+        composition_plan: Composition plan to use for the music. Must provide either prompt or composition_plan.
+        music_length_ms: Length of the generated music in milliseconds. Cannot be used if composition_plan is provided.
+
+    ⚠️ COST WARNING: This tool makes an API call to ElevenLabs which may incur costs. Only use when explicitly requested by the user.
+  </Accordion>
+  <Accordion title="create_composition_plan">
+    Create a composition plan for music generation. Usage of this endpoint does not cost any credits but is subject to rate limiting depending on your tier. Composition plans can be used when generating music with the compose_music tool.
+
+    Args:
+        prompt: Prompt to create a composition plan for
+        music_length_ms: The length of the composition plan to generate in milliseconds. Must be between 10000ms and 300000ms. Optional - if not provided, the model will choose a length based on the prompt.
+        source_composition_plan: An optional composition plan to use as a source for the new composition plan
+    
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **ElevenLabs** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Listentic" href="/server-catalog/listentic" icon="https://d338mlbnszozgc.cloudfront.net/logos/listentic.svg" />
+</CardGroup>

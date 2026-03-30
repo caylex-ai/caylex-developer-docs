@@ -1,0 +1,147 @@
+---
+title: "Acuity Scheduling"
+description: "Automate bookings and connect with AI tools"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/acuityscheduling.jpeg"
+---
+
+The Acuity Scheduling MCP Server connects AI tools like ChatGPT and Claude, enabling automated appointment scheduling, reminders, and calendar management for businesses.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Calendar & Scheduling, Scheduling & Booking |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **12** tools:
+
+<AccordionGroup>
+  <Accordion title="acuity_appointment_cancel">
+    **Write:** Cancel an appointment by `id`.
+
+**When to use:** User clearly requests cancellation.
+
+**Body:** JSON object per Acuity cancel API (may be empty or include reason—follow API docs).
+
+**Safety:** Irreversible for the client; confirm `id` and intent.
+  </Accordion>
+  <Accordion title="acuity_appointment_reschedule">
+    **Write:** Move an appointment to a new time by `id`.
+
+**When to use:** User wants a different slot for an existing booking.
+
+**Body:** New datetime / scheduling fields per Acuity.
+
+**Safety:** Re-check availability if the user suggested a narrow window; wrong slots frustrate users.
+  </Accordion>
+  <Accordion title="acuity_appointment_get_payments">
+    List payment records for one appointment `id`.
+
+**When to use:** Refunds, receipt questions, or “was this paid?”.
+
+**Efficiency:** Single-appointment scope—cheaper than listing all appointments.
+  </Accordion>
+  <Accordion title="acuity_appointment_type_list">
+    List all service / appointment types (names, duration, price, calendars).
+
+**When to use:** Before `acuity_appointment_create`, when explaining offerings, or mapping human labels to `appointmentTypeID`.
+  </Accordion>
+  <Accordion title="acuity_appointment_addon_list">
+    List optional add-ons that can attach to bookings.
+
+**When to use:** Upsell flows or building a correct create payload with add-on IDs.
+  </Accordion>
+  <Accordion title="acuity_availability_list_dates">
+    Which dates have open capacity (for scheduling UIs).
+
+**When to use:** First step in booking: narrow to dates before loading times.
+
+**Workflow:** Then call `acuity_availability_list_times` for a chosen date.
+  </Accordion>
+  <Accordion title="acuity_availability_list_times">
+    Time slots available on a given date.
+
+**When to use:** After `acuity_availability_list_dates`, offer concrete start times to the user.
+
+**Efficiency:** Pass the specific date only—avoid calling for every date without need.
+  </Accordion>
+  <Accordion title="acuity_availability_check">
+    **Read-only POST:** Ask Acuity whether proposed slot(s) are free without creating a row.
+
+**When to use:** Validate a user-suggested time before `acuity_appointment_create`.
+
+**Body:** JSON with the times/fields Acuity expects for this endpoint.
+
+**Safety:** Does not book; still uses API quota like other calls.
+  </Accordion>
+  <Accordion title="acuity_appointment_list">
+    List appointments for the Acuity account tied to the **Authorization: Basic** credentials on this MCP request.
+
+**When to use:** The user wants their bookings, staff wants a schedule slice, or you need IDs before get/update/cancel/reschedule.
+
+**Context:** Scope with `email`, `phone`, `firstName`, `lastName`, `calendarID`, `appointmentTypeID`, `minDate`, `maxDate`, `canceled`. Set `excludeForms=true` unless you need intake forms. `direction` is ASC or DESC (default DESC). `max` caps rows (default 100).
+
+**Privacy:** Without client filters you may see many clients' appointments—prefer email/phone/name filters when acting for one person.
+
+**Efficiency:** Always bound with `max` and dates when possible.
+  </Accordion>
+  <Accordion title="acuity_appointment_create">
+    **Write:** Create one appointment in Acuity.
+
+**When to use:** The user explicitly wants to book after you have a valid slot and type.
+
+**Prerequisites:** Call `acuity_appointment_type_list` for `appointmentTypeID`; use `acuity_availability_list_dates` + `acuity_availability_list_times` (or `acuity_availability_check`) so the slot is valid.
+
+**Body:** JSON matching Acuity `Appointment` (client fields, datetime, type, calendar, etc.).
+
+**Safety:** Confirm details with the user before POST.
+  </Accordion>
+  <Accordion title="acuity_appointment_get">
+    Fetch one appointment by numeric `id`.
+
+**When to use:** Confirm booking details, notes, forms, or labels; verify state before reschedule/cancel/update.
+
+**Prerequisites:** `id` from `acuity_appointment_list` or a prior create.
+  </Accordion>
+  <Accordion title="acuity_appointment_update">
+    **Write:** Update an existing appointment by `id` (HTTP PUT to Acuity).
+
+**When to use:** User asks to change time, client info, notes, or other fields on an existing booking.
+
+**Body:** JSON with `Appointment` fields to apply.
+
+**Safety:** Read with `acuity_appointment_get` first when unsure; follow Acuity semantics for partial vs full updates.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Acuity Scheduling** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+  <Card title="Calendly" href="/server-catalog/calendly" icon="https://d338mlbnszozgc.cloudfront.net/logos/calendly.svg" />
+</CardGroup>

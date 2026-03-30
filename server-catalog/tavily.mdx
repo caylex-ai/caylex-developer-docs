@@ -1,0 +1,108 @@
+---
+title: "Tavily"
+description: "Real-time web search and data extraction for AI"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg"
+---
+
+The Tavily MCP Server brings production-ready, real-time web intelligence to AI agents running inside Caylex projects. It equips agents with the ability to perform live web searches, extract structured content from specific URLs, crawl entire websites, and map site structures — making it ideal for use cases such as live research, competitive analysis, content monitoring, and intelligent data retrieval. Tavily is purpose-built for AI agents rather than general-purpose browsing, meaning its results are optimized for relevance, freshness, and AI consumption. By adding this server to a Caylex project, agents gain a comprehensive suite of web-access tools that span from broad topic searches down to deep, targeted page extraction and crawling.
+
+<Warning>
+**Prerequisites:**
+- A Tavily account with an active API key is required; sign up at app.tavily.com.
+- Sufficient Tavily API credits on your account are needed before invoking search, extract, crawl, or map tools.
+</Warning>
+
+<Note>
+**Important API details:**
+- A valid Tavily API key is required to authenticate all tool calls; the key must be provided as a header when configuring the server in Caylex.
+- Tavily API usage is metered against your Tavily account's credit quota — high-frequency crawling or extraction tasks may consume credits quickly.
+- The tavily_crawl and tavily_map tools operate on entire site structures and may be subject to depth and page-count limits depending on your Tavily plan.
+- tavily_skill provides pre-built agent skill workflows (e.g., research pipelines) that internally compose multiple Tavily operations in a single call.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Search & Research, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **6** tools:
+
+### Search
+
+<AccordionGroup>
+  <Accordion title="tavily_search">
+    Search the web for current information on any topic. Use for news, facts, or data beyond your knowledge cutoff. Returns snippets and source URLs.
+  </Accordion>
+  <Accordion title="tavily_research">
+    Perform comprehensive research on a given topic or question. Use this tool when you need to gather information from multiple sources, including web pages, documents, and other resources, to answer a question or complete a task. Returns a detailed response based on the research findings. Rate limit: 20 requests per minute.
+  </Accordion>
+</AccordionGroup>
+
+### Extraction
+
+<AccordionGroup>
+  <Accordion title="tavily_extract">
+    Extract content from URLs. Returns raw page content in markdown or text format.
+  </Accordion>
+</AccordionGroup>
+
+### Crawl & Map
+
+<AccordionGroup>
+  <Accordion title="tavily_crawl">
+    Crawl a website starting from a URL. Extracts content from pages with configurable depth and breadth.
+  </Accordion>
+  <Accordion title="tavily_map">
+    Map a website's structure. Returns a list of URLs found starting from the base URL.
+  </Accordion>
+</AccordionGroup>
+
+### Agent Skills
+
+<AccordionGroup>
+  <Accordion title="tavily_skill">
+    Search documentation for any library, API, or tool. Returns relevant, structured documentation chunks assembled for your specific query. When working with a specific library, always pass the library name for best results.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Tavily** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Firecrawl" href="/server-catalog/firecrawl" icon="https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg" />
+  <Card title="Perplexity" href="/server-catalog/perplexity" icon="https://d338mlbnszozgc.cloudfront.net/logos/perplexity.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.tavily.com/guides/mcp" href="https://docs.tavily.com/guides/mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/tavily-ai/tavily-mcp" href="https://github.com/tavily-ai/tavily-mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,67 @@
+---
+title: "Granola"
+description: "Access and analyze Granola meeting data"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/granola.svg"
+---
+
+The Granola MCP Server brings your Granola meeting notes, transcripts, and calendar data into Caylex, enabling AI agents to perform powerful semantic search and analysis across your meeting history. Built on LanceDB for fast local vector search, it allows agents to extract structured insights such as pain points, feature requests, decisions, and pricing discussions from meeting content. Speaker attribution is preserved throughout, so agents can distinguish between the meeting host and participants when surfacing key quotes or summaries. AI agents in Caylex can use this server to query meeting data in natural language, identify recurring themes across conversations, and generate targeted summaries or reports from your Granola workspace.
+
+<Warning>
+**Prerequisites:**
+- An active Granola account with meeting notes and transcripts already recorded in the Granola app.
+- An OpenAI API key is required for GPT-4o-mini-powered insight extraction and semantic indexing.
+- The local meeting data must be exported and indexed before semantic search tools can operate effectively.
+</Warning>
+
+<Note>
+**Important API details:**
+- The server uses a reverse-engineered Granola API to extract meeting data, which may be subject to breaking changes if Granola updates its internal API.
+- Semantic search and insight extraction are powered by GPT-4o-mini, meaning AI-driven indexing and search quality depends on OpenAI model availability.
+- Meeting data is indexed locally using LanceDB; the search index must be built and kept in sync before semantic queries will return results.
+- Theme extraction covers specific categories such as pain-points, feature-requests, decisions, and pricing — queries outside these themes may yield less structured results.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `email`, `offline_access`, `openid`, `profile`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Granola Authentication guide](/oauth-guides/granola) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Granola** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Fellow AI" href="/server-catalog/fellow-ai" icon="https://d338mlbnszozgc.cloudfront.net/logos/fellowai.jpeg" />
+  <Card title="Fireflies" href="/server-catalog/fireflies" icon="https://d338mlbnszozgc.cloudfront.net/logos/fireflies.svg" />
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://github.com/mishkinf/granola-mcp" href="https://github.com/mishkinf/granola-mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,168 @@
+---
+title: "Webflow"
+description: "AI-driven design updates and site management"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/webflow.svg"
+---
+
+The Webflow MCP Server connects AI agents to your Webflow projects through Caylex, enabling natural-language-driven management of designs, site content, and CMS data without writing API calls directly. Built on Webflow's Data and Designer APIs, it exposes a comprehensive set of tools that allow agents to create and modify visual elements on the canvas, manage CSS styles and design variables, build reusable components, work with CMS collections, handle assets, manage custom scripts, and retrieve site-wide information. Agents can also interact with pages, comments, enterprise features, and access an AI assistant for Webflow-specific guidance. This server is ideal for Caylex users who want to automate Webflow workflows, audit site content, or programmatically build and maintain design systems through intelligent agents.
+
+<Warning>
+**Prerequisites:**
+- A Webflow account with at least one site you have access to.
+- For Designer API tools (canvas, elements, styles, variables), the Webflow MCP Bridge app must be open in the Webflow Designer during agent interactions.
+- Access to enterprise-level features (e.g., data_enterprise_tool) requires a Webflow Enterprise plan.
+</Warning>
+
+<Note>
+**Important API details:**
+- The server is built on both Webflow's Data API and Designer API — some tools (canvas manipulation, element creation, styles) require the Designer API and may only function when the Webflow MCP Bridge app is open inside the Webflow Designer.
+- OAuth authentication is used to authorize access; users must grant permission to specific Webflow sites or Workspaces during the authorization flow.
+- A beta version of the server is in development that introduces consolidated tools, batch operations for updating multiple items in a single call, and improved performance — standard users may encounter current limitations around batching.
+- Some tools are scoped to enterprise Webflow plans (data_enterprise_tool), and access to certain features may depend on the user's Webflow account tier.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Design Tools, Design & Media |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Webflow Authentication guide](/oauth-guides/webflow) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **19** tools:
+
+### Designer - Elements & Canvas
+
+<AccordionGroup>
+  <Accordion title="element_builder">
+    Designer Tool - Element builder to create element on current active page. only create elements upto max 3 levels deep. divide your elements into smaller elements to create complex structures. recall this tool to create more elements. but max level is upto 3 levels. you can have as many children as you want. but max level is 3 levels.
+  </Accordion>
+  <Accordion title="element_tool">
+    Designer Tool - Element tool to perform actions like get all elements, get selected element, select element on current active page. and more
+  </Accordion>
+  <Accordion title="element_snapshot_tool">
+    Designer Tool - Element snapshot tool to perform actions like get element snapshot. helpful to get element snapshot for debugging and more and visual feedback.
+  </Accordion>
+  <Accordion title="de_page_tool">
+    Designer Tool - Page tool to perform actions like create page, create page folder, get current page, switch page
+  </Accordion>
+  <Accordion title="de_component_tool">
+    Designer tool - Component tool to perform actions like create component instances, get all components and more.
+  </Accordion>
+</AccordionGroup>
+
+### Designer - Styles & Variables
+
+<AccordionGroup>
+  <Accordion title="style_tool">
+    Designer Tool - Style tool to perform actions like create style, get all styles, update styles
+  </Accordion>
+  <Accordion title="variable_tool">
+    Designer Tool - Variable tool to perform actions like create variable, get all variables, update variable
+  </Accordion>
+  <Accordion title="de_learn_more_about_styles">
+    Designer tool - Learn more about styles supported by Webflow Designer.Please do not use any other styles which is not supported by Webflow Designer.Please use the long-form alias of a CSS property when managing styles. For example, the property row-gap has a long-form alias of grid-row-gap, margin has long-form alias of margin-top, margin-right, margin-bottom, margin-left, etc.
+  </Accordion>
+</AccordionGroup>
+
+### Data - Sites & Pages
+
+<AccordionGroup>
+  <Accordion title="data_sites_tool">
+    Data tool - Sites tool to perform actions like list sites, get site details, and publish sites
+  </Accordion>
+  <Accordion title="data_pages_tool">
+    Data tool - Pages tool to perform actions like list pages, get page metadata, update page settings, get page content, and update static content
+  </Accordion>
+</AccordionGroup>
+
+### Data - CMS & Content
+
+<AccordionGroup>
+  <Accordion title="data_cms_tool">
+    Data tool - CMS tool to perform actions like get collection list, get collection details, create collection, create collection fields (static/option/reference), update collection field, list collection items, create collection items, update collection items, publish collection items, and delete collection items
+  </Accordion>
+  <Accordion title="data_comments_tool">
+    Data tool - A comment in Webflow is user feedback attached to a specific element or page inside the Designer, stored as a top-level thread with optional replies. Each comment includes author info, timestamps, content, resolved state, and design-context metadata like page location and breakpoint. Use this tool to inspect feedback discussions across the site and understand where and why they were left.
+  </Accordion>
+</AccordionGroup>
+
+### Data - Components & Scripts
+
+<AccordionGroup>
+  <Accordion title="data_components_tool">
+    Data tool - Components tool to perform actions like list components, get component content, update component content, get component properties, and update component properties
+  </Accordion>
+  <Accordion title="data_scripts_tool">
+    Data tool - Scripts tool to perform actions like list registered scripts, list applied scripts, add inline site script, and delete all site scripts
+  </Accordion>
+</AccordionGroup>
+
+### Data - Assets
+
+<AccordionGroup>
+  <Accordion title="asset_tool">
+    Designer Tool - Asset tool to perform actions like create folder, get all assets and folders, update assets and folders
+  </Accordion>
+  <Accordion title="get_image_preview">
+    Designer Tool - Get image preview from url. this is helpful to get image preview from url. Only supports JPG, PNG, GIF, WEBP, WEBP and AVIF formats.
+  </Accordion>
+</AccordionGroup>
+
+### Data - Enterprise
+
+<AccordionGroup>
+  <Accordion title="data_enterprise_tool">
+    Data tool - Enterprise tool to perform actions like manage 301 redirects, manage robots.txt and more. This tool only works if User's workspace plan is Enterprise or higher, else tool will return an error.
+  </Accordion>
+</AccordionGroup>
+
+### Guidance & AI
+
+<AccordionGroup>
+  <Accordion title="webflow_guide_tool">
+    Provides essential guidelines and best practices for effectively using the Webflow tools. Call this tool to understand recommended workflows and important considerations before performing actions. ALWAYS CALL THIS TOOL FIRST BEFORE CALLING ANY OTHER TOOLS.  ALWAYS CALL THIS TOOL FIRST BEFORE CALLING ANY OTHER TOOLS. 
+  </Accordion>
+  <Accordion title="ask_webflow_ai">
+    Ask Webflow AI about anything related to Webflow API.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Webflow** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Sheets" href="/server-catalog/google-sheets" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-sheets.svg" />
+  <Card title="Shopify" href="/server-catalog/shopify" icon="https://d338mlbnszozgc.cloudfront.net/logos/shopify.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://developers.webflow.com/mcp" href="https://developers.webflow.com/mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://developers.webflow.com/mcp/reference/getting-started" href="https://developers.webflow.com/mcp/reference/getting-started" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/webflow/mcp-server" href="https://github.com/webflow/mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

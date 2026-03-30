@@ -1,0 +1,201 @@
+---
+title: "{{ server.name }}"
+description: "{{ server.server_subtitle or '' }}"
+{% if server.logo_url %}icon: "{{ server.logo_url }}"
+{% endif %}---
+{% if health_status %}
+
+<div style={{ '{{' }} display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' {{ '}}' }}>
+{% if health_status == 'UP' %}
+  <span style={{ '{{' }} display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e' {{ '}}' }} />
+  <span style={{ '{{' }} fontSize: '14px', color: '#6b7280' {{ '}}' }}>Operational</span>
+{% elif health_status == 'DOWN' %}
+  <span style={{ '{{' }} display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' {{ '}}' }} />
+  <span style={{ '{{' }} fontSize: '14px', color: '#6b7280' {{ '}}' }}>Unavailable</span>
+{% elif health_status == 'CREATING' %}
+  <span style={{ '{{' }} display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#f59e0b' {{ '}}' }} />
+  <span style={{ '{{' }} fontSize: '14px', color: '#6b7280' {{ '}}' }}>Setting up</span>
+{% else %}
+  <span style={{ '{{' }} display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#9ca3af' {{ '}}' }} />
+  <span style={{ '{{' }} fontSize: '14px', color: '#6b7280' {{ '}}' }}>Status unknown</span>
+{% endif %}
+</div>
+{% endif %}
+
+{{ enrichment.overview or server.description or '' }}
+{% if enrichment.prerequisites %}
+
+<Warning>
+**Prerequisites:**
+{% for prereq in enrichment.prerequisites %}
+- {{ prereq }}
+{% endfor %}
+</Warning>
+{% endif %}
+{% if enrichment.api_notes or server.server_type in ['CAYLEX', 'FOUNDRY'] %}
+
+<Note>
+**Important API details:**
+{% if server.server_type in ['CAYLEX', 'FOUNDRY'] %}
+- This server is hosted on Caylex Cloud — no external account or API key is required.
+{% endif %}
+{% for note in enrichment.api_notes or [] %}
+- {{ note }}
+{% endfor %}
+</Note>
+{% endif %}
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | {{ 'SSE' if server.transport == 'SSE' else 'Streamable HTTP' }} |
+| **Hosting** | {{ 'Caylex Cloud' if server.server_type in ['CAYLEX', 'FOUNDRY'] else 'Remote (externally hosted)' }} |
+{% if categories %}| **Categories** | {{ categories | join(', ') }} |
+{% endif %}
+
+## Authentication
+{% if auth_methods %}
+
+This server supports the following authentication method{{ 's' if auth_methods | length > 1 else '' }}:
+{% for method in auth_methods %}
+{% if method == 'OAUTH' %}
+
+### OAuth
+{% if oauth_scopes %}
+**Scopes:** `{{ oauth_scopes | join('`, `') }}`
+{% endif %}
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [{{ server.name }} Authentication guide](/oauth-guides/{{ slug }}) for step-by-step credential configuration.
+{% elif method == 'HEADER' %}
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+{% if auth_details.headers %}
+
+| Header | Value Prefix | Description |
+|--------|-------------|-------------|
+{% for h in auth_details.headers %}
+| `{{ h.name }}` | {{ '`' + h.prefix + '`' if h.prefix else '—' }} | Provided during server onboarding |
+{% endfor %}
+{% endif %}
+{% elif method == 'PATH' %}
+
+### Path Parameter Authentication
+
+This server requires path parameters to be set in the server URL. These are typically identifiers like account IDs or organization slugs.
+{% if auth_details.path_params %}
+
+| Parameter | Description |
+|-----------|-------------|
+{% for p in auth_details.path_params %}
+| `{{ p }}` | Must be set in the server URL during onboarding |
+{% endfor %}
+{% endif %}
+{% elif method == 'QUERY' %}
+
+### Query Parameter Authentication
+
+This server requires query parameters to be appended to the server URL. These are typically API keys or tokens.
+{% if auth_details.query_params %}
+
+| Parameter | Description |
+|-----------|-------------|
+{% for q in auth_details.query_params %}
+| `{{ q }}` | Must be provided as a query parameter in the server URL |
+{% endfor %}
+{% endif %}
+{% elif method == 'NO_AUTH' or method == 'NONE' %}
+
+### No Authentication
+
+This server does not require authentication — it is ready to use immediately after adding it to your project.
+{% endif %}
+{% endfor %}
+{% else %}
+
+<Info>
+  This server does not require authentication.
+</Info>
+{% endif %}
+{% if enrichment.server_configuration %}
+
+## Server Configuration
+
+The following parameters can be set in the server URL when adding this server to your Caylex project:
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+{% for param in enrichment.server_configuration %}
+| `{{ param.param }}` | {{ param.type }} | {{ param.description }} | `{{ param.example }}` |
+{% endfor %}
+{% endif %}
+{% if tools %}
+
+## Available Tools
+
+This server provides **{{ tools | length }}** tool{{ 's' if tools | length > 1 else '' }}:
+{% if enrichment.tool_categories %}
+{% set tools_by_name = {} %}
+{% for tool in tools %}{% if tools_by_name.update({tool.name: tool}) %}{% endif %}{% endfor %}
+{% for category, cat_tool_names in enrichment.tool_categories.items() %}
+
+### {{ category }}
+
+<AccordionGroup>
+{% for tname in cat_tool_names %}
+{% set tool = tools_by_name.get(tname) %}
+{% if tool %}
+  <Accordion title="{{ tool.name }}">
+    {{ tool.description or 'No description available.' }}
+  </Accordion>
+{% endif %}
+{% endfor %}
+</AccordionGroup>
+{% endfor %}
+{% else %}
+
+<AccordionGroup>
+{% for tool in tools %}
+  <Accordion title="{{ tool.name }}">
+    {{ tool.description or 'No description available.' }}
+  </Accordion>
+{% endfor %}
+</AccordionGroup>
+{% endif %}
+{% endif %}
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **{{ server.name }}** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://{{ app_domain }}/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+{% if related_servers %}
+
+## Related Servers
+
+<CardGroup cols={2}>
+{% for rs in related_servers %}
+  <Card title="{{ rs.name }}" href="/server-catalog/{{ rs.slug }}" icon={{ '"' + rs.logo_url + '"' if rs.logo_url else '"server"' }} />
+{% endfor %}
+</CardGroup>
+{% endif %}
+{% if doc_urls %}
+
+## References
+
+<CardGroup cols={1}>
+{% for url in doc_urls %}
+  <Card title="{{ url }}" href="{{ url }}" icon="arrow-up-right-from-square" />
+{% endfor %}
+</CardGroup>
+{% endif %}

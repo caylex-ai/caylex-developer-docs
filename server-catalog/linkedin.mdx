@@ -1,0 +1,113 @@
+---
+title: "LinkedIn"
+description: "AI-driven insights from LinkedIn's professional..."
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg"
+---
+
+The LinkedIn MCP Server bridges AI assistants with LinkedIn’s API, enabling context-aware interactions, profile scraping, job searches, and lead generation for developers and business professionals.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Social Media, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `profile`, `email`, `w_member_social`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [LinkedIn Authentication guide](/oauth-guides/linkedin) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **4** tools:
+
+<AccordionGroup>
+  <Accordion title="linkedin_format_rich_post">
+    Format post content with bold, italic, lists, mentions, and hashtags. Does not publish to LinkedIn.
+
+When to use: When the user wants formatted text (bold, bullets, numbered list, hashtags, @mentions) for a LinkedIn post. Call this first to get formatted_text, then pass that text to linkedin_create_post to publish. Use when the user says "format this for LinkedIn" or "add bullet points and hashtags". Does not require a LinkedIn API call or auth for formatting alone.
+
+Parameters:
+    text: Required. The main content. Exact substrings in bold_text/italic_text will be wrapped with ** and *.
+    bold_text: Optional. List of exact phrases from text to make bold (LinkedIn: **phrase**).
+    italic_text: Optional. List of exact phrases from text to make italic (LinkedIn: *phrase*).
+    bullet_points: Optional. List of strings; each becomes a bullet line (• item).
+    numbered_list: Optional. List of strings; each becomes "1. item", "2. item", etc.
+    hashtags: Optional. List of tags without # (e.g. ["AI", "Productivity"]); appended as #AI #Productivity.
+    mentions: Optional. List of usernames/names; appended as @mention. Format depends on LinkedIn (often display name or URN).
+
+Returns: JSON with original_text, formatted_text (use this in linkedin_create_post), formatting_applied counts, character_count, and a note to use linkedin_create_post to publish.
+
+Side effects: None. No API call. Use output formatted_text with linkedin_create_post to publish.
+  </Accordion>
+  <Accordion title="linkedin_create_url_share">
+    Publish a LinkedIn post that shares a link with title and description preview (link unfurl).
+
+When to use: When the user wants to "share a link on LinkedIn", "post an article", "share a URL with a preview", or "post a link with description". Use this instead of linkedin_create_post when the primary content is a URL and the user expects a rich preview (image/title/description). For text-only posts or posts that only mention a URL in the body, linkedin_create_post is sufficient.
+
+Parameters:
+    url: Required. The URL to share (e.g. blog post, article, video). Must be valid and reachable; LinkedIn may fetch metadata.
+    text: Required. The commentary or caption that appears above the link preview.
+    title: Optional. Title shown in the link preview. If omitted, "Shared Content" is used.
+    description: Optional. Short description for the preview. If omitted, "Shared link" is used.
+    visibility: One of "PUBLIC", "CONNECTIONS", or "PRIVATE". Default "PUBLIC".
+
+Returns: JSON with id, created, lifecycleState, shared_url, url_title, url_description. On failure returns JSON with error, url, text, note (e.g. w_member_social and valid URL), and exception.
+
+Requires: LinkedIn OAuth with w_member_social scope. Token must be sent in the request.
+  </Accordion>
+  <Accordion title="linkedin_create_post">
+    Publish a text post to the authenticated user's LinkedIn feed.
+
+When to use: When the user wants to "post on LinkedIn", "share an update", "publish a post", or "create a LinkedIn post". Use for plain text or short article-style posts (title + body). For sharing a link with preview, use linkedin_create_url_share instead. For formatting text with bold/italic/lists before posting, use linkedin_format_rich_post first and then pass the formatted_text here.
+
+Parameters:
+    text: Required. The main body of the post. Can include line breaks and simple formatting.
+    title: Optional. If provided, appears above the text (article-style). Omit for a simple text-only post.
+    hashtags: Optional. List of hashtag strings without the # (e.g. ["Python", "Tech"]). They are formatted and appended to the post.
+    visibility: One of "PUBLIC", "CONNECTIONS", or "PRIVATE". Default "PUBLIC". Who can see the post.
+
+Returns: JSON with id, created, lifecycleState; optionally title, hashtags_used. On failure returns JSON with error, note (e.g. w_member_social scope required), and exception.
+
+Requires: LinkedIn OAuth with w_member_social scope. Token must be sent in the request.
+  </Accordion>
+  <Accordion title="linkedin_get_profile_info">
+    Get LinkedIn profile information for the authenticated user.
+
+When to use: When the user asks "who am I on LinkedIn?", "what's my profile?", "show my LinkedIn info", or when you need the current user's name, email, or locale before creating posts or shares. Do not use to look up other people's profiles (passing person_id is not supported with standard permissions).
+
+Parameters:
+    person_id: Optional. Leave empty or omit to get the current authenticated user's profile. Providing another user's ID requires elevated API permissions and will return an error.
+
+Returns: JSON with id, firstName, lastName, name, email, locale. On error returns a string starting with "Error:".
+
+Requires: Valid LinkedIn OAuth token in the request (Bearer token). No API call is made if person_id is set (returns error message).
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **LinkedIn** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="LinkedIn Research" href="/server-catalog/linkedin-research" icon="https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg" />
+  <Card title="Hunter" href="/server-catalog/hunter" icon="https://d338mlbnszozgc.cloudfront.net/logos/hunter.svg" />
+</CardGroup>
