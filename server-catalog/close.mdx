@@ -1,0 +1,437 @@
+---
+title: "Close"
+description: "Automate workflows with Close.iO and Minecraft PE"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/close.svg"
+---
+
+The Close MCP Server connects AI agents to Close data, enabling seamless workflow automation, real-time content management, and integration with platforms like Cursor and Claude for enhanced decision-making and operational efficiency.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | CRM, Business Operations |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `mcp.read,`, `mcp.write`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Close Authentication guide](/oauth-guides/close) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **63** tools:
+
+<AccordionGroup>
+  <Accordion title="fetch_sms_template">
+    Fetch an SMS template by ID.
+
+Returns the complete SMS template with all its details.
+  </Accordion>
+  <Accordion title="fetch_pipeline_and_opportunity_statuses">
+    Fetch an opportunity pipeline, including its opportunity statuses, by ID.
+  </Accordion>
+  <Accordion title="create_pipeline">
+    Create a new opportunity pipeline.
+
+Use the create_opportunity_status tool to add statuses to the pipeline.
+  </Accordion>
+  <Accordion title="update_pipeline">
+    Update an existing opportunity pipeline.
+
+Only fields that are provided will be updated.
+  </Accordion>
+  <Accordion title="delete_pipeline">
+    Permanently delete an opportunity pipeline.
+
+A pipeline can only be deleted if it has no statuses. The last pipeline
+cannot be deleted.
+  </Accordion>
+  <Accordion title="fetch_opportunity_status">
+    Fetch an opportunity status by ID.
+  </Accordion>
+  <Accordion title="create_opportunity_status_tool">
+    Create a new opportunity status.
+  </Accordion>
+  <Accordion title="update_opportunity_status_tool">
+    Update the label of an existing opportunity status.
+  </Accordion>
+  <Accordion title="org_info">
+    Return general information about the organization and the user.
+  </Accordion>
+  <Accordion title="org_users">
+    Return active users (memberships) which are part of the current org.
+  </Accordion>
+  <Accordion title="find_lead_statuses">
+    List or find lead statuses for the organization
+  </Accordion>
+  <Accordion title="fetch_lead_status">
+    Fetch a lead status by ID.
+  </Accordion>
+  <Accordion title="create_lead_status">
+    Create a new lead status.
+  </Accordion>
+  <Accordion title="update_lead_status">
+    Update the label of an existing lead status.
+  </Accordion>
+  <Accordion title="delete_lead_status">
+    Permanently delete a lead status.
+
+Cannot delete if it's the last lead status in the organization or there are
+leads currently using this status.
+  </Accordion>
+  <Accordion title="find_email_templates">
+    List or find email templates
+  </Accordion>
+  <Accordion title="fetch_email_template">
+    Fetch an email template by ID.
+
+Returns the complete email template with all its details.
+  </Accordion>
+  <Accordion title="update_email_template">
+    Update an existing email template.
+
+Only fields that are provided and not None will be updated.
+
+Handling of attachments and unsubscribe links via this tool is currently unsupported.
+
+Email template body should be HTML formatted.
+
+Use template tags as placeholders, for example:
+`{{ organization.name }}` to refer to the sender's organization name.
+`{{ user.first_name }}` `{{ user.last_name }}` `{{ user.email }}` `{{ user.phone }}` to refer to the user sending the email.
+`{{ lead.display_name }}` to refer to the lead name (recipient's name/company).
+`{{ contact.first_name }}` `{{ contact.last_name }}` to refer to the recipient.
+  </Accordion>
+  <Accordion title="create_email_template">
+    Create a new email template.
+
+Handling of attachments and unsubscribe links via this tool is currently unsupported.
+
+Email template body should be HTML formatted.
+
+Use template tags as placeholders, for example:
+`{{ organization.name }}` to refer to the sender's organization name.
+`{{ user.first_name }}` `{{ user.last_name }}` `{{ user.email }}` `{{ user.phone }}` to refer to the user sending the email.
+`{{ lead.display_name }}` to refer to the lead name (recipient's name/company).
+`{{ contact.first_name }}` `{{ contact.last_name }}` to refer to the recipient.
+  </Accordion>
+  <Accordion title="delete_email_template">
+    Permanently delete an email template.
+
+If the template is used in any workflows (sequences), it cannot be deleted.
+  </Accordion>
+  <Accordion title="find_sms_templates">
+    List or find SMS templates
+  </Accordion>
+  <Accordion title="update_sms_template">
+    Update an existing SMS template.
+
+Only fields that are provided will be updated. Fields that are not provided will remain unchanged.
+
+Handling of attachments via this tool is currently unsupported.
+
+Use template tags as placeholders, for example:
+`{{ organization.name }}` to refer to the sender's organization name.
+`{{ user.first_name }}` `{{ user.last_name }}` `{{ user.email }}` `{{ user.phone }}` to refer to the user sending the message.
+`{{ lead.display_name }}` to refer to the lead name (recipient's name/company).
+`{{ contact.first_name }}` `{{ contact.last_name }}` to refer to the recipient.
+  </Accordion>
+  <Accordion title="create_sms_template">
+    Create a new SMS template.
+
+Handling of attachments via this tool is currently unsupported.
+
+Use template tags as placeholders, for example:
+`{{ organization.name }}` to refer to the sender's organization name.
+`{{ user.first_name }}` `{{ user.last_name }}` `{{ user.email }}` `{{ user.phone }}` to refer to the user sending the message.
+`{{ lead.display_name }}` to refer to the lead name (recipient's name/company).
+`{{ contact.first_name }}` `{{ contact.last_name }}` to refer to the recipient.
+  </Accordion>
+  <Accordion title="delete_sms_template">
+    Permanently delete an SMS template.
+
+If the template is used in any workflows (sequences), it cannot be deleted.
+  </Accordion>
+  <Accordion title="create_lead">
+    Create a new lead (company).
+
+After creating a lead, you should usually add an address or contact
+(including phone or email) to the lead.
+  </Accordion>
+  <Accordion title="update_lead">
+    Update an existing lead (company).
+
+Only fields that are provided and not None will be updated.
+  </Accordion>
+  <Accordion title="fetch_lead">
+    Fetch an existing lead (company) by ID.
+  </Accordion>
+  <Accordion title="delete_lead">
+    Permanently delete an existing lead (company) by ID including all of its
+addresses, contacts, opportunities, tasks, and activities.
+
+ONLY call this if the user specifically instructed you to delete the lead,
+and you confirmed what the deletion will entail and that it cannot be
+reversed.
+  </Accordion>
+  <Accordion title="create_address">
+    Add a new address to an existing lead (company).
+  </Accordion>
+  <Accordion title="delete_address">
+    Delete an address from an existing lead (company) if there is an exact
+match.
+  </Accordion>
+  <Accordion title="find_lead_smart_views">
+    List lead smart views (saved searches).
+  </Accordion>
+  <Accordion title="fetch_lead_smart_view">
+    Fetch a lead smart view (saved search) by ID.
+  </Accordion>
+  <Accordion title="update_lead_smart_view">
+    Update a lead smart view (saved search).
+
+Only fields that are provided and not None will be updated.
+  </Accordion>
+  <Accordion title="delete_lead_smart_view">
+    Permanently delete a lead smart view (saved search).
+  </Accordion>
+  <Accordion title="create_contact">
+    Create a new contact for a lead.
+
+A contact represents a person associated with a lead (company).
+  </Accordion>
+  <Accordion title="fetch_contact">
+    Fetch an existing contact by ID.
+
+Returns the contact's details including name, title, email addresses, phone numbers, and URLs.
+  </Accordion>
+  <Accordion title="update_contact">
+    Update an existing contact.
+
+You can update a contact's name, title, email addresses, phone numbers, and URLs.
+Only fields that are provided will be updated.
+  </Accordion>
+  <Accordion title="delete_contact">
+    Permanently delete an existing contact.
+
+This will remove the contact from its lead including its email addresses,
+phone numbers, and URLs will be removed. Activitise on the lead are not
+affected.
+
+This action cannot be undone.
+
+ONLY call this if the user specifically instructed you to delete the contact.
+  </Accordion>
+  <Accordion title="lead_search">
+    Perform a simple lead search and return the initial set of results.
+
+Use this to retrieve all leads, most recent leads, search leads by
+keyword, or filter by lead status and smart view. For more complex
+searches use the `search` tool instead.
+
+Leads will be returned by last updated first.
+  </Accordion>
+  <Accordion title="paginate_search">
+    Paginate an existing search (from search or lead_search) to retrieve more
+results.
+
+Use the search_id from a previous search and a pagination cursor.
+  </Accordion>
+  <Accordion title="activity_search">
+    Search for activities. Results are returned ordered by date descending.
+
+Examples:
+<ul>
+<li>To list activities on a lead, use the lead_ids filter.</li>
+<li>To list conversations, filter for calls and meetings.</li>
+</ul>
+  </Accordion>
+  <Accordion title="search">
+    Perform a natural language search for leads or contacts.
+
+If a more specific search tool (like lead_search or activity_search)
+satisfies the request, use that tool instead.
+
+You can reference related objects like activities (such as calls, emails,
+meetings, notes, custom activities, etc.), opportunities, tasks as long as
+they are part of a lead query.
+
+Example queries:
+
+<ul>
+<li>leads not contacted in the past week</li>
+<li>leads assigned to me with uncompleted tasks</li>
+<li>leads with an active opportunity over $500</li>
+<li>contacts with CTO title</li>
+</ul>
+
+Each returned result will contain a title label, preview text, object ID,
+and URL.
+
+The initial set of results, total count of all results, and a URL to open
+the results in Close is returned. To retrieve more results, use the
+returned cursor and call the paginate_search tool using the cursor and
+search ID returned in this response.
+  </Accordion>
+  <Accordion title="fetch">
+    Retrieve the contents of an arbitrary object by its ID.
+
+Currently supported are leads and contacts.
+  </Accordion>
+  <Accordion title="aggregation">
+    Perform an aggregation to answer questions like:
+
+<ul>
+<li>How many emails were sent this week?</li>
+<li>Calls by user this week (Who made the most?)</li>
+</ul>
+
+You MUST first fetch the list of available leads of fields using the
+`get_fields` tool.
+  </Accordion>
+  <Accordion title="get_fields">
+    Use this field ONLY to get a list of fields for the aggregation tool.
+  </Accordion>
+  <Accordion title="close_product_knowledge_search">
+    Search Close product documentation and knowledge base for relevant information.
+
+Use this tool when users ask about:
+<ul>
+<li>How to use specific Close features</li>
+<li>Close API documentation and integration</li>
+<li>Workflow automation and best practices</li>
+<li>Product capabilities and limitations</li>
+<li>Setup and configuration guidance</li>
+</ul>
+
+Example queries:
+<ul>
+<li>"How do I set up automated lead assignment?"</li>
+<li>"What are Close's API rate limits?"</li>
+<li>"How to create custom fields in Close?"</li>
+<li>"Best practices for email templates in Close"</li>
+</ul>
+  </Accordion>
+  <Accordion title="find_workflows">
+    List or find workflows
+  </Accordion>
+  <Accordion title="create_workflow">
+    Create a new workflow (a.k.a. sequence) with Draft status.
+  </Accordion>
+  <Accordion title="find_pipelines_and_opportunity_statuses">
+    List all opportunity pipelines and their opportunity statuses in the organization.
+  </Accordion>
+  <Accordion title="delete_opportunity_status_tool">
+    Permanently delete an opportunity status.
+
+Cannot delete if it's the last opportunity status in the organization or there are
+opportunities currently using this status.
+  </Accordion>
+  <Accordion title="find_opportunities">
+    Find opportunities based on various filters.
+
+You can filter by lead, user, status, dates, and more.
+  </Accordion>
+  <Accordion title="fetch_opportunity">
+    Fetch a specific opportunity by ID.
+
+Returns the complete opportunity with all its details.
+  </Accordion>
+  <Accordion title="create_opportunity">
+    Create a new opportunity.
+
+Requires a lead ID and status ID. Other fields are optional.
+The value should be specified in cents (e.g., $100.00 = 10000).
+  </Accordion>
+  <Accordion title="update_opportunity">
+    Update an existing opportunity.
+
+Only fields that are provided will be updated.
+The value should be specified in cents (e.g., $100.00 = 10000).
+  </Accordion>
+  <Accordion title="delete_opportunity">
+    Permanently delete an opportunity.
+
+This action cannot be undone. All data associated with the opportunity will be removed.
+  </Accordion>
+  <Accordion title="find_scheduling_links">
+    List available scheduling links for the user and org.
+
+User-owned personal links come with a URL. Shared links come with a special
+template tag. Each can be inserted into generated templates.
+  </Accordion>
+  <Accordion title="create_task">
+    Create a new task for a lead.
+
+A task represents a to-do item that can be assigned to a user
+and optionally associated with a contact.
+  </Accordion>
+  <Accordion title="find_custom_activities">
+    List all active (non-archived) Custom Activity Types in the organization.
+
+Call this before creating a workflow with a "custom-activity-event" trigger
+so you can look up the correct Custom Activity Type ID.
+  </Accordion>
+  <Accordion title="find_forms">
+    List all web forms in the organization.
+
+Call this before creating a workflow with a "form-submission-event" trigger
+so you can look up the correct Form ID.
+  </Accordion>
+  <Accordion title="list_lead_custom_fields">
+    List all lead custom fields defined for the organization.
+
+Returns each field's ID, name, description, type, allowed choices
+(for choice fields), whether multiple values are accepted, and whether
+it is a shared field. Useful for deciding which custom field to read
+or write when working with leads.
+  </Accordion>
+  <Accordion title="find_call_outcomes">
+    List all outcomes applicable to calls available in the organization.
+  </Accordion>
+  <Accordion title="find_meeting_outcomes">
+    List all outcomes applicable to meetings available in the organization.
+  </Accordion>
+  <Accordion title="find_lead_custom_fields">
+    List all lead custom fields defined for the organization.
+
+Returns each field's ID, name, description, type, allowed choices
+(for choice fields), whether multiple values are accepted, and whether
+it is a shared field. Useful for deciding which custom field to read
+or write when working with leads.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Close** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Salesloft" href="/server-catalog/salesloft" icon="https://d338mlbnszozgc.cloudfront.net/logos/salesloft.jpeg" />
+  <Card title="Outreach" href="/server-catalog/outreach" icon="https://d338mlbnszozgc.cloudfront.net/logos/outreach.svg" />
+  <Card title="LinkedIn Research" href="/server-catalog/linkedin-research" icon="https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://help.close.com/v1/docs/en/mcp-server" href="https://help.close.com/v1/docs/en/mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

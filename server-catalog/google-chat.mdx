@@ -1,0 +1,88 @@
+---
+title: "Google Chat"
+description: "Manage Google Chat spaces and messages easily"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-chat.svg"
+---
+
+The Google Chat MCP Server integrates with the Google Chat API, providing capabilities to manage spaces, messages, and members, enabling AI agents to facilitate conversations, automate tasks, and enhance team collaboration.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Communication, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/chat.messages`, `https://www.googleapis.com/auth/chat.messages.readonly`, `https://www.googleapis.com/auth/chat.spaces`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Chat Authentication guide](/oauth-guides/google-chat) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **5** tools:
+
+<AccordionGroup>
+  <Accordion title="chat_get_current_user">
+    Returns the authenticated user's account information for use with Chat tools. Use the returned email as user_google_email when calling chat_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="get_messages">
+    Retrieves messages from a Google Chat space.
+
+Use chat_get_current_user to get the user_google_email or account information.
+
+Returns:
+    str: Formatted messages from the specified space.
+  </Accordion>
+  <Accordion title="chat_send_message">
+    Sends a message to a Google Chat space.
+
+Use chat_get_current_user to get the user_google_email or account information.
+
+Returns:
+    str: Confirmation message with sent message details.
+  </Accordion>
+  <Accordion title="chat_list_spaces">
+    Lists Google Chat spaces (rooms and direct messages) accessible to the user.
+
+Use chat_get_current_user to get the user_google_email or account information.
+
+Returns:
+    str: A formatted list of Google Chat spaces accessible to the user.
+  </Accordion>
+  <Accordion title="chat_search_messages">
+    Searches for messages in Google Chat spaces by text content.
+
+Use chat_get_current_user to get the user_google_email or account information.
+
+Returns:
+    str: A formatted list of messages matching the search query.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Chat** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+</CardGroup>

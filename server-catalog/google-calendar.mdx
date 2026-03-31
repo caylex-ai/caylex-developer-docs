@@ -1,0 +1,206 @@
+---
+title: "Google Calendar"
+description: "Seamless AI integration for event management"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg"
+---
+
+The Google Calendar MCP Server integrates seamlessly with AI agents, providing comprehensive event management capabilities, enabling efficient scheduling, daily planning, and meeting coordination.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Calendar & Scheduling, Scheduling & Booking, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/calendar`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Calendar Authentication guide](/oauth-guides/google-calendar) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **9** tools:
+
+<AccordionGroup>
+  <Accordion title="calendar_list_calendars">
+    Retrieves a list of calendars accessible to the authenticated user.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: A formatted list of the user's calendars (summary, ID, primary status).
+  </Accordion>
+  <Accordion title="calendar_modify_event">
+    Modifies an existing event.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    event_id (str): The ID of the event to modify.
+    calendar_id (str): Calendar ID (default: 'primary').
+    summary (Optional[str]): New event title.
+    start_time (Optional[str]): New start time (RFC3339, e.g., "2023-10-27T10:00:00-07:00" or "2023-10-27" for all-day).
+    end_time (Optional[str]): New end time (RFC3339, e.g., "2023-10-27T11:00:00-07:00" or "2023-10-28" for all-day).
+    description (Optional[str]): New event description.
+    location (Optional[str]): New event location.
+    attendees (Optional[Union[List[str], List[Dict[str, Any]]]]): Attendees as email strings or objects with metadata. Supports: ["email@example.com"] or [\{"email": "email@example.com", "responseStatus": "accepted", "organizer": true, "optional": true\}]. When using objects, existing metadata (responseStatus, organizer, optional) is preserved. New attendees default to responseStatus="needsAction".
+    timezone (Optional[str]): New timezone (e.g., "America/New_York").
+    add_google_meet (Optional[bool]): Whether to add or remove Google Meet video conference. If True, adds Google Meet; if False, removes it; if None, leaves unchanged.
+    reminders (Optional[Union[str, List[Dict[str, Any]]]]): JSON string or list of reminder objects to replace existing reminders. Each should have 'method' ("popup" or "email") and 'minutes' (0-40320). Max 5 reminders. Example: '[\{"method": "popup", "minutes": 15\}]' or [\{"method": "popup", "minutes": 15\}]
+    use_default_reminders (Optional[bool]): Whether to use calendar's default reminders. If specified, overrides current reminder settings.
+    transparency (Optional[str]): Event transparency for busy/free status. "opaque" shows as Busy, "transparent" shows as Available/Free. If None, preserves existing transparency setting.
+    visibility (Optional[str]): Event visibility. "default" uses calendar default, "public" is visible to all, "private" is visible only to attendees, "confidential" is same as private (legacy). If None, preserves existing visibility setting.
+    color_id (Optional[str]): Event color ID (1-11). If None, preserves existing color.
+    guests_can_modify (Optional[bool]): Whether attendees other than the organizer can modify the event. If None, preserves existing setting.
+    guests_can_invite_others (Optional[bool]): Whether attendees other than the organizer can invite others to the event. If None, preserves existing setting.
+    guests_can_see_other_guests (Optional[bool]): Whether attendees other than the organizer can see who the event's attendees are. If None, preserves existing setting.
+
+Returns:
+    str: Confirmation message of the successful event modification with event link.
+  </Accordion>
+  <Accordion title="calendar_create_event">
+    Creates a new event.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    summary (str): Event title.
+    start_time (str): Start time (RFC3339, e.g., "2023-10-27T10:00:00-07:00" or "2023-10-27" for all-day).
+    end_time (str): End time (RFC3339, e.g., "2023-10-27T11:00:00-07:00" or "2023-10-28" for all-day).
+    calendar_id (str): Calendar ID (default: 'primary').
+    description (Optional[str]): Event description.
+    location (Optional[str]): Event location.
+    attendees (Optional[List[str]]): Attendee email addresses.
+    timezone (Optional[str]): Timezone (e.g., "America/New_York").
+    attachments (Optional[List[str]]): List of Google Drive file URLs or IDs to attach to the event.
+    add_google_meet (bool): Whether to add a Google Meet video conference to the event. Defaults to False.
+    reminders (Optional[Union[str, List[Dict[str, Any]]]]): JSON string or list of reminder objects. Each should have 'method' ("popup" or "email") and 'minutes' (0-40320). Max 5 reminders. Example: '[\{"method": "popup", "minutes": 15\}]' or [\{"method": "popup", "minutes": 15\}]
+    use_default_reminders (bool): Whether to use calendar's default reminders. If False, uses custom reminders. Defaults to True.
+    transparency (Optional[str]): Event transparency for busy/free status. "opaque" shows as Busy (default), "transparent" shows as Available/Free. Defaults to None (uses Google Calendar default).
+    visibility (Optional[str]): Event visibility. "default" uses calendar default, "public" is visible to all, "private" is visible only to attendees, "confidential" is same as private (legacy). Defaults to None (uses Google Calendar default).
+    guests_can_modify (Optional[bool]): Whether attendees other than the organizer can modify the event. Defaults to None (uses Google Calendar default of False).
+    guests_can_invite_others (Optional[bool]): Whether attendees other than the organizer can invite others to the event. Defaults to None (uses Google Calendar default of True).
+    guests_can_see_other_guests (Optional[bool]): Whether attendees other than the organizer can see who the event's attendees are. Defaults to None (uses Google Calendar default of True).
+
+Returns:
+    str: Confirmation message of the successful event creation with event link.
+  </Accordion>
+  <Accordion title="calendar_delete_event">
+    Deletes an existing event.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    event_id (str): The ID of the event to delete.
+    calendar_id (str): Calendar ID (default: 'primary').
+
+Returns:
+    str: Confirmation message of the successful event deletion.
+  </Accordion>
+  <Accordion title="calendar_get_current_time">
+    Get the accurate current date and time in the user's timezone.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+CRITICAL: Always call this tool FIRST before any calendar operations
+(creating, updating, listing, or scheduling events) to prevent using
+outdated time information.
+NOTE: If current time information is already provided in the system prompt
+or context, you do NOT need to call this tool.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: JSON object containing the current datetime, timezone, date, time, and day of the week.
+  </Accordion>
+  <Accordion title="calendar_add_attendees_to_event">
+    Add attendees to an existing event in Google Calendar.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+Automatically deduplicates: if an attendee is already on the event, they are skipped.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    event_id (str): The ID of the event to add attendees to.
+    attendees (List[str]): List of attendee email addresses to add.
+    calendar_id (str): The ID of the calendar containing the event. Defaults to 'primary'.
+    send_updates (str): Specifies which attendees to notify about the change ('all', 'externalOnly', 'none'). Defaults to 'all'.
+
+Returns:
+    str: Confirmation message with the list of newly added attendees and a link to the event.
+  </Accordion>
+  <Accordion title="calendar_get_events">
+    Retrieves events from a specified Google Calendar. Can retrieve a single event by ID or multiple events within a time range.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+You can also search for events by keyword by supplying the optional "query" param.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    calendar_id (str): The ID of the calendar to query. Use 'primary' for the user's primary calendar. Defaults to 'primary'. Calendar IDs can be obtained using `calendar_list_calendars`.
+    event_id (Optional[str]): The ID of a specific event to retrieve. If provided, retrieves only this event and ignores time filtering parameters.
+    time_min (Optional[str]): The start of the time range (inclusive) in RFC3339 format (e.g., '2024-05-12T10:00:00Z' or '2024-05-12'). If omitted, defaults to the current time. Ignored if event_id is provided.
+    time_max (Optional[str]): The end of the time range (exclusive) in RFC3339 format. If omitted, events starting from `time_min` onwards are considered (up to `max_results`). Ignored if event_id is provided.
+    max_results (int): The maximum number of events to return. Defaults to 25. Ignored if event_id is provided.
+    query (Optional[str]): A keyword to search for within event fields (summary, description, location). Ignored if event_id is provided.
+    detailed (bool): Whether to return detailed event information including description, location, attendees, and attendee details (response status, organizer, optional flags). Defaults to False.
+    include_attachments (bool): Whether to include attachment information in detailed event output. When True, shows attachment details (fileId, fileUrl, mimeType, title) for events that have attachments. Only applies when detailed=True. Set this to True when you need to view or access files that have been attached to calendar events, such as meeting documents, presentations, or other shared files. Defaults to False.
+
+Returns:
+    str: A formatted list of events (summary, start and end times, link) within the specified range, or detailed information for a single event if event_id is provided.
+  </Accordion>
+  <Accordion title="calendar_get_current_user">
+    Returns the authenticated user's account information for use with Calendar tools. Use the returned email as user_google_email when calling calendar_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="calendar_query_freebusy">
+    Returns free/busy information for a set of calendars.
+
+Use calendar_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    time_min (str): The start of the interval for the query in RFC3339 format (e.g., '2024-05-12T10:00:00Z' or '2024-05-12').
+    time_max (str): The end of the interval for the query in RFC3339 format (e.g., '2024-05-12T18:00:00Z' or '2024-05-12').
+    calendar_ids (Optional[List[str]]): List of calendar identifiers to query. If not provided, queries the primary calendar. Use 'primary' for the user's primary calendar or specific calendar IDs obtained from `calendar_list_calendars`.
+    group_expansion_max (Optional[int]): Maximum number of calendar identifiers to be provided for a single group. Optional. An error is returned for a group with more members than this value. Maximum value is 100.
+    calendar_expansion_max (Optional[int]): Maximum number of calendars for which FreeBusy information is to be provided. Optional. Maximum value is 50.
+
+Returns:
+    str: A formatted response showing free/busy information for each requested calendar, including busy time periods.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Calendar** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+  <Card title="Google Contacts" href="/server-catalog/google-contacts" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-contacts.svg" />
+  <Card title="Calendly" href="/server-catalog/calendly" icon="https://d338mlbnszozgc.cloudfront.net/logos/calendly.svg" />
+  <Card title="Fellow AI" href="/server-catalog/fellow-ai" icon="https://d338mlbnszozgc.cloudfront.net/logos/fellowai.jpeg" />
+</CardGroup>

@@ -1,0 +1,498 @@
+---
+title: "Gmail"
+description: "Draft emails and analyze your writing style"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg"
+---
+
+The Gmail MCP Server enables AI agents to search email threads, analyze writing styles, and draft emails, facilitating efficient inbox management and personalized communication.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Email Clients, Communication & Support, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.modify`, `https://www.googleapis.com/auth/gmail.compose`, `https://www.googleapis.com/auth/gmail.settings.basic`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Gmail Authentication guide](/oauth-guides/gmail) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **21** tools:
+
+<AccordionGroup>
+  <Accordion title="gmail_modify_message_labels">
+    Adds or removes labels from a Gmail message.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+To archive an email, remove the INBOX label.
+To delete an email, add the TRASH label.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    message_id (str): The ID of the message to modify.
+    add_label_ids (Optional[List[str]]): List of label IDs to add to the message.
+    remove_label_ids (Optional[List[str]]): List of label IDs to remove from the message.
+
+Returns:
+    str: Confirmation message of the label changes applied to the message.
+  </Accordion>
+  <Accordion title="gmail_draft_message">
+    Creates a draft email in the user's Gmail account. Supports both new drafts and reply drafts with optional attachments.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+Supports Gmail's "Send As" feature to draft from configured alias addresses.
+
+Args:
+    user_google_email (str): The user's Google email address. Required for authentication.
+    subject (str): Email subject.
+    body (str): Email body (plain text).
+    body_format (Literal['plain', 'html']): Email body format. Defaults to 'plain'.
+    to (Optional[str]): Optional recipient email address. Can be left empty for drafts.
+    cc (Optional[str]): Optional CC email address.
+    bcc (Optional[str]): Optional BCC email address.
+    from_name (Optional[str]): Optional sender display name. If provided, the From header will be formatted as 'Name &lt;email&gt;'.
+    from_email (Optional[str]): Optional 'Send As' alias email address. The alias must be
+        configured in Gmail settings (Settings > Accounts > Send mail as). If not provided,
+        the draft will be from the authenticated user's primary email address.
+    thread_id (Optional[str]): Optional Gmail thread ID to reply within. When provided, creates a reply draft.
+    in_reply_to (Optional[str]): Optional Message-ID of the message being replied to. Used for proper threading.
+    references (Optional[str]): Optional chain of Message-IDs for proper threading. Should include all previous Message-IDs.
+    attachments (List[Dict[str, str]]): Optional list of attachments. Each dict can contain:
+        Option 1 - File path (auto-encodes):
+<ul>
+<li>'path' (required): File path to attach</li>
+<li>'filename' (optional): Override filename</li>
+<li>'mime_type' (optional): Override MIME type (auto-detected if not provided)</li>
+</ul>
+        Option 2 - Base64 content:
+<ul>
+<li>'content' (required): Standard base64-encoded file content (not urlsafe)</li>
+<li>'filename' (required): Name of the file</li>
+<li>'mime_type' (optional): MIME type (defaults to 'application/octet-stream')</li>
+</ul>
+
+Returns:
+    str: Confirmation message with the created draft's ID.
+
+Examples:
+    # Create a new draft
+    draft_gmail_message(subject="Hello", body="Hi there!", to="user@example.com")
+
+    # Create a draft from a configured alias (Send As)
+    draft_gmail_message(
+        subject="Business Inquiry",
+        body="Hello from my business address...",
+        to="user@example.com",
+        from_email="business@mydomain.com"
+    )
+
+    # Create a plaintext draft with CC and BCC
+    draft_gmail_message(
+        subject="Project Update",
+        body="Here's the latest update...",
+        to="user@example.com",
+        cc="manager@example.com",
+        bcc="archive@example.com"
+    )
+
+    # Create a HTML draft with CC and BCC
+    draft_gmail_message(
+        subject="Project Update",
+        body="<strong>Hi there!</strong>",
+        body_format="html",
+        to="user@example.com",
+        cc="manager@example.com",
+        bcc="archive@example.com"
+    )
+
+    # Create a reply draft in plaintext
+    draft_gmail_message(
+        subject="Re: Meeting tomorrow",
+        body="Thanks for the update!",
+        to="user@example.com",
+        thread_id="thread_123",
+        in_reply_to="&lt;message123@gmail.com&gt;",
+        references="&lt;original@gmail.com&gt; &lt;message123@gmail.com&gt;"
+    )
+
+    # Create a reply draft in HTML
+    draft_gmail_message(
+        subject="Re: Meeting tomorrow",
+        body="<strong>Thanks for the update!</strong>",
+        body_format="html",
+        to="user@example.com",
+        thread_id="thread_123",
+        in_reply_to="&lt;message123@gmail.com&gt;",
+        references="&lt;original@gmail.com&gt; &lt;message123@gmail.com&gt;"
+    )
+  </Accordion>
+  <Accordion title="gmail_send_message">
+    Sends an email using the user's Gmail account. Supports both new emails and replies with optional attachments.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+Supports Gmail's "Send As" feature to send from configured alias addresses.
+
+Args:
+    to (str): Recipient email address.
+    subject (str): Email subject.
+    body (str): Email body content.
+    body_format (Literal['plain', 'html']): Email body format. Defaults to 'plain'.
+    attachments (Optional[List[Dict[str, str]]]): Optional list of attachments. Each dict can contain:
+        Option 1 - File path (auto-encodes):
+<ul>
+<li>'path' (required): File path to attach</li>
+<li>'filename' (optional): Override filename</li>
+<li>'mime_type' (optional): Override MIME type (auto-detected if not provided)</li>
+</ul>
+        Option 2 - Base64 content:
+<ul>
+<li>'content' (required): Standard base64-encoded file content (not urlsafe)</li>
+<li>'filename' (required): Name of the file</li>
+<li>'mime_type' (optional): MIME type (defaults to 'application/octet-stream')</li>
+</ul>
+    cc (Optional[str]): Optional CC email address.
+    bcc (Optional[str]): Optional BCC email address.
+    from_name (Optional[str]): Optional sender display name. If provided, the From header will be formatted as 'Name &lt;email&gt;'.
+    from_email (Optional[str]): Optional 'Send As' alias email address. The alias must be
+        configured in Gmail settings (Settings > Accounts > Send mail as). If not provided,
+        the email will be sent from the authenticated user's primary email address.
+    user_google_email (str): The user's Google email address. Required for authentication.
+    thread_id (Optional[str]): Optional Gmail thread ID to reply within. When provided, sends a reply.
+    in_reply_to (Optional[str]): Optional Message-ID of the message being replied to. Used for proper threading.
+    references (Optional[str]): Optional chain of Message-IDs for proper threading. Should include all previous Message-IDs.
+
+Returns:
+    str: Confirmation message with the sent email's message ID.
+
+Examples:
+    # Send a new email
+    send_gmail_message(to="user@example.com", subject="Hello", body="Hi there!")
+
+    # Send with a custom display name
+    send_gmail_message(to="user@example.com", subject="Hello", body="Hi there!", from_name="John Doe")
+
+    # Send an HTML email
+    send_gmail_message(
+        to="user@example.com",
+        subject="Hello",
+        body="<strong>Hi there!</strong>",
+        body_format="html"
+    )
+
+    # Send from a configured alias (Send As)
+    send_gmail_message(
+        to="user@example.com",
+        subject="Business Inquiry",
+        body="Hello from my business address...",
+        from_email="business@mydomain.com"
+    )
+
+    # Send an email with CC and BCC
+    send_gmail_message(
+        to="user@example.com",
+        cc="manager@example.com",
+        bcc="archive@example.com",
+        subject="Project Update",
+        body="Here's the latest update..."
+    )
+
+    # Send an email with attachments (using file path)
+    send_gmail_message(
+        to="user@example.com",
+        subject="Report",
+        body="Please see attached report.",
+        attachments=[\{
+            "path": "/path/to/report.pdf"
+        \}]
+    )
+
+    # Send an email with attachments (using base64 content)
+    send_gmail_message(
+        to="user@example.com",
+        subject="Report",
+        body="Please see attached report.",
+        attachments=[\{
+            "filename": "report.pdf",
+            "content": "JVBERi0xLjQK...",  # base64 encoded PDF
+            "mime_type": "application/pdf"
+        \}]
+    )
+
+    # Send a reply
+    send_gmail_message(
+        to="user@example.com",
+        subject="Re: Meeting tomorrow",
+        body="Thanks for the update!",
+        thread_id="thread_123",
+        in_reply_to="&lt;message123@gmail.com&gt;",
+        references="&lt;original@gmail.com&gt; &lt;message123@gmail.com&gt;"
+    )
+  </Accordion>
+  <Accordion title="gmail_delete_filter">
+    Deletes a Gmail filter by ID.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    filter_id (str): The ID of the filter to delete.
+
+Returns:
+    str: Confirmation message for the deletion.
+  </Accordion>
+  <Accordion title="gmail_get_or_create_label">
+    Gets an existing Gmail label by name, or creates it if it doesn't exist.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    name (str): The name of the label to find or create.
+    label_list_visibility (Literal["labelShow", "labelHide"]): Whether the label is shown in the label list. Defaults to "labelShow".
+    message_list_visibility (Literal["show", "hide"]): Whether the label is shown in the message list. Defaults to "show".
+
+Returns:
+    str: Information about the found or newly created label.
+  </Accordion>
+  <Accordion title="gmail_create_filter_from_template">
+    Creates a Gmail filter using a pre-defined template for common scenarios.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Available templates:
+<ul>
+<li>fromSender: Filter emails from a specific sender. Parameters: senderEmail, labelIds, archive (bool).</li>
+<li>withSubject: Filter emails with a specific subject. Parameters: subjectText, labelIds, markAsRead (bool).</li>
+<li>withAttachments: Filter emails that have attachments. Parameters: labelIds.</li>
+<li>largeEmails: Filter emails larger than a specified size. Parameters: sizeInBytes, labelIds.</li>
+<li>containingText: Filter emails containing specific text. Parameters: searchText, labelIds, markImportant (bool).</li>
+<li>mailingList: Filter emails from a mailing list. Parameters: listIdentifier, labelIds, archive (bool).</li>
+</ul>
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    template (str): The template name to use.
+    parameters (Dict[str, Any]): Template-specific parameters.
+
+Returns:
+    str: Confirmation message with the created filter ID and template used.
+  </Accordion>
+  <Accordion title="gmail_get_messages_content_batch">
+    Retrieves the content of multiple Gmail messages in a single batch request.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+Supports up to 25 messages per batch to prevent SSL connection exhaustion.
+
+Args:
+    message_ids (List[str]): List of Gmail message IDs to retrieve (max 25 per batch).
+    user_google_email (str): The user's Google email address. Required.
+    format (Literal["full", "metadata"]): Message format. "full" includes body, "metadata" only headers.
+
+Returns:
+    str: A formatted list of message contents including subject, sender, date, Message-ID, recipients (To, Cc), and body (if full format).
+  </Accordion>
+  <Accordion title="gmail_list_filters">
+    Lists all Gmail filters configured in the user's mailbox.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: A formatted list of filters with their criteria and actions.
+  </Accordion>
+  <Accordion title="gmail_delete_message">
+    Permanently deletes a Gmail message. This action is irreversible and bypasses the Trash.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+To move a message to Trash instead, use modify_gmail_message_labels with add_label_ids=["TRASH"].
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    message_id (str): The ID of the message to permanently delete.
+
+Returns:
+    str: Confirmation message of the deletion.
+  </Accordion>
+  <Accordion title="gmail_batch_delete_messages">
+    Permanently deletes multiple Gmail messages in batches. This action is irreversible and bypasses the Trash.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    message_ids (List[str]): List of message IDs to permanently delete.
+    batch_size (int): Number of messages to process per batch. Defaults to 50.
+
+Returns:
+    str: Summary of the batch deletion operation including successes and failures.
+  </Accordion>
+  <Accordion title="gmail_search_messages">
+    Searches messages in a user's Gmail account based on a query.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+Returns both Message IDs and Thread IDs for each found message, along with Gmail web interface links for manual verification.
+Supports pagination via page_token parameter.
+
+Args:
+    query (str): The search query. Supports standard Gmail search operators.
+    user_google_email (str): The user's Google email address. Required.
+    page_size (int): The maximum number of messages to return. Defaults to 10.
+    page_token (Optional[str]): Token for retrieving the next page of results. Use the next_page_token from a previous response.
+
+Returns:
+    str: LLM-friendly structured results with Message IDs, Thread IDs, and clickable Gmail web interface URLs for each found message.
+    Includes pagination token if more results are available.
+  </Accordion>
+  <Accordion title="gmail_get_message_content">
+    Retrieves the full content (subject, sender, recipients, plain text body) of a specific Gmail message.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    message_id (str): The unique ID of the Gmail message to retrieve.
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: The message details including subject, sender, date, Message-ID, recipients (To, Cc), and body content.
+  </Accordion>
+  <Accordion title="gmail_get_attachment_content">
+    Downloads the content of a specific email attachment.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    message_id (str): The ID of the Gmail message containing the attachment.
+    attachment_id (str): The ID of the attachment to download.
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: Attachment metadata and base64-encoded content that can be decoded and saved.
+  </Accordion>
+  <Accordion title="gmail_get_threads_content_batch">
+    Retrieves the content of multiple Gmail threads in a single batch request.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+Supports up to 25 threads per batch to prevent SSL connection exhaustion.
+
+Args:
+    thread_ids (List[str]): A list of Gmail thread IDs to retrieve. The function will automatically batch requests in chunks of 25.
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: A formatted list of thread contents with separators.
+  </Accordion>
+  <Accordion title="gmail_list_labels">
+    Lists all labels in the user's Gmail account.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: A formatted list of all labels with their IDs, names, and types.
+  </Accordion>
+  <Accordion title="gmail_create_filter">
+    Creates a Gmail filter using the users.settings.filters API.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    criteria (Dict[str, Any]): Criteria for matching messages.
+    action (Dict[str, Any]): Actions to apply to matched messages.
+
+Returns:
+    str: Confirmation message with the created filter ID.
+  </Accordion>
+  <Accordion title="gmail_batch_modify_message_labels">
+    Adds or removes labels from multiple Gmail messages in a single batch request.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    message_ids (List[str]): A list of message IDs to modify.
+    add_label_ids (Optional[List[str]]): List of label IDs to add to the messages.
+    remove_label_ids (Optional[List[str]]): List of label IDs to remove from the messages.
+
+Returns:
+    str: Confirmation message of the label changes applied to the messages.
+  </Accordion>
+  <Accordion title="gmail_get_filter">
+    Gets details of a specific Gmail filter by its ID.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    filter_id (str): The ID of the filter to retrieve.
+
+Returns:
+    str: Formatted filter details including criteria and actions.
+  </Accordion>
+  <Accordion title="gmail_get_current_user">
+    Returns the authenticated user's account information for use with Gmail tools. Use the returned email as user_google_email when calling gmail_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="gmail_get_thread_content">
+    Retrieves the complete content of a Gmail conversation thread, including all messages.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    thread_id (str): The unique ID of the Gmail thread to retrieve.
+    user_google_email (str): The user's Google email address. Required.
+
+Returns:
+    str: The complete thread content with all messages formatted for reading.
+  </Accordion>
+  <Accordion title="gmail_manage_label">
+    Manages Gmail labels: create, update, or delete labels.
+
+Use gmail_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    action (Literal["create", "update", "delete"]): Action to perform on the label.
+    name (Optional[str]): Label name. Required for create, optional for update.
+    label_id (Optional[str]): Label ID. Required for update and delete operations.
+    label_list_visibility (Literal["labelShow", "labelHide"]): Whether the label is shown in the label list.
+    message_list_visibility (Literal["show", "hide"]): Whether the label is shown in the message list.
+
+Returns:
+    str: Confirmation message of the label operation.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Gmail** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+  <Card title="Google Contacts" href="/server-catalog/google-contacts" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-contacts.svg" />
+  <Card title="Google Drive" href="/server-catalog/google-drive" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-drive.svg" />
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+</CardGroup>

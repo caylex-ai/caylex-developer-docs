@@ -1,0 +1,66 @@
+---
+title: "Fulcra Context"
+description: "Personalized insights from your life data"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/fulcra-context.webp"
+---
+
+Fulcra Context is an MCP server that aggregates personal health and lifestyle telemetry from wearables and apps — including sleep stages, heart rate variability (HRV), glucose levels, workouts, and activity data — and makes it accessible to AI agents within your Caylex project. By connecting this server, your agents gain real-time access to your personal Fulcra account data, enabling them to deliver personalized health insights, trend analysis, cross-metric correlations, and tailored recommendations. Each connection is session-isolated, meaning your data is only accessible to your authenticated session, ensuring privacy even on the public shared server infrastructure. The server uses OAuth2 authorization, so Caylex users will be prompted to authenticate with their Fulcra account when first connecting. Once set up, agents can answer natural-language health questions — such as analyzing sleep patterns, flagging unusual heart rate changes, or identifying glucose responses to meals — using live data pulled directly from Fulcra.
+
+<Warning>
+**Prerequisites:**
+- A Fulcra (Context by Fulcra) account is required; sign up at fulcradynamics.com before connecting.
+- Health data must already be synced to your Fulcra account via the Context by Fulcra iOS app and connected wearables or apps.
+- OAuth2 authentication with Fulcra must be completed when prompted during the Caylex connection setup.
+</Warning>
+
+<Note>
+**Important API details:**
+- Each session is fully isolated — your personal data is only accessible within your own authenticated session and is not shared across connections.
+- The server uses OAuth2 authorization; users must authenticate with their Fulcra account credentials to grant access.
+- Data access is real-time, pulling live metrics from the user's Fulcra account rather than cached or exported snapshots.
+- The server is publicly available and free to use, with no cost associated with the MCP server itself.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Data Processing, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Fulcra Context Authentication guide](/oauth-guides/fulcra-context) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Fulcra Context** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://fulcradynamics.github.io/developer-docs/mcp-server/" href="https://fulcradynamics.github.io/developer-docs/mcp-server/" icon="arrow-up-right-from-square" />
+  <Card title="https://www.fulcradynamics.com/mcp-setup-and-ai-prompts" href="https://www.fulcradynamics.com/mcp-setup-and-ai-prompts" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,198 @@
+---
+title: "Atlassian"
+description: "Securely link Jira and Confluence with AI tools"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/atlassian.svg"
+---
+
+The Atlassian MCP Server connects your AI agents directly to Jira and Confluence via the Atlassian Rovo MCP Server, enabling real-time interaction with your Atlassian Cloud data. Within Caylex, agents can search, read, create, and update Jira issues and Confluence pages using natural language-driven tool calls — no manual context switching required. Authentication is handled securely via OAuth 2.1, ensuring all actions respect the authenticated user's existing Atlassian permissions. Agents can automate repetitive workflows such as generating Jira tickets from notes, transitioning issue states, adding worklogs, managing page comments, and executing complex multi-step operations across Jira and Confluence. This server is ideal for developer, content, and project management teams looking to bring Atlassian productivity directly into their AI-powered workflows.
+
+<Warning>
+**Prerequisites:**
+- An active Atlassian Cloud site with access to Jira and/or Confluence is required.
+- OAuth 2.1 authorization must be completed for the connecting user; if using API token authentication instead, an Atlassian organization admin must first enable this option in the Atlassian Rovo MCP Server settings.
+- Users must have the appropriate Atlassian product licenses and permissions for the Jira projects and Confluence spaces they intend to access.
+</Warning>
+
+<Note>
+**Important API details:**
+- All actions are scoped to the authenticated user's existing Atlassian permissions — agents cannot access data or perform actions the user is not authorized for.
+- Authentication is via OAuth 2.1 by default; API token authentication is also supported, but must be explicitly enabled by an Atlassian organization admin in the Rovo MCP Server settings.
+- The server operates against Atlassian Cloud sites only — on-premise or Data Center Atlassian instances are not supported.
+- Jira and Confluence searches support their respective native query languages: JQL (Jira Query Language) for Jira issues and CQL (Confluence Query Language) for Confluence content.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Cicd, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Atlassian Authentication guide](/oauth-guides/atlassian) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **31** tools:
+
+### Jira - Read
+
+<AccordionGroup>
+  <Accordion title="getJiraIssue">
+    Get issue details
+  </Accordion>
+  <Accordion title="getVisibleJiraProjects">
+    Get projects
+  </Accordion>
+  <Accordion title="getJiraProjectIssueTypesMetadata">
+    Get issue types
+  </Accordion>
+  <Accordion title="getJiraIssueTypeMetaWithFields">
+    Get field metadata
+  </Accordion>
+  <Accordion title="getTransitionsForJiraIssue">
+    Get transitions
+  </Accordion>
+  <Accordion title="getJiraIssueRemoteIssueLinks">
+    Get remote links
+  </Accordion>
+  <Accordion title="getIssueLinkTypes">
+    Get available Jira issue link types (e.g. Blocks, Duplicate, Clones, Relates). For createIssueLink: inwardIssue = blocker, outwardIssue = blocked (e.g. "A is blocked by B" → inwardIssue: B, outwardIssue: A).
+  </Accordion>
+</AccordionGroup>
+
+### Jira - Write
+
+<AccordionGroup>
+  <Accordion title="createJiraIssue">
+    Create issue
+  </Accordion>
+  <Accordion title="editJiraIssue">
+    Update issue
+  </Accordion>
+  <Accordion title="transitionJiraIssue">
+    Transition issue status
+  </Accordion>
+  <Accordion title="addCommentToJiraIssue">
+    Add comment
+  </Accordion>
+  <Accordion title="addWorklogToJiraIssue">
+    Add or update a worklog on a Jira issue. When worklogId is provided, updates that worklog;
+  </Accordion>
+  <Accordion title="createIssueLink">
+    Create a link between two Jira issues. For directional link types (e.g. Blocks): inwardIssue = issue that blocks, outwardIssue = issue that is blocked (e.g. "A is blocked by B" → inwardIssue: B, outwardIssue: A). Use getIssueLinkTypes if link type is unknown.
+  </Accordion>
+</AccordionGroup>
+
+### Jira - Search
+
+<AccordionGroup>
+  <Accordion title="searchJiraIssuesUsingJql">
+    Search issues with JQL
+  </Accordion>
+  <Accordion title="lookupJiraAccountId">
+    Lookup user IDs
+  </Accordion>
+</AccordionGroup>
+
+### Confluence - Read
+
+<AccordionGroup>
+  <Accordion title="getConfluencePage">
+    Get a Confluence page or blog post by ID, including body content.
+  </Accordion>
+  <Accordion title="getConfluenceSpaces">
+    Get spaces
+  </Accordion>
+  <Accordion title="getPagesInConfluenceSpace">
+    Get pages or blog posts in a space
+  </Accordion>
+  <Accordion title="getConfluencePageDescendants">
+    Get child pages of specified page
+  </Accordion>
+  <Accordion title="getConfluencePageFooterComments">
+    Get footer comments for a page or blog post
+  </Accordion>
+  <Accordion title="getConfluencePageInlineComments">
+    Get inline comments for a page or blog post
+  </Accordion>
+  <Accordion title="getConfluenceCommentChildren">
+    Get reply(child) comments for a comment
+  </Accordion>
+</AccordionGroup>
+
+### Confluence - Write
+
+<AccordionGroup>
+  <Accordion title="createConfluencePage">
+    Create a Confluence page or blog post
+  </Accordion>
+  <Accordion title="updateConfluencePage">
+    Update a Confluence page or blog post
+  </Accordion>
+  <Accordion title="createConfluenceFooterComment">
+    Create a footer comment on a page or blog post
+  </Accordion>
+  <Accordion title="createConfluenceInlineComment">
+    Create an inline comment on specific text in a page or blog post
+  </Accordion>
+</AccordionGroup>
+
+### Confluence - Search
+
+<AccordionGroup>
+  <Accordion title="searchConfluenceUsingCql">
+    Search content with CQL
+  </Accordion>
+</AccordionGroup>
+
+### Atlassian - General
+
+<AccordionGroup>
+  <Accordion title="atlassianUserInfo">
+    Get current user info
+  </Accordion>
+  <Accordion title="getAccessibleAtlassianResources">
+    Get cloudId to make tool calls. When a link is provided (e.g. https://site.atlassian.net/*), try passing the site hostname (e.g. site.atlassian.net) as cloudId to other tools first; if that fails, use this tool to list accessible resources.
+  </Accordion>
+  <Accordion title="searchAtlassian">
+    Search Jira and Confluence using Rovo Search, ALWAYS use this tool to search for Jira and Confluence content unless the word CQL or JQL is used in the context
+  </Accordion>
+  <Accordion title="fetchAtlassian">
+    Get details of a Jira issue or Confluence page by ARI (Atlassian Resource Identifier), if the id is not an ARI, then use a different tool to fetch the content
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Atlassian** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Linear" href="/server-catalog/linear" icon="https://d338mlbnszozgc.cloudfront.net/logos/linear.svg" />
+  <Card title="Github" href="/server-catalog/github" icon="https://d338mlbnszozgc.cloudfront.net/logos/github.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://support.atlassian.com/rovo/docs/getting-started-with-the-atlassian-remote-mcp-server/" href="https://support.atlassian.com/rovo/docs/getting-started-with-the-atlassian-remote-mcp-server/" icon="arrow-up-right-from-square" />
+  <Card title="https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/" href="https://support.atlassian.com/atlassian-rovo-mcp-server/docs/getting-started-with-the-atlassian-remote-mcp-server/" icon="arrow-up-right-from-square" />
+</CardGroup>

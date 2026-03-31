@@ -1,0 +1,160 @@
+---
+title: "Calendly"
+description: "Schedule events and manage invitees effortlessly"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/calendly.svg"
+---
+
+The Calendly MCP Server provides seamless integration with Calendly's scheduling platform, enabling AI agents to retrieve user info, manage events, and handle invitees, making it ideal for automating scheduling tasks and enhancing productivity.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Calendar & Scheduling, Scheduling & Booking |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **13** tools:
+
+<AccordionGroup>
+  <Accordion title="calendly_event_type_list">
+    Retrieve all event types (meeting templates) for a user or organization in Calendly.
+
+**When to use:** When customer needs to see available meeting types, find a specific event type by name, or verify which event types are active/inactive.
+
+**Context needed:** Must provide either organization or user parameter (both are URIs). Use active parameter to filter by status. Use sort parameter with format "field:direction" (e.g., "name:asc"). Use count and page_token for pagination through large result sets.
+
+**Token efficiency**: Specify count parameter to limit response size. Use active and admin_managed filters to narrow results.
+  </Accordion>
+  <Accordion title="calendly_event_type_availability_list">
+    Returns available time slots for a specific event type within a date range.
+
+**When to use:** When a customer needs to see open booking slots for a particular event type, or when checking availability before scheduling.
+
+**Context needed:** Date range cannot exceed 7 days. The start_time cannot be in the past, and end_time must be after start_time. Use ISO 8601 format (e.g., 2020-01-02T20:00:00.000000Z). The event_type parameter requires the full URI (e.g., https://api.calendly.com/event_types/AAAAAAAAAAAAAAAA) - obtain this from calendly_event_type_list if you only have an event name or need to look up the URI.
+
+**Token efficiency**: This endpoint does not support pagination. Limit your date range to reduce response size.
+  </Accordion>
+  <Accordion title="calendly_invitee_list">
+    Retrieve all invitees (attendees) for a specific scheduled event.
+
+**When to use:** When you need to see who is attending an event, check invitee status (active/canceled), or look up an invitee by email address.
+
+**Context needed:** The uuid parameter is the scheduled event ID (obtain via calendly_scheduled_event_list). Use email parameter to find a specific invitee. Use status parameter to filter by "active" or "canceled" invitees.
+
+**Token efficiency**: Use count parameter to limit results. Use page_token for pagination through large invitee lists.
+  </Accordion>
+  <Accordion title="calendly_user_get">
+    Retrieve profile information for a Calendly user by their unique identifier.
+
+**When to use:** When you need user details like name, email, scheduling URL, timezone, or organization affiliation. Use uuid="me" to get the authenticated user's own profile, or provide a specific user UUID to look up another user.
+
+**Context needed:** The uuid parameter accepts either a user's unique identifier or the literal string "me" to reference the currently authenticated user.
+  </Accordion>
+  <Accordion title="calendly_user_get_current">
+    Retrieve the authenticated user's profile information including name, email, scheduling URL, timezone, and organization.
+
+**When to use:** When you need to identify the current user, get their scheduling URL to share with customers, or check their timezone/organization settings. Use this before other operations that require the user's URI.
+
+**Token efficiency**: Returns a single user object with all profile fields.
+  </Accordion>
+  <Accordion title="calendly_invitee_get">
+    Retrieve detailed information about a specific invitee for a scheduled event.
+
+**When to use:** When you need to view invitee details (contact info, answers to booking questions, payment status, cancellation info, or no-show status) for a specific scheduled event. Use after obtaining event_uuid and invitee_uuid from list-event-invitees or list-scheduled-events.
+
+**Context needed:** Both event_uuid and invitee_uuid are required identifiers. To find these IDs, first use list-scheduled-events to get event_uuid, then list-event-invitees with that event_uuid to get invitee_uuid. Alternatively, search by email using list-event-invitees filters.
+  </Accordion>
+  <Accordion title="calendly_scheduled_event_get">
+    Retrieve detailed information about a specific scheduled event by its unique identifier.
+
+**When to use:** When you need full details about a scheduled event (meeting time, location, participants, status, notes) after obtaining the event UUID from list-scheduled-events or when a user provides an event link/ID.
+
+**Context needed:** The uuid parameter is the event's unique identifier (format: GBGBDCAADAEDCRZ2), typically obtained by listing events first or extracted from a Calendly event URL.
+
+**Token efficiency**: Returns comprehensive event data including invitees_counter, event_memberships, event_guests, and calendar_event details. Use list-scheduled-events with filters if you only need to find an event by criteria.
+  </Accordion>
+  <Accordion title="calendly_user_busy_time_list">
+    Returns all scheduled events and busy periods for a user within a specified date range (max 7 days).
+
+**When to use:** When checking a user's availability or identifying scheduling conflicts before booking appointments. Use this to see both Calendly events and external calendar conflicts.
+
+**Context needed:** Date range cannot exceed 7 days. Start_time cannot be in the past. End_time must be after start_time. External events only appear for calendars with "Check for conflicts" enabled. User parameter must be a full URI (e.g., https://api.calendly.com/users/AAAAAAAAAAAAAAAA) - use calendly_user_get or calendly_user_list to find user URIs by email.
+
+**Token efficiency**: Returns all busy times in range without pagination. Use narrow date ranges to minimize response size.
+  </Accordion>
+  <Accordion title="calendly_availability_schedule_get">
+    Retrieve a specific availability schedule by its UUID, showing the user's available time blocks, timezone, and scheduling rules.
+
+**When to use:** When you need to view the details of a specific availability schedule (e.g., to understand a user's working hours or available time slots). To find the schedule UUID first, use calendly_user_availability_schedule_list.
+
+**Context needed:** The uuid parameter must be the full UUID of the availability schedule, not a user ID or event ID.
+  </Accordion>
+  <Accordion title="calendly_scheduled_event_list">
+    Retrieve a list of scheduled events from Calendly with flexible filtering options.
+
+**When to use:** When you need to find events for a specific user, organization, group, or invitee; check event status; or retrieve events within a time range. Use this to look up events by invitee_email before accessing detailed event information.
+
+**Context needed:** Specify user URI alone for personal events only. To query another user's events, provide both user and organization URIs (requires admin/owner). To query group events, provide both group and organization URIs (requires admin). Time filters (min_start_time, max_start_time) must use UTC format: "2020-01-02T12:30:00.000000Z". Sort parameter format: "start_time:asc" or "start_time:desc".
+
+**Token efficiency:** Use count parameter to limit results. Use page_token for pagination through large result sets. Apply status and time filters to narrow results.
+  </Accordion>
+  <Accordion title="calendly_invitee_create">
+    Create a new invitee for a scheduled event, triggering standard notifications, calendar invites, and workflows as if booked through Calendly UI.
+
+**When to use:** When scheduling an event on behalf of someone (e.g., customer support booking an appointment for a user). Requires knowing the event_type URI and desired start_time.
+
+**Context needed:** Either name OR first_name must be provided for the invitee. The event_type parameter requires the full Calendly URI (format: https://api.calendly.com/event_types/AAAAAAAAAAAAAAAA). Use list-event-types to find available event types. Timezone must be a valid IANA timezone identifier (e.g., America/New_York). For SMS reminders, text_reminder_number must be a valid phone number with country code (e.g., +14155551234).
+
+**Safety:** POST operation creates a new scheduled event. Verify event_type, start_time, and invitee details before creation. Requires paid Calendly plan (Standard or above).
+  </Accordion>
+  <Accordion title="calendly_scheduled_event_cancel">
+    Cancel a scheduled Calendly event.
+
+**When to use:** When a customer or support agent needs to cancel an existing scheduled event. Use list-scheduled-events to find the event_uuid if you only have email or other details.
+
+**Context needed:** The uuid parameter is the event's unique identifier (found via list-scheduled-events). The reason field is optional but recommended for record-keeping (max 10,000 characters).
+
+**Safety**: POST operation cancels the event permanently. Cannot cancel events that are already canceled or in the past. Verify the correct event_uuid before canceling.
+  </Accordion>
+  <Accordion title="calendly_user_availability_schedule_list">
+    Retrieve all availability schedules for a specific Calendly user, showing their configured working hours and time blocks.
+
+**When to use:** When you need to view a user's availability configurations to understand their scheduling preferences, working hours, or to help troubleshoot scheduling issues.
+
+**Context needed:** The user parameter must be a full Calendly user URI (format: https://api.calendly.com/users/\{uuid\}). To get a user URI from an email, first use calendly_user_get with the email parameter.
+
+**Token efficiency**: Returns all schedules for the user. Each schedule includes detailed rules with time intervals and timezone information.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Calendly** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+  <Card title="Acuity Scheduling" href="/server-catalog/acuity-scheduling" icon="https://d338mlbnszozgc.cloudfront.net/logos/acuityscheduling.jpeg" />
+</CardGroup>

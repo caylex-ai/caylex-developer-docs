@@ -1,0 +1,73 @@
+---
+title: "Octagon"
+description: "AI-powered insights from financial data sources"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/octagon.svg"
+---
+
+The Octagon MCP Server connects AI agents in Caylex to the Octagon Market Intelligence API, providing comprehensive financial research and analysis capabilities. Agents can analyze public company filings, earnings call transcripts, financial metrics, and stock market data to support investment research and decision-making. Beyond public markets, the server also covers extensive private market transactions and prediction market research, enabling deep, multi-dimensional financial intelligence. Authentication is supported via API keys (full access) or Public Keys (limited access), giving Caylex users flexibility in how they credential the server. This makes Octagon a powerful addition to any Caylex project focused on financial analysis, portfolio research, or market intelligence workflows.
+
+<Warning>
+**Prerequisites:**
+- An Octagon account with a valid API key or Public Key — obtain credentials via the Octagon Agents API authentication portal.
+- For full access to all tools and endpoints, an API key is required; Public Keys only grant limited model and endpoint access.
+</Warning>
+
+<Note>
+**Important API details:**
+- API keys provide full access to all Octagon capabilities, while Public Keys offer limited model and endpoint access — choose accordingly based on your use case.
+- The server covers both public market data (filings, earnings transcripts, stock metrics) and private market transactions, as well as prediction market research.
+- Octagon supports OAuth-based authentication as the recommended method; API key-based authentication is also available for non-OAuth setups.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Business Intelligence, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `email`, `offline_access`, `openid`, `profile`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Octagon Authentication guide](/oauth-guides/octagon) for step-by-step credential configuration.
+
+## Server Configuration
+
+The following parameters can be set in the server URL when adding this server to your Caylex project:
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `OCTAGON_API_KEY` | path | Your Octagon API key or Public Key, embedded in the server path for non-OAuth authentication. Required if not authenticating via OAuth. | `sk-oct-xxxxxxxxxxxx` |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Octagon** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Perplexity" href="/server-catalog/perplexity" icon="https://d338mlbnszozgc.cloudfront.net/logos/perplexity.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.octagonagents.com/guide/mcp-server.html" href="https://docs.octagonagents.com/guide/mcp-server.html" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/OctagonAI/octagon-mcp-server" href="https://github.com/OctagonAI/octagon-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

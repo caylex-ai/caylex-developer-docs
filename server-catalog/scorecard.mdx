@@ -1,0 +1,57 @@
+---
+title: "Scorecard"
+description: "AI model evaluation and security assessment"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/scorecard.svg"
+---
+
+The Scorecard MCP Server brings AI testing and evaluation capabilities directly into your Caylex-powered AI agents, allowing them to manage the full evaluation lifecycle through natural language. With approximately 45 exposed tools spanning metrics, scores, systems, annotations, and documentation search, agents can create and manage projects, build testsets, configure evaluation metrics, run scoring pipelines, and analyze results — all programmatically. Scorecard is designed to streamline rapid feedback loops for AI systems, making it straightforward to run security assessments and conversational project management at scale. By connecting this server in Caylex, your agents gain the ability to orchestrate end-to-end AI quality evaluation workflows without leaving the agent environment.
+
+<Warning>
+**Prerequisites:**
+- A Scorecard account is required; sign up at scorecard.io before connecting.
+- OAuth authorization must be completed to grant access to your Scorecard projects and data.
+</Warning>
+
+<Note>
+**Important API details:**
+- Authentication is handled via OAuth — users will need to complete the OAuth flow to authorize the Scorecard connection.
+- The server exposes approximately 45 tools covering metrics, scores, systems, annotations, and documentation search.
+- An API key (SCORECARD_API_KEY) is required when running the server in local/non-OAuth configurations, but within Caylex the OAuth flow is the standard authentication path.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | API Tools & Services, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Scorecard Authentication guide](/oauth-guides/scorecard) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Scorecard** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.scorecard.io/features/mcp" href="https://docs.scorecard.io/features/mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/scorecard-ai/scorecard-mcp" href="https://github.com/scorecard-ai/scorecard-mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,917 @@
+---
+title: "Twilio"
+description: "Automate Twilio API interactions with ease"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/twilio.svg"
+---
+
+The Twilio MCP Server exposes Twilio's Public API via the Model Context Protocol, enabling AI agents to automate development and integrate with tools like Claude and Cursor for enhanced communication and data management.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | SMS & Voice, Communication & Support |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Available Tools
+
+This server provides **197** tools:
+
+<AccordionGroup>
+  <Accordion title="twilio_api_v2010_update_outgoing_caller_id">
+    [Twilio - Api] Updates the caller-id.
+Required: AccountSid, Sid.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_queue">
+    [Twilio - Api] Update the queue with the new parameters.
+Required: AccountSid, Sid.
+Optional: FriendlyName, MaxSize.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_queue">
+    [Twilio - Api] Remove an empty queue.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_queue">
+    [Twilio - Api] Create a queue.
+Required: AccountSid, FriendlyName.
+Optional: MaxSize.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_signing_key">
+    [Twilio - Api] Use this tool to retrieve a list of Signing Key resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_new_signing_key">
+    [Twilio - Api] Create a new Signing Key for the account making the request.
+Required: AccountSid.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_notification">
+    [Twilio - Api] Fetch a notification belonging to the account used to make the request.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_notification">
+    [Twilio - Api] Retrieve a list of notifications belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_outgoing_caller_id">
+    [Twilio - Api] Fetch an outgoing-caller-id belonging to the account used to make the request.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_trigger">
+    [Twilio - Api] Retrieve a list of usage-triggers belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_recording_add_on_result_payload">
+    [Twilio - Api] Retrieve a list of payloads belonging to the AddOnResult.
+Required: AccountSid, ReferenceSid, AddOnResultSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_recording_add_on_result_payload_data">
+    [Twilio - Api] Fetch an instance of a result payload.
+Required: AccountSid, ReferenceSid, AddOnResultSid, PayloadSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_recording_transcription">
+    [Twilio - Api] Use this tool to retrieve details of a specific Recording Transcription by its identifier.
+Required: AccountSid, RecordingSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_member">
+    [Twilio - Api] Fetch a specific member from the queue.
+Required: AccountSid, QueueSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_recording_transcription">
+    [Twilio - Api] DESTRUCTIVE: Permanently delete a Recording Transcription. This action cannot be undone.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, RecordingSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_member">
+    [Twilio - Api] Dequeue a member from a queue and have the member's call begin executing the TwiML document at that URL.
+Required: AccountSid, QueueSid, CallSid, Url.
+Optional: Method.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_recording_transcription">
+    [Twilio - Api] Use this tool to retrieve a list of Recording Transcription resources. Returns a paginated collection.
+Required: AccountSid, RecordingSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_auth_calls_credential_list_mapping">
+    [Twilio - Api] Retrieve a list of credential list mappings belonging to the domain used in the request.
+Required: AccountSid, DomainSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_credential_list_mapping">
+    [Twilio - Api] Delete a CredentialListMapping resource from an account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_domain">
+    [Twilio - Api] Retrieve a list of domains belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_member">
+    [Twilio - Api] Retrieve the members of the queue.
+Required: AccountSid, QueueSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_message">
+    [Twilio - Api] Retrieve a list of Message resources associated with a Twilio Account.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_message">
+    [Twilio - Api] Send a message.
+Required: AccountSid, To.
+Optional: StatusCallback, ApplicationSid, MaxPrice, ProvideFeedback, Attempt.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_message">
+    [Twilio - Api] Fetch a specific Message.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_message">
+    [Twilio - Api] Update a Message resource (used to redact Message `body` text and to cancel not-yet-sent messages).
+Required: AccountSid, Sid.
+Optional: Body, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_message">
+    [Twilio - Api] Deletes a Message resource from your account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_message_feedback">
+    [Twilio - Api] Create Message Feedback to confirm a tracked user action was performed by the recipient of the associated Message.
+Required: AccountSid, MessageSid.
+Optional: Outcome.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_ip_address">
+    [Twilio - Api] Create a new IpAddress resource.
+Required: AccountSid, IpAccessControlListSid, FriendlyName, IpAddress.
+Optional: CidrPrefixLength.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_transcription">
+    [Twilio - Api] Retrieve a list of transcriptions belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_outgoing_caller_id">
+    [Twilio - Api] Delete the caller-id specified from the account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_outgoing_caller_id">
+    [Twilio - Api] Retrieve a list of outgoing-caller-ids belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_validation_request">
+    [Twilio - Api] Use this tool to create a new Validation Request.
+Required: AccountSid, PhoneNumber.
+Optional: FriendlyName, CallDelay, Extension, StatusCallback, StatusCallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_participant">
+    [Twilio - Api] Fetch an instance of a participant.
+Required: AccountSid, ConferenceSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_queue">
+    [Twilio - Api] Retrieve a list of queues belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_account">
+    [Twilio - Api] Retrieves a collection of Accounts belonging to the account used to make the request.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_account">
+    [Twilio - Api] Create a new Twilio Subaccount from the account making the request.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_account">
+    [Twilio - Api] Fetch the account specified by the provided Account Sid.
+Required: Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_account">
+    [Twilio - Api] Modify the properties of a given Account.
+Required: Sid.
+Optional: FriendlyName, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_address">
+    [Twilio - Api] Use this tool to retrieve a list of Address resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_address">
+    [Twilio - Api] Use this tool to create a new Address.
+Required: AccountSid, CustomerName, Street, City, Region, PostalCode, IsoCountry.
+Optional: FriendlyName, EmergencyEnabled, AutoCorrectAddress, StreetSecondary.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_address">
+    [Twilio - Api] Use this tool to retrieve details of a specific Address by its identifier.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_address">
+    [Twilio - Api] Use this tool to modify properties of an existing Address.
+Required: AccountSid, Sid.
+Optional: FriendlyName, CustomerName, Street, City, Region.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_address">
+    [Twilio - Api] DESTRUCTIVE: Permanently delete a Address. This action cannot be undone.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_application">
+    [Twilio - Api] Retrieve a list of applications representing an application within the requesting account.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_application">
+    [Twilio - Api] Create a new application within your account.
+Required: AccountSid.
+Optional: ApiVersion, VoiceUrl, VoiceMethod, VoiceFallbackUrl, VoiceFallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_application">
+    [Twilio - Api] Fetch the application specified by the provided sid.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_application">
+    [Twilio - Api] Updates the application's properties.
+Required: AccountSid, Sid.
+Optional: FriendlyName, ApiVersion, VoiceUrl, VoiceMethod, VoiceFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_application">
+    [Twilio - Api] Delete the application by the specified application sid.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_authorized_connect_app">
+    [Twilio - Api] Fetch an instance of an authorized-connect-app.
+Required: AccountSid, ConnectAppSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_authorized_connect_app">
+    [Twilio - Api] Retrieve a list of authorized-connect-apps belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_country">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Country resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_available_phone_number_country">
+    [Twilio - Api] Use this tool to retrieve details of a specific Available Phone Number Country by its identifier.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_local">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Local resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_machine_to_machine">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Machine To Machine resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_mobile">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Mobile resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_national">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number National resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_shared_cost">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Shared Cost resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_toll_free">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Toll Free resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_available_phone_number_voip">
+    [Twilio - Api] Use this tool to retrieve a list of Available Phone Number Voip resources. Returns a paginated collection.
+Required: AccountSid, CountryCode.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_balance">
+    [Twilio - Api] Fetch the balance for an Account based on Account Sid. Balance changes may not be reflected immediately. Child accounts do not contain balance information.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_call">
+    [Twilio - Api] Retrieves a collection of calls made to and from your account.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_call">
+    [Twilio - Api] Create a new outgoing call to phones, SIP-enabled endpoints or Twilio Client connections.
+Required: AccountSid, To, From.
+Optional: Method, FallbackUrl, FallbackMethod, StatusCallback, StatusCallbackEvent.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_call">
+    [Twilio - Api] Fetch the call specified by the provided Call SID.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_call">
+    [Twilio - Api] Initiates a call redirect or terminates a call.
+Required: AccountSid, Sid.
+Optional: Url, Method, Status, FallbackUrl, FallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_call">
+    [Twilio - Api] Delete a Call record from your account. Once the record is deleted, it will no longer appear in the API and Account Portal logs.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_call_event">
+    [Twilio - Api] Retrieve a list of all events for a call.
+Required: AccountSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_call_notification">
+    [Twilio - Api] Use this tool to retrieve details of a specific Call Notification by its identifier.
+Required: AccountSid, CallSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_call_notification">
+    [Twilio - Api] Use this tool to retrieve a list of Call Notification resources. Returns a paginated collection.
+Required: AccountSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_call_recording">
+    [Twilio - Api] Retrieve a list of recordings belonging to the call used to make the request.
+Required: AccountSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_call_recording">
+    [Twilio - Api] Create a recording for the call.
+Required: AccountSid, CallSid.
+Optional: RecordingStatusCallbackEvent, RecordingStatusCallback, RecordingStatusCallbackMethod, Trim, RecordingChannels.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_call_recording">
+    [Twilio - Api] Fetch an instance of a recording for a call.
+Required: AccountSid, CallSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_call_recording">
+    [Twilio - Api] Changes the status of the recording to paused, stopped, or in-progress. Note: Pass `Twilio.CURRENT` instead of recording sid to reference current active recording.
+Required: AccountSid, CallSid, Sid, Status.
+Optional: PauseBehavior.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_call_recording">
+    [Twilio - Api] Delete a recording from your account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, CallSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_conference">
+    [Twilio - Api] Fetch an instance of a conference.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_conference">
+    [Twilio - Api] Use this tool to modify properties of an existing Conference.
+Required: AccountSid, Sid.
+Optional: Status, AnnounceUrl, AnnounceMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_conference">
+    [Twilio - Api] Retrieve a list of conferences belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_conference_recording">
+    [Twilio - Api] Retrieve a list of recordings belonging to the call used to make the request.
+Required: AccountSid, ConferenceSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_conference_recording">
+    [Twilio - Api] Fetch an instance of a recording for a call.
+Required: AccountSid, ConferenceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_conference_recording">
+    [Twilio - Api] Changes the status of the recording to paused, stopped, or in-progress. Note: To use `Twilio.CURRENT`, pass it as recording sid.
+Required: AccountSid, ConferenceSid, Sid, Status.
+Optional: PauseBehavior.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_conference_recording">
+    [Twilio - Api] Delete a recording from your account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, ConferenceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_connect_app">
+    [Twilio - Api] Fetch an instance of a connect-app.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_connect_app">
+    [Twilio - Api] Update a connect-app with the specified parameters.
+Required: AccountSid, Sid.
+Optional: AuthorizeRedirectUrl, CompanyName, DeauthorizeCallbackMethod, DeauthorizeCallbackUrl, Description.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_connect_app">
+    [Twilio - Api] Delete an instance of a connect-app.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_connect_app">
+    [Twilio - Api] Retrieve a list of connect-apps belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_dependent_phone_number">
+    [Twilio - Api] Use this tool to retrieve a list of Dependent Phone Number resources. Returns a paginated collection.
+Required: AccountSid, AddressSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_incoming_phone_number">
+    [Twilio - Api] Fetch an incoming-phone-number belonging to the account used to make the request.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_incoming_phone_number">
+    [Twilio - Api] Update an incoming-phone-number instance.
+Required: AccountSid, Sid.
+Optional: ApiVersion, FriendlyName, SmsApplicationSid, SmsFallbackMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_incoming_phone_number">
+    [Twilio - Api] Delete a phone-numbers belonging to the account used to make the request.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number">
+    [Twilio - Api] Retrieve a list of incoming-phone-numbers belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_incoming_phone_number">
+    [Twilio - Api] Purchase a phone-number for the account.
+Required: AccountSid.
+Optional: ApiVersion, FriendlyName, SmsApplicationSid, SmsFallbackMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_incoming_phone_number_assigned_add_on">
+    [Twilio - Api] Fetch an instance of an Add-on installation currently assigned to this Number.
+Required: AccountSid, ResourceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_incoming_phone_number_assigned_add_on">
+    [Twilio - Api] Remove the assignment of an Add-on installation from the Number specified.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, ResourceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number_assigned_add_on">
+    [Twilio - Api] Retrieve a list of Add-on installations currently assigned to this Number.
+Required: AccountSid, ResourceSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_incoming_phone_number_assigned_add_on">
+    [Twilio - Api] Assign an Add-on installation to the Number specified.
+Required: AccountSid, ResourceSid, InstalledAddOnSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_incoming_phone_number_assigned_add_on_extension">
+    [Twilio - Api] Fetch an instance of an Extension for the Assigned Add-on.
+Required: AccountSid, ResourceSid, AssignedAddOnSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number_assigned_add_on_extension">
+    [Twilio - Api] Retrieve a list of Extensions for the Assigned Add-on.
+Required: AccountSid, ResourceSid, AssignedAddOnSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number_local">
+    [Twilio - Api] Use this tool to retrieve a list of Incoming Phone Number Local resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_incoming_phone_number_local">
+    [Twilio - Api] Use this tool to create a new Incoming Phone Number Local.
+Required: AccountSid, PhoneNumber.
+Optional: ApiVersion, FriendlyName, SmsApplicationSid, SmsFallbackMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number_mobile">
+    [Twilio - Api] Use this tool to retrieve a list of Incoming Phone Number Mobile resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_incoming_phone_number_mobile">
+    [Twilio - Api] Use this tool to create a new Incoming Phone Number Mobile.
+Required: AccountSid, PhoneNumber.
+Optional: ApiVersion, FriendlyName, SmsApplicationSid, SmsFallbackMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_incoming_phone_number_toll_free">
+    [Twilio - Api] Use this tool to retrieve a list of Incoming Phone Number Toll Free resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_incoming_phone_number_toll_free">
+    [Twilio - Api] Use this tool to create a new Incoming Phone Number Toll Free.
+Required: AccountSid, PhoneNumber.
+Optional: ApiVersion, FriendlyName, SmsApplicationSid, SmsFallbackMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_key">
+    [Twilio - Api] Use this tool to retrieve details of a specific Key by its identifier.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_key">
+    [Twilio - Api] Use this tool to modify properties of an existing Key.
+Required: AccountSid, Sid.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_key">
+    [Twilio - Api] DESTRUCTIVE: Permanently delete a Key. This action cannot be undone.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_key">
+    [Twilio - Api] Use this tool to retrieve a list of Key resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_new_key">
+    [Twilio - Api] Use this tool to create a new New Key.
+Required: AccountSid.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_media">
+    [Twilio - Api] Fetch a single Media resource associated with a specific Message resource.
+Required: AccountSid, MessageSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_media">
+    [Twilio - Api] Delete the Media resource.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, MessageSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_media">
+    [Twilio - Api] Read a list of Media resources associated with a specific Message resource.
+Required: AccountSid, MessageSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_participant">
+    [Twilio - Api] Update the properties of the participant.
+Required: AccountSid, ConferenceSid, CallSid.
+Optional: Muted, Hold, HoldUrl, HoldMethod, AnnounceUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_participant">
+    [Twilio - Api] Kick a participant from a given conference.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, ConferenceSid, CallSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_participant">
+    [Twilio - Api] Retrieve a list of participants belonging to the account used to make the request.
+Required: AccountSid, ConferenceSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_participant">
+    [Twilio - Api] Use this tool to create a new Participant.
+Required: AccountSid, ConferenceSid, From, To.
+Optional: StatusCallback, StatusCallbackMethod, StatusCallbackEvent, Label, Timeout.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_recording">
+    [Twilio - Api] Retrieve a list of recordings belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_payments">
+    [Twilio - Api] create an instance of payments. This will start a new payments session.
+Required: AccountSid, CallSid, IdempotencyKey, StatusCallback.
+Optional: BankAccountType, ChargeAmount, Currency, Description, Input.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_payments">
+    [Twilio - Api] update an instance of payments with different phases of payment flows.
+Required: AccountSid, CallSid, Sid, IdempotencyKey, StatusCallback.
+Optional: Capture, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_queue">
+    [Twilio - Api] Fetch an instance of a queue identified by the QueueSid.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_realtime_transcription">
+    [Twilio - Api] Create a Transcription.
+Required: AccountSid, CallSid.
+Optional: Name, Track, StatusCallbackUrl, StatusCallbackMethod, InboundTrackLabel.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_realtime_transcription">
+    [Twilio - Api] Stop a Transcription using either the SID of the Transcription resource or the `name` used when creating the resource.
+Required: AccountSid, CallSid, Sid, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_recording">
+    [Twilio - Api] Fetch an instance of a recording.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_recording">
+    [Twilio - Api] Delete a recording from your account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_recording_add_on_result">
+    [Twilio - Api] Fetch an instance of an AddOnResult.
+Required: AccountSid, ReferenceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_recording_add_on_result">
+    [Twilio - Api] Delete a result and purge all associated Payloads.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, ReferenceSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_recording_add_on_result">
+    [Twilio - Api] Retrieve a list of results belonging to the recording.
+Required: AccountSid, ReferenceSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_recording_add_on_result_payload">
+    [Twilio - Api] Fetch an instance of a result payload.
+Required: AccountSid, ReferenceSid, AddOnResultSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_recording_add_on_result_payload">
+    [Twilio - Api] Delete a payload from the result along with all associated Data.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, ReferenceSid, AddOnResultSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_short_code">
+    [Twilio - Api] Fetch an instance of a short code.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_short_code">
+    [Twilio - Api] Update a short code with the following parameters.
+Required: AccountSid, Sid.
+Optional: FriendlyName, ApiVersion, SmsUrl, SmsMethod, SmsFallbackUrl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_short_code">
+    [Twilio - Api] Retrieve a list of short-codes belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_signing_key">
+    [Twilio - Api] Use this tool to retrieve details of a specific Signing Key by its identifier.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_signing_key">
+    [Twilio - Api] Use this tool to modify properties of an existing Signing Key.
+Required: AccountSid, Sid.
+Optional: FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_signing_key">
+    [Twilio - Api] DESTRUCTIVE: Permanently delete a Signing Key. This action cannot be undone.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_auth_calls_credential_list_mapping">
+    [Twilio - Api] Create a new credential list mapping resource.
+Required: AccountSid, DomainSid, CredentialListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_auth_calls_credential_list_mapping">
+    [Twilio - Api] Fetch a specific instance of a credential list mapping.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_auth_calls_credential_list_mapping">
+    [Twilio - Api] Delete a credential list mapping from the requested domain.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_auth_calls_ip_access_control_list_mapping">
+    [Twilio - Api] Retrieve a list of IP Access Control List mappings belonging to the domain used in the request.
+Required: AccountSid, DomainSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_credential_list">
+    [Twilio - Api] Get a Credential List.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_auth_calls_ip_access_control_list_mapping">
+    [Twilio - Api] Create a new IP Access Control List mapping.
+Required: AccountSid, DomainSid, IpAccessControlListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_auth_calls_ip_access_control_list_mapping">
+    [Twilio - Api] Fetch a specific instance of an IP Access Control List mapping.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_auth_calls_ip_access_control_list_mapping">
+    [Twilio - Api] Delete an IP Access Control List mapping from the requested domain.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_auth_registrations_credential_list_mapping">
+    [Twilio - Api] Retrieve a list of credential list mappings belonging to the domain used in the request.
+Required: AccountSid, DomainSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_credential">
+    [Twilio - Api] Create a new credential resource.
+Required: AccountSid, CredentialListSid, Username, Password.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_auth_registrations_credential_list_mapping">
+    [Twilio - Api] Create a new credential list mapping resource.
+Required: AccountSid, DomainSid, CredentialListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_auth_registrations_credential_list_mapping">
+    [Twilio - Api] Fetch a specific instance of a credential list mapping.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_auth_registrations_credential_list_mapping">
+    [Twilio - Api] Delete a credential list mapping from the requested domain.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_credential">
+    [Twilio - Api] Retrieve a list of credentials.
+Required: AccountSid, CredentialListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_credential">
+    [Twilio - Api] Fetch a single credential.
+Required: AccountSid, CredentialListSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_sip_credential">
+    [Twilio - Api] Update a credential resource.
+Required: AccountSid, CredentialListSid, Sid.
+Optional: Password.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_credential">
+    [Twilio - Api] Delete a credential resource.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, CredentialListSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_credential_list">
+    [Twilio - Api] Get All Credential Lists.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_credential_list">
+    [Twilio - Api] Create a Credential List.
+Required: AccountSid, FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_sip_credential_list">
+    [Twilio - Api] Update a Credential List.
+Required: AccountSid, Sid, FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_credential_list">
+    [Twilio - Api] Delete a Credential List.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_credential_list_mapping">
+    [Twilio - Api] Read multiple CredentialListMapping resources from an account.
+Required: AccountSid, DomainSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_credential_list_mapping">
+    [Twilio - Api] Create a CredentialListMapping resource for an account.
+Required: AccountSid, DomainSid, CredentialListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_credential_list_mapping">
+    [Twilio - Api] Fetch a single CredentialListMapping resource from an account.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_domain">
+    [Twilio - Api] Create a new Domain.
+Required: AccountSid, DomainName.
+Optional: FriendlyName, VoiceUrl, VoiceMethod, VoiceFallbackUrl, VoiceFallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_domain">
+    [Twilio - Api] Fetch an instance of a Domain.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_sip_domain">
+    [Twilio - Api] Update the attributes of a domain.
+Required: AccountSid, Sid.
+Optional: FriendlyName, VoiceFallbackMethod, VoiceFallbackUrl, VoiceMethod, VoiceStatusCallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_domain">
+    [Twilio - Api] Delete an instance of a Domain.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_ip_access_control_list">
+    [Twilio - Api] Retrieve a list of IpAccessControlLists that belong to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_ip_access_control_list">
+    [Twilio - Api] Create a new IpAccessControlList resource.
+Required: AccountSid, FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_ip_access_control_list">
+    [Twilio - Api] Fetch a specific instance of an IpAccessControlList.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_sip_ip_access_control_list">
+    [Twilio - Api] Rename an IpAccessControlList.
+Required: AccountSid, Sid, FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_ip_access_control_list">
+    [Twilio - Api] Delete an IpAccessControlList from the requested account.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record">
+    [Twilio - Api] Retrieve a list of usage-records belonging to the account used to make the request.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_ip_access_control_list_mapping">
+    [Twilio - Api] Fetch an IpAccessControlListMapping resource.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_ip_access_control_list_mapping">
+    [Twilio - Api] Delete an IpAccessControlListMapping resource.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, DomainSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_ip_access_control_list_mapping">
+    [Twilio - Api] Retrieve a list of IpAccessControlListMapping resources.
+Required: AccountSid, DomainSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_sip_ip_access_control_list_mapping">
+    [Twilio - Api] Create a new IpAccessControlListMapping resource.
+Required: AccountSid, DomainSid, IpAccessControlListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_sip_ip_address">
+    [Twilio - Api] Read multiple IpAddress resources.
+Required: AccountSid, IpAccessControlListSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_sip_ip_address">
+    [Twilio - Api] Read one IpAddress resource.
+Required: AccountSid, IpAccessControlListSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_sip_ip_address">
+    [Twilio - Api] Update an IpAddress resource.
+Required: AccountSid, IpAccessControlListSid, Sid.
+Optional: IpAddress, FriendlyName, CidrPrefixLength.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_sip_ip_address">
+    [Twilio - Api] Delete an IpAddress resource.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, IpAccessControlListSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_siprec">
+    [Twilio - Api] Create a Siprec.
+Required: AccountSid, CallSid.
+Optional: Name, ConnectorName, Track, StatusCallback, StatusCallbackMethod.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_siprec">
+    [Twilio - Api] Stop a Siprec using either the SID of the Siprec resource or the `name` used when creating the resource.
+Required: AccountSid, CallSid, Sid, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_stream">
+    [Twilio - Api] Create a Stream.
+Required: AccountSid, CallSid, Url.
+Optional: Name, Track, StatusCallback, StatusCallbackMethod, Parameter1.Name.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_stream">
+    [Twilio - Api] Stop a Stream using either the SID of the Stream resource or the `name` used when creating the resource.
+Required: AccountSid, CallSid, Sid, Status.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_token">
+    [Twilio - Api] Create a new token for ICE servers.
+Required: AccountSid.
+Optional: Ttl.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_transcription">
+    [Twilio - Api] Fetch an instance of a Transcription.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_transcription">
+    [Twilio - Api] Delete a transcription from the account used to make the request.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_all_time">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record All Time resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_daily">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Daily resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_last_month">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Last Month resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_monthly">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Monthly resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_this_month">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record This Month resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_today">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Today resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_yearly">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Yearly resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_list_usage_record_yesterday">
+    [Twilio - Api] Use this tool to retrieve a list of Usage Record Yesterday resources. Returns a paginated collection.
+Required: AccountSid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_fetch_usage_trigger">
+    [Twilio - Api] Fetch and instance of a usage-trigger.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_update_usage_trigger">
+    [Twilio - Api] Update an instance of a usage trigger.
+Required: AccountSid, Sid.
+Optional: CallbackMethod, CallbackUrl, FriendlyName.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_usage_trigger">
+    [Twilio - Api] DESTRUCTIVE: Permanently delete a Usage Trigger. This action cannot be undone.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, Sid.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_usage_trigger">
+    [Twilio - Api] Create a new UsageTrigger.
+Required: AccountSid, CallbackUrl, TriggerValue, UsageCategory.
+Optional: CallbackMethod, FriendlyName, Recurring, TriggerBy.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_user_defined_message">
+    [Twilio - Api] Create a new User Defined Message for the given Call SID.
+Required: AccountSid, CallSid, Content.
+Optional: IdempotencyKey.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_create_user_defined_message_subscription">
+    [Twilio - Api] Subscribe to User Defined Messages for a given Call SID.
+Required: AccountSid, CallSid, Callback.
+Optional: IdempotencyKey, Method.
+  </Accordion>
+  <Accordion title="twilio_api_v2010_delete_user_defined_message_subscription">
+    [Twilio - Api] Delete a specific User Defined Message Subscription.
+WARNING: This is a destructive operation that cannot be undone.
+Required: AccountSid, CallSid, Sid.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Twilio** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+</CardGroup>

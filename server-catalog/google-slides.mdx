@@ -1,0 +1,139 @@
+---
+title: "Google Slides"
+description: "Automate and enhance Google Slides presentations"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-slides.svg"
+---
+
+The Google Slides MCP Server streamlines presentation creation, enabling AI agents to create, read, and modify slides effortlessly. Use cases include automating business reports, technical diagrams, and documentation for enhanced productivity.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/presentations`, `https://www.googleapis.com/auth/presentations.readonly`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Slides Authentication guide](/oauth-guides/google-slides) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **10** tools:
+
+<AccordionGroup>
+  <Accordion title="slides_reply_to_presentation_comment">
+    Reply to a specific comment in a Google Presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="slides_read_presentation_comments">
+    Read all comments from a Google Presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="slides_create_presentation_comment">
+    Create a new comment on a Google Presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="slides_resolve_presentation_comment">
+    Resolve a comment in a Google Presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+  </Accordion>
+  <Accordion title="slides_create_presentation">
+    Create a new Google Slides presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    title (str): The title for the new presentation. Defaults to "Untitled Presentation".
+
+Returns:
+    str: Details about the created presentation including ID and URL.
+  </Accordion>
+  <Accordion title="slides_batch_update_presentation">
+    Apply batch updates to a Google Slides presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    presentation_id (str): The ID of the presentation to update.
+    requests (List[Dict[str, Any]]): List of update requests to apply.
+
+Returns:
+    str: Details about the batch update operation results.
+  </Accordion>
+  <Accordion title="slides_get_page">
+    Get details about a specific page (slide) in a presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    presentation_id (str): The ID of the presentation.
+    page_object_id (str): The object ID of the page/slide to retrieve.
+
+Returns:
+    str: Details about the specific page including elements and layout.
+  </Accordion>
+  <Accordion title="slides_get_current_user">
+    Returns the authenticated user's account information for use with Slides tools. Use the returned email as user_google_email when calling slides_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="get_presentation">
+    Get details about a Google Slides presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    presentation_id (str): The ID of the presentation to retrieve.
+
+Returns:
+    str: Details about the presentation including title, slides count, and metadata.
+  </Accordion>
+  <Accordion title="slides_get_page_thumbnail">
+    Generate a thumbnail URL for a specific page (slide) in a presentation.
+
+Use slides_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    presentation_id (str): The ID of the presentation.
+    page_object_id (str): The object ID of the page/slide.
+    thumbnail_size (str): Size of thumbnail ("LARGE", "MEDIUM", "SMALL"). Defaults to "MEDIUM".
+
+Returns:
+    str: URL to the generated thumbnail image.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Slides** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Drive" href="/server-catalog/google-drive" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-drive.svg" />
+  <Card title="Google Docs" href="/server-catalog/google-docs" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-docs.svg" />
+</CardGroup>

@@ -1,0 +1,624 @@
+---
+title: "Firecrawl"
+description: "Automated web scraping and data extraction tools"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg"
+---
+
+The Firecrawl MCP Server brings powerful, AI-ready web data extraction capabilities to your Caylex projects, enabling agents to scrape, crawl, search, and interact with any website on the web. Built on Firecrawl's v2 API, it supports a wide range of operations — from single-page scraping and full-site crawling to structured data extraction and live browser interaction — making it suitable for use cases such as automated content generation, competitive research, lead enrichment, SEO analysis, and dynamic frontend population. Agents can map entire website link structures, run web searches, and even spin up persistent browser sessions to interact with JavaScript-heavy or login-gated pages. Long-running crawl jobs are handled asynchronously, with dedicated status-checking tools so agents can poll for completion without blocking. This server is ideal for any Caylex workflow that needs reliable, structured access to live web content at scale.
+
+<Warning>
+**Prerequisites:**
+- A Firecrawl account with a valid API key is required — obtain one from the Firecrawl dashboard at firecrawl.dev.
+- Certain advanced features (browser sessions, agent tools, structured extraction) may require a paid Firecrawl plan; verify your plan supports the tools you intend to use.
+</Warning>
+
+<Note>
+**Important API details:**
+- Crawl and agent operations are asynchronous — use firecrawl_check_crawl_status and firecrawl_agent_status to poll for job completion rather than expecting immediate results.
+- Browser session tools (firecrawl_browser_create, firecrawl_browser_list, firecrawl_browser_delete, firecrawl_interact, firecrawl_interact_stop) enable stateful, persistent browser sessions for interacting with JavaScript-heavy or authenticated pages; sessions must be explicitly created and deleted to avoid resource leaks.
+- The firecrawl_extract tool is designed for structured data extraction and may use LLM-based parsing under the hood, which can affect credit consumption relative to standard scraping.
+- API credit usage varies by tool and operation complexity; high-volume crawls or agent tasks consume significantly more credits than single-page scrapes.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Web Scraping, Web Scraping & Browser Automation |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Path Parameter Authentication
+
+This server requires path parameters to be set in the server URL. These are typically identifiers like account IDs or organization slugs.
+
+## Available Tools
+
+This server provides **13** tools:
+
+### Scrape & Extract
+
+<AccordionGroup>
+  <Accordion title="firecrawl_scrape">
+    
+Scrape content from a single URL with advanced options.
+This is the most powerful, fastest and most reliable scraper tool, if available you should always default to using this tool for any web scraping needs.
+
+**Best for:** Single page content extraction, when you know exactly which page contains the information.
+**Not recommended for:** Multiple pages (call scrape multiple times or use crawl), unknown page location (use search).
+**Common mistakes:** Using markdown format when extracting specific data points (use JSON instead).
+**Other Features:** Use 'branding' format to extract brand identity (colors, fonts, typography, spacing, UI components) for design analysis or style replication.
+
+**CRITICAL - Format Selection (you MUST follow this):**
+When the user asks for SPECIFIC data points, you MUST use JSON format with a schema. Only use markdown when the user needs the ENTIRE page content.
+
+**Use JSON format when user asks for:**
+<ul>
+<li>Parameters, fields, or specifications (e.g., "get the header parameters", "what are the required fields")</li>
+<li>Prices, numbers, or structured data (e.g., "extract the pricing", "get the product details")</li>
+<li>API details, endpoints, or technical specs (e.g., "find the authentication endpoint")</li>
+<li>Lists of items or properties (e.g., "list the features", "get all the options")</li>
+<li>Any specific piece of information from a page</li>
+</ul>
+
+**Use markdown format ONLY when:**
+<ul>
+<li>User wants to read/summarize an entire article or blog post</li>
+<li>User needs to see all content on a page without specific extraction</li>
+<li>User explicitly asks for the full page content</li>
+</ul>
+
+**Handling JavaScript-rendered pages (SPAs):**
+If JSON extraction returns empty, minimal, or just navigation content, the page is likely JavaScript-rendered or the content is on a different URL. Try these steps IN ORDER:
+1. **Add waitFor parameter:** Set `waitFor: 5000` to `waitFor: 10000` to allow JavaScript to render before extraction
+2. **Try a different URL:** If the URL has a hash fragment (#section), try the base URL or look for a direct page URL
+3. **Use firecrawl_map to find the correct page:** Large documentation sites or SPAs often spread content across multiple URLs. Use `firecrawl_map` with a `search` parameter to discover the specific page containing your target content, then scrape that URL directly.
+   Example: If scraping "https://docs.example.com/reference" fails to find webhook parameters, use `firecrawl_map` with `{"url": "https://docs.example.com/reference", "search": "webhook"}` to find URLs like "/reference/webhook-events", then scrape that specific page.
+4. **Use firecrawl_agent:** As a last resort for heavily dynamic pages where map+scrape still fails, use the agent which can autonomously navigate and research
+
+**Usage Example (JSON format - REQUIRED for specific data extraction):**
+```json
+{
+  "name": "firecrawl_scrape",
+  "arguments": {
+    "url": "https://example.com/api-docs",
+    "formats": ["json"],
+    "jsonOptions": {
+      "prompt": "Extract the header parameters for the authentication endpoint",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" },
+                "required": { "type": "boolean" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Prefer markdown format by default.** You can read and reason over the full page content directly — no need for an intermediate query step. Use markdown for questions about page content, factual lookups, and any task where you need to understand the page.
+
+**Use JSON format when user needs:**
+<ul>
+<li>Structured data with specific fields (extract all products with name, price, description)</li>
+<li>Data in a specific schema for downstream processing</li>
+</ul>
+
+**Use query format only when:**
+<ul>
+<li>The page is extremely long and you need a single targeted answer without processing the full content</li>
+<li>You want a quick factual answer and don't need to retain the page content</li>
+</ul>
+
+**Usage Example (markdown format - default for most tasks):**
+```json
+{
+  "name": "firecrawl_scrape",
+  "arguments": {
+    "url": "https://example.com/article",
+    "formats": ["markdown"],
+    "onlyMainContent": true
+  }
+}
+```
+**Usage Example (branding format - extract brand identity):**
+```json
+{
+  "name": "firecrawl_scrape",
+  "arguments": {
+    "url": "https://example.com",
+    "formats": ["branding"]
+  }
+}
+```
+**Branding format:** Extracts comprehensive brand identity (colors, fonts, typography, spacing, logo, UI components) for design analysis or style replication.
+**Performance:** Add maxAge parameter for 500% faster scrapes using cached data.
+**Returns:** JSON structured data, markdown, branding profile, or other formats as specified.
+**Safe Mode:** Read-only content extraction. Interactive actions (click, write, executeJavascript) are disabled for security.
+
+  </Accordion>
+  <Accordion title="firecrawl_extract">
+    
+Extract structured information from web pages using LLM capabilities. Supports both cloud AI and self-hosted LLM extraction.
+
+**Best for:** Extracting specific structured data like prices, names, details from web pages.
+**Not recommended for:** When you need the full content of a page (use scrape); when you're not looking for specific structured data.
+**Arguments:**
+<ul>
+<li>urls: Array of URLs to extract information from</li>
+<li>prompt: Custom prompt for the LLM extraction</li>
+<li>schema: JSON schema for structured data extraction</li>
+<li>allowExternalLinks: Allow extraction from external links</li>
+<li>enableWebSearch: Enable web search for additional context</li>
+<li>includeSubdomains: Include subdomains in extraction</li>
+</ul>
+**Prompt Example:** "Extract the product name, price, and description from these product pages."
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_extract",
+  "arguments": {
+    "urls": ["https://example.com/page1", "https://example.com/page2"],
+    "prompt": "Extract product information including name, price, and description",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "price"]
+    },
+    "allowExternalLinks": false,
+    "enableWebSearch": false,
+    "includeSubdomains": false
+  }
+}
+```
+**Returns:** Extracted structured data as defined by your schema.
+
+  </Accordion>
+</AccordionGroup>
+
+### Crawl
+
+<AccordionGroup>
+  <Accordion title="firecrawl_crawl">
+    
+ Starts a crawl job on a website and extracts content from all pages.
+ 
+ **Best for:** Extracting content from multiple related pages, when you need comprehensive coverage.
+ **Not recommended for:** Extracting content from a single page (use scrape); when token limits are a concern (use map + batch_scrape); when you need fast results (crawling can be slow).
+ **Warning:** Crawl responses can be very large and may exceed token limits. Limit the crawl depth and number of pages, or use map + batch_scrape for better control.
+ **Common mistakes:** Setting limit or maxDiscoveryDepth too high (causes token overflow) or too low (causes missing pages); using crawl for a single page (use scrape instead). Using a /* wildcard is not recommended.
+ **Prompt Example:** "Get all blog posts from the first two levels of example.com/blog."
+ **Usage Example:**
+ ```json
+ {
+   "name": "firecrawl_crawl",
+   "arguments": {
+     "url": "https://example.com/blog/*",
+     "maxDiscoveryDepth": 5,
+     "limit": 20,
+     "allowExternalLinks": false,
+     "deduplicateSimilarURLs": true,
+     "sitemap": "include"
+   }
+ }
+ ```
+ **Returns:** Operation ID for status checking; use firecrawl_check_crawl_status to check progress.
+ **Safe Mode:** Read-only crawling. Webhooks and interactive actions are disabled for security.
+ 
+  </Accordion>
+  <Accordion title="firecrawl_check_crawl_status">
+    
+Check the status of a crawl job.
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_check_crawl_status",
+  "arguments": {
+    "id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+**Returns:** Status and progress of the crawl job, including results if available.
+
+  </Accordion>
+</AccordionGroup>
+
+### Search
+
+<AccordionGroup>
+  <Accordion title="firecrawl_search">
+    
+Search the web and optionally extract content from search results. This is the most powerful web search tool available, and if available you should always default to using this tool for any web search needs.
+
+The query also supports search operators, that you can use if needed to refine the search:
+| Operator | Functionality | Examples |
+---|-|-|
+| `""` | Non-fuzzy matches a string of text | `"Firecrawl"`
+| `-` | Excludes certain keywords or negates other operators | `-bad`, `-site:firecrawl.dev`
+| `site:` | Only returns results from a specified website | `site:firecrawl.dev`
+| `inurl:` | Only returns results that include a word in the URL | `inurl:firecrawl`
+| `allinurl:` | Only returns results that include multiple words in the URL | `allinurl:git firecrawl`
+| `intitle:` | Only returns results that include a word in the title of the page | `intitle:Firecrawl`
+| `allintitle:` | Only returns results that include multiple words in the title of the page | `allintitle:firecrawl playground`
+| `related:` | Only returns results that are related to a specific domain | `related:firecrawl.dev`
+| `imagesize:` | Only returns images with exact dimensions | `imagesize:1920x1080`
+| `larger:` | Only returns images larger than specified dimensions | `larger:1920x1080`
+
+**Best for:** Finding specific information across multiple websites, when you don't know which website has the information; when you need the most relevant content for a query.
+**Not recommended for:** When you need to search the filesystem. When you already know which website to scrape (use scrape); when you need comprehensive coverage of a single website (use map or crawl.
+**Common mistakes:** Using crawl or map for open-ended questions (use search instead).
+**Prompt Example:** "Find the latest research papers on AI published in 2023."
+**Sources:** web, images, news, default to web unless needed images or news.
+**Scrape Options:** Only use scrapeOptions when you think it is absolutely necessary. When you do so default to a lower limit to avoid timeouts, 5 or lower.
+**Optimal Workflow:** Search first using firecrawl_search without formats, then after fetching the results, use the scrape tool to get the content of the relevantpage(s) that you want to scrape
+
+**Usage Example without formats (Preferred):**
+```json
+{
+  "name": "firecrawl_search",
+  "arguments": {
+    "query": "top AI companies",
+    "limit": 5,
+    "sources": [
+      { "type": "web" }
+    ]
+  }
+}
+```
+**Usage Example with formats:**
+```json
+{
+  "name": "firecrawl_search",
+  "arguments": {
+    "query": "latest AI research papers 2023",
+    "limit": 5,
+    "lang": "en",
+    "country": "us",
+    "sources": [
+      { "type": "web" },
+      { "type": "images" },
+      { "type": "news" }
+    ],
+    "scrapeOptions": {
+      "formats": ["markdown"],
+      "onlyMainContent": true
+    }
+  }
+}
+```
+**Returns:** Array of search results (with optional scraped content).
+
+  </Accordion>
+</AccordionGroup>
+
+### Map
+
+<AccordionGroup>
+  <Accordion title="firecrawl_map">
+    
+Map a website to discover all indexed URLs on the site.
+
+**Best for:** Discovering URLs on a website before deciding what to scrape; finding specific sections or pages within a large site; locating the correct page when scrape returns empty or incomplete results.
+**Not recommended for:** When you already know which specific URL you need (use scrape); when you need the content of the pages (use scrape after mapping).
+**Common mistakes:** Using crawl to discover URLs instead of map; jumping straight to firecrawl_agent when scrape fails instead of using map first to find the right page.
+
+**IMPORTANT - Use map before agent:** If `firecrawl_scrape` returns empty, minimal, or irrelevant content, use `firecrawl_map` with the `search` parameter to find the specific page URL containing your target content. This is faster and cheaper than using `firecrawl_agent`. Only use the agent as a last resort after map+scrape fails.
+
+**Prompt Example:** "Find the webhook documentation page on this API docs site."
+**Usage Example (discover all URLs):**
+```json
+{
+  "name": "firecrawl_map",
+  "arguments": {
+    "url": "https://example.com"
+  }
+}
+```
+**Usage Example (search for specific content - RECOMMENDED when scrape fails):**
+```json
+{
+  "name": "firecrawl_map",
+  "arguments": {
+    "url": "https://docs.example.com/api",
+    "search": "webhook events"
+  }
+}
+```
+**Returns:** Array of URLs found on the site, filtered by search query if provided.
+
+  </Accordion>
+</AccordionGroup>
+
+### Browser Session
+
+<AccordionGroup>
+  <Accordion title="firecrawl_browser_create">
+    
+**DEPRECATED — prefer firecrawl_scrape + firecrawl_interact instead.** Interact lets you scrape a page and then click, fill forms, and navigate without managing sessions manually.
+
+Create a browser session for code execution via CDP (Chrome DevTools Protocol).
+
+**Arguments:**
+<ul>
+<li>ttl: Total session lifetime in seconds (30-3600, optional)</li>
+<li>activityTtl: Idle timeout in seconds (10-3600, optional)</li>
+<li>streamWebView: Whether to enable live view streaming (optional)</li>
+<li>profile: Save and reuse browser state (cookies, localStorage) across sessions (optional)</li>
+<li>name: Profile name (sessions with the same name share state)</li>
+<li>saveChanges: Whether to save changes back to the profile (default: true)</li>
+</ul>
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_browser_create",
+  "arguments": {
+    "profile": { "name": "my-profile", "saveChanges": true }
+  }
+}
+```
+**Returns:** Session ID, CDP URL, and live view URL.
+
+  </Accordion>
+  <Accordion title="firecrawl_browser_list">
+    
+**DEPRECATED — prefer firecrawl_scrape + firecrawl_interact instead.**
+
+List browser sessions, optionally filtered by status.
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_browser_list",
+  "arguments": {
+    "status": "active"
+  }
+}
+```
+**Returns:** Array of browser sessions.
+
+  </Accordion>
+  <Accordion title="firecrawl_browser_delete">
+    
+**DEPRECATED — prefer firecrawl_scrape + firecrawl_interact instead.**
+
+Destroy a browser session.
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_browser_delete",
+  "arguments": {
+    "sessionId": "session-id-here"
+  }
+}
+```
+**Returns:** Success confirmation.
+
+  </Accordion>
+</AccordionGroup>
+
+### Interact
+
+<AccordionGroup>
+  <Accordion title="firecrawl_interact">
+    
+Interact with a previously scraped page in a live browser session. Scrape a page first with firecrawl_scrape, then use the returned scrapeId to click buttons, fill forms, extract dynamic content, or navigate deeper.
+
+**Best for:** Multi-step workflows on a single page — searching a site, clicking through results, filling forms, extracting data that requires interaction.
+**Requires:** A scrapeId from a previous firecrawl_scrape call (found in the metadata of the scrape response).
+
+**Arguments:**
+<ul>
+<li>scrapeId: The scrape job ID from a previous scrape (required)</li>
+<li>prompt: Natural language instruction describing the action to take (use this OR code)</li>
+<li>code: Code to execute in the browser session (use this OR prompt)</li>
+<li>language: "bash", "python", or "node" (optional, defaults to "node", only used with code)</li>
+<li>timeout: Execution timeout in seconds, 1-300 (optional, defaults to 30)</li>
+</ul>
+
+**Usage Example (prompt):**
+```json
+{
+  "name": "firecrawl_interact",
+  "arguments": {
+    "scrapeId": "scrape-id-from-previous-scrape",
+    "prompt": "Click on the first product and tell me its price"
+  }
+}
+```
+
+**Usage Example (code):**
+```json
+{
+  "name": "firecrawl_interact",
+  "arguments": {
+    "scrapeId": "scrape-id-from-previous-scrape",
+    "code": "agent-browser click @e5",
+    "language": "bash"
+  }
+}
+```
+**Returns:** Execution result including output, stdout, stderr, exit code, and live view URLs.
+
+  </Accordion>
+  <Accordion title="firecrawl_interact_stop">
+    
+Stop an interact session for a scraped page. Call this when you are done interacting to free resources.
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_interact_stop",
+  "arguments": {
+    "scrapeId": "scrape-id-here"
+  }
+}
+```
+**Returns:** Success confirmation.
+
+  </Accordion>
+</AccordionGroup>
+
+### Agent
+
+<AccordionGroup>
+  <Accordion title="firecrawl_agent">
+    
+Autonomous web research agent. This is a separate AI agent layer that independently browses the internet, searches for information, navigates through pages, and extracts structured data based on your query. You describe what you need, and the agent figures out where to find it.
+
+**How it works:** The agent performs web searches, follows links, reads pages, and gathers data autonomously. This runs **asynchronously** - it returns a job ID immediately, and you poll `firecrawl_agent_status` to check when complete and retrieve results.
+
+**IMPORTANT - Async workflow with patient polling:**
+1. Call `firecrawl_agent` with your prompt/schema → returns job ID immediately
+2. Poll `firecrawl_agent_status` with the job ID to check progress
+3. **Keep polling for at least 2-3 minutes** - agent research typically takes 1-5 minutes for complex queries
+4. Poll every 15-30 seconds until status is "completed" or "failed"
+5. Do NOT give up after just a few polling attempts - the agent needs time to research
+
+**Expected wait times:**
+<ul>
+<li>Simple queries with provided URLs: 30 seconds - 1 minute</li>
+<li>Complex research across multiple sites: 2-5 minutes</li>
+<li>Deep research tasks: 5+ minutes</li>
+</ul>
+
+**Best for:** Complex research tasks where you don't know the exact URLs; multi-source data gathering; finding information scattered across the web; extracting data from JavaScript-heavy SPAs that fail with regular scrape.
+**Not recommended for:**
+<ul>
+<li>Single-page extraction when you have a URL (use firecrawl_scrape, faster and cheaper)</li>
+<li>Web search (use firecrawl_search first)</li>
+<li>Interactive page tasks like clicking, filling forms, login, or navigating JS-heavy SPAs (use firecrawl_scrape + firecrawl_interact)</li>
+<li>Extracting specific data from a known page (use firecrawl_scrape with JSON format)</li>
+</ul>
+
+**Arguments:**
+<ul>
+<li>prompt: Natural language description of the data you want (required, max 10,000 characters)</li>
+<li>urls: Optional array of URLs to focus the agent on specific pages</li>
+<li>schema: Optional JSON schema for structured output</li>
+</ul>
+
+**Prompt Example:** "Find the founders of Firecrawl and their backgrounds"
+**Usage Example (start agent, then poll patiently for results):**
+```json
+{
+  "name": "firecrawl_agent",
+  "arguments": {
+    "prompt": "Find the top 5 AI startups founded in 2024 and their funding amounts",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "startups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "funding": { "type": "string" },
+              "founded": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+Then poll with `firecrawl_agent_status` every 15-30 seconds for at least 2-3 minutes.
+
+**Usage Example (with URLs - agent focuses on specific pages):**
+```json
+{
+  "name": "firecrawl_agent",
+  "arguments": {
+    "urls": ["https://docs.firecrawl.dev", "https://firecrawl.dev/pricing"],
+    "prompt": "Compare the features and pricing information from these pages"
+  }
+}
+```
+**Returns:** Job ID for status checking. Use `firecrawl_agent_status` to poll for results.
+
+  </Accordion>
+  <Accordion title="firecrawl_agent_status">
+    
+Check the status of an agent job and retrieve results when complete. Use this to poll for results after starting an agent with `firecrawl_agent`.
+
+**IMPORTANT - Be patient with polling:**
+<ul>
+<li>Poll every 15-30 seconds</li>
+<li>**Keep polling for at least 2-3 minutes** before considering the request failed</li>
+<li>Complex research can take 5+ minutes - do not give up early</li>
+<li>Only stop polling when status is "completed" or "failed"</li>
+</ul>
+
+**Usage Example:**
+```json
+{
+  "name": "firecrawl_agent_status",
+  "arguments": {
+    "id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+**Possible statuses:**
+<ul>
+<li>processing: Agent is still researching - keep polling, do not give up</li>
+<li>completed: Research finished - response includes the extracted data</li>
+<li>failed: An error occurred (only stop polling on this status)</li>
+</ul>
+
+**Returns:** Status, progress, and results (if completed) of the agent job.
+
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Firecrawl** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+  <Card title="Bright Data" href="/server-catalog/bright-data" icon="https://d338mlbnszozgc.cloudfront.net/logos/brightdata.png" />
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+  <Card title="Simplescraper" href="/server-catalog/simplescraper" icon="https://d338mlbnszozgc.cloudfront.net/logos/simplescraper.png" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.firecrawl.dev/mcp-server" href="https://docs.firecrawl.dev/mcp-server" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/firecrawl/firecrawl-mcp-server" href="https://github.com/firecrawl/firecrawl-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

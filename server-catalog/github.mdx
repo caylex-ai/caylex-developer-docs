@@ -1,0 +1,270 @@
+---
+title: "Github"
+description: "Integrate GitHub tools for code and project man..."
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/github.svg"
+---
+
+The GitHub MCP Server is GitHub's official Model Context Protocol server, enabling AI agents within Caylex to interact directly with GitHub repositories, issues, pull requests, branches, releases, and more. It provides a comprehensive set of tools for automating software development workflows — from creating and merging pull requests to searching code, managing issue tracking, and running secret scanning. Agents can read and write file contents, manage branches, fork or create repositories, and even request Copilot-powered code reviews, all without leaving the Caylex ecosystem. Certain advanced tools — such as those interacting with GitHub Copilot Coding Agent features like `assign_copilot_to_issue` or `create_pull_request_with_copilot` — require a paid GitHub Copilot license on the authenticated account. This server is ideal for teams looking to automate code review workflows, triage issues, synchronize repository tasks, and enhance collaborative development through AI agents.
+
+<Warning>
+**Prerequisites:**
+- A valid GitHub account is required; a paid GitHub Copilot license is additionally required for Copilot-specific tools.
+- A GitHub Personal Access Token (PAT) with the necessary permission scopes, or OAuth authentication, must be configured when adding the server to your Caylex project.
+- If operating within a GitHub organization or enterprise, ensure the organization's MCP policy is enabled by an admin before use.
+</Warning>
+
+<Note>
+**Important API details:**
+- Tools that interact with GitHub Copilot Coding Agent features (e.g., assign_copilot_to_issue, create_pull_request_with_copilot, request_copilot_review) require a paid GitHub Copilot license.
+- Authentication via a Personal Access Token (PAT) requires the token to have the appropriate scopes for each action — for example, repo scope for repository access and write operations.
+- If authenticating as a member of a GitHub organization or enterprise with Copilot Business or Copilot Enterprise, the organization's 'MCP servers in Copilot' policy must be enabled at the org/enterprise level.
+- All tools inherit the same access requirements as their corresponding GitHub features — if a GitHub feature requires elevated permissions or a paid plan, the equivalent MCP tool will too.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Version Control, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `repo`, `user`, `gist`, `notifications`, `project`, `workflow`, `codespaceRetry`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Github Authentication guide](/oauth-guides/github) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **44** tools:
+
+### Repository Management
+
+<AccordionGroup>
+  <Accordion title="create_repository">
+    Create a new GitHub repository in your account or specified organization
+  </Accordion>
+  <Accordion title="fork_repository">
+    Fork a GitHub repository to your account or specified organization
+  </Accordion>
+  <Accordion title="get_file_contents">
+    Get the contents of a file or directory from a GitHub repository
+  </Accordion>
+  <Accordion title="create_or_update_file">
+    Create or update a single file in a GitHub repository. 
+If updating, you should provide the SHA of the file you want to update. Use this tool to create or update a file in a GitHub repository remotely; do not use it for local file operations.
+
+In order to obtain the SHA of original file version before updating, use the following git command:
+git rev-parse &lt;branch&gt;:&lt;path to file&gt;
+
+SHA MUST be provided for existing file updates.
+
+  </Accordion>
+  <Accordion title="delete_file">
+    Delete a file from a GitHub repository
+  </Accordion>
+  <Accordion title="push_files">
+    Push multiple files to a GitHub repository in a single commit
+  </Accordion>
+  <Accordion title="list_branches">
+    List branches in a GitHub repository
+  </Accordion>
+  <Accordion title="create_branch">
+    Create a new branch in a GitHub repository
+  </Accordion>
+  <Accordion title="list_commits">
+    Get list of commits of a branch in a GitHub repository. Returns at least 30 results per page by default, but can return more if specified using the perPage parameter (up to 100).
+  </Accordion>
+  <Accordion title="get_commit">
+    Get details for a commit from a GitHub repository
+  </Accordion>
+  <Accordion title="search_repositories">
+    Find GitHub repositories by name, description, readme, topics, or other metadata. Perfect for discovering projects, finding examples, or locating specific repositories across GitHub.
+  </Accordion>
+  <Accordion title="search_code">
+    Fast and precise code search across ALL GitHub repositories using GitHub's native search engine. Best for finding exact symbols, functions, classes, or specific code patterns.
+  </Accordion>
+</AccordionGroup>
+
+### Issue Management
+
+<AccordionGroup>
+  <Accordion title="list_issues">
+    List issues in a GitHub repository. For pagination, use the 'endCursor' from the previous response's 'pageInfo' in the 'after' parameter.
+  </Accordion>
+  <Accordion title="issue_read">
+    Get information about a specific issue in a GitHub repository.
+  </Accordion>
+  <Accordion title="issue_write">
+    Create a new or update an existing issue in a GitHub repository.
+  </Accordion>
+  <Accordion title="add_issue_comment">
+    Add a comment to a specific issue in a GitHub repository. Use this tool to add comments to pull requests as well (in this case pass pull request number as issue_number), but only if user is not asking specifically to add review comments.
+  </Accordion>
+  <Accordion title="search_issues">
+    Search for issues in GitHub repositories using issues search syntax already scoped to is:issue
+  </Accordion>
+  <Accordion title="list_issue_types">
+    List supported issue types for repository owner (organization).
+  </Accordion>
+  <Accordion title="sub_issue_write">
+    Add a sub-issue to a parent issue in a GitHub repository.
+  </Accordion>
+  <Accordion title="assign_copilot_to_issue">
+    Assign Copilot to a specific issue in a GitHub repository.
+
+This tool can help with the following outcomes:
+<ul>
+<li>a Pull Request created with source code changes to resolve the issue</li>
+</ul>
+
+
+More information can be found at:
+<ul>
+<li>https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot</li>
+</ul>
+
+  </Accordion>
+  <Accordion title="get_label">
+    Get a specific label from a repository.
+  </Accordion>
+</AccordionGroup>
+
+### Pull Request Management
+
+<AccordionGroup>
+  <Accordion title="list_pull_requests">
+    List pull requests in a GitHub repository. If the user specifies an author, then DO NOT use this tool and use the search_pull_requests tool instead.
+  </Accordion>
+  <Accordion title="pull_request_read">
+    Get information on a specific pull request in GitHub repository.
+  </Accordion>
+  <Accordion title="create_pull_request">
+    Create a new pull request in a GitHub repository.
+  </Accordion>
+  <Accordion title="update_pull_request">
+    Update an existing pull request in a GitHub repository.
+  </Accordion>
+  <Accordion title="update_pull_request_branch">
+    Update the branch of a pull request with the latest changes from the base branch.
+  </Accordion>
+  <Accordion title="merge_pull_request">
+    Merge a pull request in a GitHub repository.
+  </Accordion>
+  <Accordion title="search_pull_requests">
+    Search for pull requests in GitHub repositories using issues search syntax already scoped to is:pr
+  </Accordion>
+  <Accordion title="add_reply_to_pull_request_comment">
+    Add a reply to an existing pull request comment. This creates a new comment that is linked as a reply to the specified comment.
+  </Accordion>
+  <Accordion title="pull_request_review_write">
+    Create and/or submit, delete review of a pull request.
+
+Available methods:
+<ul>
+<li>create: Create a new review of a pull request. If "event" parameter is provided, the review is submitted. If "event" is omitted, a pending review is created.</li>
+<li>submit_pending: Submit an existing pending review of a pull request. This requires that a pending review exists for the current user on the specified pull request. The "body" and "event" parameters are used when submitting the review.</li>
+<li>delete_pending: Delete an existing pending review of a pull request. This requires that a pending review exists for the current user on the specified pull request.</li>
+</ul>
+
+  </Accordion>
+  <Accordion title="add_comment_to_pending_review">
+    Add review comment to the requester's latest pending pull request review. A pending review needs to already exist to call this (check with the user if not sure).
+  </Accordion>
+  <Accordion title="create_pull_request_with_copilot">
+    Delegate a task to GitHub Copilot coding agent to perform in the background. The agent will create a pull request with the implementation. You should use this tool if the user asks to create a pull request to perform a specific task, or if the user asks Copilot to do something.
+  </Accordion>
+  <Accordion title="request_copilot_review">
+    Request a GitHub Copilot code review for a pull request. Use this for automated feedback on pull requests, usually before requesting a human reviewer.
+  </Accordion>
+</AccordionGroup>
+
+### Releases & Tags
+
+<AccordionGroup>
+  <Accordion title="list_releases">
+    List releases in a GitHub repository
+  </Accordion>
+  <Accordion title="get_latest_release">
+    Get the latest release in a GitHub repository
+  </Accordion>
+  <Accordion title="get_release_by_tag">
+    Get a specific release by its tag name in a GitHub repository
+  </Accordion>
+  <Accordion title="list_tags">
+    List git tags in a GitHub repository
+  </Accordion>
+  <Accordion title="get_tag">
+    Get details about a specific git tag in a GitHub repository
+  </Accordion>
+</AccordionGroup>
+
+### Teams & Users
+
+<AccordionGroup>
+  <Accordion title="get_me">
+    Get details of the authenticated GitHub user. Use this when a request is about the user's own profile for GitHub. Or when information is missing to build other tool calls.
+  </Accordion>
+  <Accordion title="get_teams">
+    Get details of the teams the user is a member of. Limited to organizations accessible with current credentials
+  </Accordion>
+  <Accordion title="get_team_members">
+    Get member usernames of a specific team in an organization. Limited to organizations accessible with current credentials
+  </Accordion>
+  <Accordion title="search_users">
+    Find GitHub users by username, real name, or other profile information. Useful for locating developers, contributors, or team members.
+  </Accordion>
+</AccordionGroup>
+
+### Copilot & Security
+
+<AccordionGroup>
+  <Accordion title="get_copilot_job_status">
+    Get the status of a GitHub Copilot coding agent job. Use this to check if a previously submitted task has completed and to get the pull request URL once it's created. Provide the job ID (from create_pull_request_with_copilot) or pull request number (from assign_copilot_to_issue), or any pull request you want agent sessions for.
+  </Accordion>
+  <Accordion title="run_secret_scanning">
+    Scan files, content, or recent changes for secrets such as API keys, passwords, tokens, and credentials.
+
+This tool is intended for targeted scans of specific files, snippets, or diffs provided directly as content. It accepts file contents or diffs and returns detected secrets with their locations and related secret scanning metadata. Content must not be empty. For full repository scanning, other mechanisms are available.
+
+Caveats:
+
+<ul>
+<li>Only files within the codebase should be scanned. Files outside of the codebase should not be sent.</li>
+<li>Files listed in .gitignore should be skipped.</li>
+</ul>
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Github** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Linear" href="/server-catalog/linear" icon="https://d338mlbnszozgc.cloudfront.net/logos/linear.svg" />
+  <Card title="Atlassian" href="/server-catalog/atlassian" icon="https://d338mlbnszozgc.cloudfront.net/logos/atlassian.svg" />
+  <Card title="Sentry" href="/server-catalog/sentry" icon="https://d338mlbnszozgc.cloudfront.net/logos/sentry.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp/use-the-github-mcp-server" href="https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp/use-the-github-mcp-server" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/github/github-mcp-server" href="https://github.com/github/github-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

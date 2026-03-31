@@ -1,0 +1,378 @@
+---
+title: "Google Drive"
+description: "Search, read, and manage Google Drive files"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-drive.svg"
+---
+
+The Google Drive MCP Server integrates with Google Drive, enabling AI agents to search, list, and read files. Key use cases include accessing document contents, managing Google Sheets, and performing full-text searches across files.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Cloud Storage, Documents & Files, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/drive`, `https://www.googleapis.com/auth/drive.readonly`, `https://www.googleapis.com/auth/drive.file`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Drive Authentication guide](/oauth-guides/google-drive) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **18** tools:
+
+<AccordionGroup>
+  <Accordion title="drive_search_files">
+    Searches for files and folders within a user's Google Drive, including shared drives.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    query (str): The search query string. Supports Google Drive search operators.
+    page_size (int): The maximum number of files to return. Defaults to 10.
+    drive_id (Optional[str]): ID of the shared drive to search. If None, behavior depends on `corpora` and `include_items_from_all_drives`.
+    include_items_from_all_drives (bool): Whether shared drive items should be included in results. Defaults to True. This is effective when not specifying a `drive_id`.
+    corpora (Optional[str]): Bodies of items to query (e.g., 'user', 'domain', 'drive', 'allDrives').
+                             If 'drive_id' is specified and 'corpora' is None, it defaults to 'drive'.
+                             Otherwise, Drive API default behavior applies. Prefer 'user' or 'drive' over 'allDrives' for efficiency.
+
+Returns:
+    str: A formatted list of found files/folders with their details (ID, name, type, size, modified time, link).
+  </Accordion>
+  <Accordion title="drive_get_file_download_url">
+    Gets a download URL for a Google Drive file. The file is prepared and made available via HTTP URL.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+For Google native files (Docs, Sheets, Slides), exports to a useful format:
+• Google Docs → PDF (default) or DOCX if export_format='docx'
+• Google Sheets → XLSX (default), PDF if export_format='pdf', or CSV if export_format='csv'
+• Google Slides → PDF (default) or PPTX if export_format='pptx'
+
+For other files, downloads the original file format.
+
+Args:
+    user_google_email: The user's Google email address. Required.
+    file_id: The Google Drive file ID to get a download URL for.
+    export_format: Optional export format for Google native files.
+                  Options: 'pdf', 'docx', 'xlsx', 'csv', 'pptx'.
+                  If not specified, uses sensible defaults (PDF for Docs/Slides, XLSX for Sheets).
+                  For Sheets: supports 'csv', 'pdf', or 'xlsx' (default).
+
+Returns:
+    str: Download URL and file metadata. The file is available at the URL for 1 hour.
+  </Accordion>
+  <Accordion title="drive_import_to_google_doc">
+    Imports a file (Markdown, DOCX, TXT, HTML, RTF, ODT) into Google Docs format with automatic conversion.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Google Drive automatically converts the source file to native Google Docs format,
+preserving formatting like headings, lists, bold, italic, etc.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_name (str): The name for the new Google Doc (extension will be ignored).
+    content (Optional[str]): Text content for text-based formats (MD, TXT, HTML).
+    file_path (Optional[str]): Local file path for binary formats (DOCX, ODT). Supports file:// URLs.
+    file_url (Optional[str]): Remote URL to fetch the file from (http/https).
+    source_format (Optional[str]): Source format hint ('md', 'markdown', 'docx', 'txt', 'html', 'rtf', 'odt').
+                                   Auto-detected from file_name extension if not provided.
+    folder_id (str): The ID of the parent folder. Defaults to 'root'.
+
+Returns:
+    str: Confirmation message with the new Google Doc link.
+
+Examples:
+    # Import markdown content directly
+    drive_import_to_google_doc(file_name="My Doc.md", content="# Title\n\nHello **world**")
+
+    # Import a local DOCX file
+    drive_import_to_google_doc(file_name="Report", file_path="/path/to/report.docx")
+
+    # Import from URL
+    drive_import_to_google_doc(file_name="Remote Doc", file_url="https://example.com/doc.md")
+  </Accordion>
+  <Accordion title="drive_update_file">
+    Updates metadata and properties of a Google Drive file.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file to update. Required.
+    name (Optional[str]): New name for the file.
+    description (Optional[str]): New description for the file.
+    mime_type (Optional[str]): New MIME type (note: changing type may require content upload).
+    add_parents (Optional[str]): Comma-separated folder IDs to add as parents.
+    remove_parents (Optional[str]): Comma-separated folder IDs to remove from parents.
+    starred (Optional[bool]): Whether to star/unstar the file.
+    trashed (Optional[bool]): Whether to move file to/from trash.
+    writers_can_share (Optional[bool]): Whether editors can share the file.
+    copy_requires_writer_permission (Optional[bool]): Whether copying requires writer permission.
+    properties (Optional[dict]): Custom key-value properties for the file.
+
+Returns:
+    str: Confirmation message with details of the updates applied.
+  </Accordion>
+  <Accordion title="drive_share_file">
+    Shares a Google Drive file or folder with a user, group, domain, or anyone with the link.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+When sharing a folder, all files inside inherit the permission.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder to share. Required.
+    share_with (Optional[str]): Email address (for user/group), domain name (for domain), or omit for 'anyone'.
+    role (str): Permission role - 'reader', 'commenter', or 'writer'. Defaults to 'reader'.
+    share_type (str): Type of sharing - 'user', 'group', 'domain', or 'anyone'. Defaults to 'user'.
+    send_notification (bool): Whether to send a notification email. Defaults to True.
+    email_message (Optional[str]): Custom message for the notification email.
+    expiration_time (Optional[str]): Expiration time in RFC 3339 format (e.g., "2025-01-15T00:00:00Z"). Permission auto-revokes after this time.
+    allow_file_discovery (Optional[bool]): For 'domain' or 'anyone' shares - whether the file can be found via search. Defaults to None (API default).
+
+Returns:
+    str: Confirmation with permission details and shareable link.
+  </Accordion>
+  <Accordion title="drive_update_permission">
+    Updates an existing permission on a Google Drive file or folder.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder. Required.
+    permission_id (str): The ID of the permission to update (from get_drive_file_permissions). Required.
+    role (Optional[str]): New role - 'reader', 'commenter', or 'writer'. If not provided, role unchanged.
+    expiration_time (Optional[str]): Expiration time in RFC 3339 format (e.g., "2025-01-15T00:00:00Z"). Set or update when permission expires.
+
+Returns:
+    str: Confirmation with updated permission details.
+  </Accordion>
+  <Accordion title="drive_copy_file">
+    Creates a copy of an existing Google Drive file.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+This tool copies the template document to a new location with an optional new name.
+The copy maintains all formatting and content from the original file.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file to copy. Required.
+    new_name (Optional[str]): New name for the copied file. If not provided, uses "Copy of [original name]".
+    parent_folder_id (str): The ID of the folder where the copy should be created. Defaults to 'root' (My Drive).
+
+Returns:
+    str: Confirmation message with details of the copied file and its link.
+  </Accordion>
+  <Accordion title="drive_get_file_content">
+    Retrieves the content of a specific Google Drive file by ID, supporting files in shared drives.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+• Native Google Docs, Sheets, Slides → exported as text / CSV.
+• Office files (.docx, .xlsx, .pptx) → unzipped & parsed with std-lib to
+  extract readable text.
+• Any other file → downloaded; tries UTF-8 decode, else notes binary.
+
+Args:
+    user_google_email: The user’s Google email address.
+    file_id: Drive file ID.
+
+Returns:
+    str: The file content as plain text with metadata header.
+  </Accordion>
+  <Accordion title="drive_list_items">
+    Lists files and folders, supporting shared drives.
+
+Use drive_get_current_user to get the user_google_email or account information.
+If `drive_id` is specified, lists items within that shared drive. `folder_id` is then relative to that drive (or use drive_id as folder_id for root).
+If `drive_id` is not specified, lists items from user's "My Drive" and accessible shared drives (if `include_items_from_all_drives` is True).
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    folder_id (str): The ID of the Google Drive folder. Defaults to 'root'. For a shared drive, this can be the shared drive's ID to list its root, or a folder ID within that shared drive.
+    page_size (int): The maximum number of items to return. Defaults to 100.
+    drive_id (Optional[str]): ID of the shared drive. If provided, the listing is scoped to this drive.
+    include_items_from_all_drives (bool): Whether items from all accessible shared drives should be included if `drive_id` is not set. Defaults to True.
+    corpora (Optional[str]): Corpus to query ('user', 'drive', 'allDrives'). If `drive_id` is set and `corpora` is None, 'drive' is used. If None and no `drive_id`, API defaults apply.
+
+Returns:
+    str: A formatted list of files/folders in the specified folder.
+  </Accordion>
+  <Accordion title="drive_get_file_permissions">
+    Gets detailed metadata about a Google Drive file including sharing permissions.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file to check permissions for.
+
+Returns:
+    str: Detailed file metadata including sharing status and URLs.
+  </Accordion>
+  <Accordion title="drive_batch_share_file">
+    Shares a Google Drive file or folder with multiple users or groups in a single operation.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Each recipient can have a different role and optional expiration time.
+
+Note: Each recipient is processed sequentially. For very large recipient lists,
+consider splitting into multiple calls.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder to share. Required.
+    recipients (List[Dict]): List of recipient objects. Each should have:
+<ul>
+<li>email (str): Recipient email address. Required for 'user' or 'group' share_type.</li>
+<li>role (str): Permission role - 'reader', 'commenter', or 'writer'. Defaults to 'reader'.</li>
+<li>share_type (str, optional): 'user', 'group', or 'domain'. Defaults to 'user'.</li>
+<li>expiration_time (str, optional): Expiration in RFC 3339 format (e.g., "2025-01-15T00:00:00Z").</li>
+</ul>
+        For domain shares, use 'domain' field instead of 'email':
+<ul>
+<li>domain (str): Domain name. Required when share_type is 'domain'.</li>
+</ul>
+    send_notification (bool): Whether to send notification emails. Defaults to True.
+    email_message (Optional[str]): Custom message for notification emails.
+
+Returns:
+    str: Summary of created permissions with success/failure for each recipient.
+  </Accordion>
+  <Accordion title="drive_remove_permission">
+    Removes a permission from a Google Drive file or folder, revoking access.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder. Required.
+    permission_id (str): The ID of the permission to remove (from get_drive_file_permissions). Required.
+
+Returns:
+    str: Confirmation of the removed permission.
+  </Accordion>
+  <Accordion title="drive_get_current_user">
+    Returns the authenticated user's account information for use with Drive tools. Use the returned email as user_google_email when calling drive_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="drive_create_file">
+    Creates a new file in Google Drive, supporting creation within shared drives.
+
+Use drive_get_current_user to get the user_google_email or account information.
+Accepts either direct content or a fileUrl to fetch the content from.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_name (str): The name for the new file.
+    content (Optional[str]): If provided, the content to write to the file.
+    folder_id (str): The ID of the parent folder. Defaults to 'root'. For shared drives, this must be a folder ID within the shared drive.
+    mime_type (str): The MIME type of the file. Defaults to 'text/plain'.
+    fileUrl (Optional[str]): If provided, fetches the file content from this URL. Supports file://, http://, and https:// protocols.
+
+Returns:
+    str: Confirmation message of the successful file creation with file link.
+  </Accordion>
+  <Accordion title="drive_check_file_public_access">
+    Searches for a file by name and checks if it has public link sharing enabled.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_name (str): The name of the file to check.
+
+Returns:
+    str: Information about the file's sharing status and whether it can be used in Google Docs.
+  </Accordion>
+  <Accordion title="drive_get_shareable_link">
+    Gets the shareable link for a Google Drive file or folder.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder to get the shareable link for. Required.
+
+Returns:
+    str: The shareable links and current sharing status.
+  </Accordion>
+  <Accordion title="drive_transfer_ownership">
+    Transfers ownership of a Google Drive file or folder to another user.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+This is an irreversible operation. The current owner will become an editor.
+Only works within the same Google Workspace domain or for personal accounts.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder to transfer. Required.
+    new_owner_email (str): Email address of the new owner. Required.
+    move_to_new_owners_root (bool): If True, moves the file to the new owner's My Drive root. Defaults to False.
+
+Returns:
+    str: Confirmation of the ownership transfer.
+  </Accordion>
+  <Accordion title="drive_set_file_permissions">
+    Sets file-level sharing settings and controls link sharing for a Google Drive file or folder.
+
+Use drive_get_current_user to get the user_google_email or account information.
+
+This is a high-level tool for the most common permission changes. Use this to toggle
+"anyone with the link" access or configure file-level sharing behavior. For managing
+individual user/group permissions, use share_drive_file or update_drive_permission instead.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    file_id (str): The ID of the file or folder. Required.
+    link_sharing (Optional[str]): Control "anyone with the link" access for the file.
+<ul>
+<li>"off": Disable "anyone with the link" access for this file.</li>
+<li>"reader": Anyone with the link can view.</li>
+<li>"commenter": Anyone with the link can comment.</li>
+<li>"writer": Anyone with the link can edit.</li>
+</ul>
+    writers_can_share (Optional[bool]): Whether editors can change permissions and share.
+        If False, only the owner can share. Defaults to None (no change).
+    copy_requires_writer_permission (Optional[bool]): Whether viewers and commenters
+        are prevented from copying, printing, or downloading. Defaults to None (no change).
+
+Returns:
+    str: Summary of all permission changes applied to the file.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Drive** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Docs" href="/server-catalog/google-docs" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-docs.svg" />
+  <Card title="Google Sheets" href="/server-catalog/google-sheets" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-sheets.svg" />
+  <Card title="Notion" href="/server-catalog/notion" icon="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" />
+</CardGroup>

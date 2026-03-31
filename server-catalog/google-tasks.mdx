@@ -1,0 +1,46 @@
+---
+title: "Google Tasks"
+description: "Automate and manage tasks with AI assistance"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-tasks.svg"
+---
+
+The Google Tasks MCP Server integrates AI agents with Google Tasks, enabling seamless task management, automation, and interaction. Key use cases include creating, updating, and organizing tasks through natural language commands.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/tasks`, `https://www.googleapis.com/auth/tasks.readonly`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Tasks Authentication guide](/oauth-guides/google-tasks) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Tasks** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+  <Card title="Linear" href="/server-catalog/linear" icon="https://d338mlbnszozgc.cloudfront.net/logos/linear.svg" />
+  <Card title="Notion" href="/server-catalog/notion" icon="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" />
+</CardGroup>

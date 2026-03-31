@@ -1,0 +1,2494 @@
+---
+title: "Mailchimp"
+description: "Manage email campaigns and subscriber lists"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/mailchimp.svg"
+---
+
+The Mailchimp MCP Server enables AI agents to manage email campaigns, track performance, and automate workflows, facilitating efficient marketing strategies and subscriber engagement.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Marketing Automation, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+### OAuth
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Mailchimp Authentication guide](/oauth-guides/mailchimp) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **281** tools:
+
+<AccordionGroup>
+  <Accordion title="mailchimp_campaign_create">
+    Create a new email campaign in Mailchimp.
+
+**When to use:** When user wants to set up a new email campaign (regular, plaintext, A/B split, RSS, or variate) before adding content or sending.
+
+**Context needed:** The type parameter is required and determines campaign structure (regular, plaintext, absplit, rss, variate). Note that absplit is deprecated—use variate instead. For RSS campaigns, rss_opts with feed_url and frequency are required. For variate campaigns, variate_settings with winner_criteria is required. Use recipients.list_id to specify the target audience, and optionally recipients.segment_opts to narrow targeting with saved_segment_id or custom conditions.
+
+**Safety:** POST operation creates a new campaign. This is non-destructive but creates a persistent resource that may need cleanup if unused.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customer_get">
+    Retrieve detailed information about a specific customer in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view a customer's profile, contact details, purchase history (orders_count, total_spent), or address information for a specific store.
+
+**Context needed:** Use fields parameter to request only specific attributes (e.g., "email_address,orders_count") or exclude_fields to omit unwanted data for token efficiency.
+
+**Token efficiency**: Response includes full customer profile with address details and metadata. Use fields/exclude_fields parameters to limit response size when you only need specific attributes.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promorule_update">
+    Update an existing promotional rule for an e-commerce store in Mailchimp.
+
+**When to use:** When modifying promotion details like discount amounts, date ranges, enabled status, or targeting for an existing promo rule.
+
+**Context needed:** For amount parameter: use decimal 0.0-1.0 for percentage type (e.g., 0.5 for 50% off), or monetary value for fixed type. For free shipping promotions, set type to 'fixed' and target to 'shipping'. The ends_at timestamp must be after starts_at.
+
+**Safety**: PATCH operations modify existing data. Changes take effect immediately for the promo rule.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_goals_list">
+    Retrieve the last 50 goal events for a specific member on a list.
+
+**When to use:** When analyzing member engagement through goal tracking, investigating conversion events, or reviewing a subscriber's goal completion history.
+
+**Context needed:** subscriber_hash accepts MD5 hash of lowercase email, plain email address, or contact_id. Use fields or exclude_fields parameters to control response size.
+
+**Token efficiency**: Returns maximum 50 most recent goal events. Use fields parameter to request only needed properties (e.g., 'goals.goal_id,goals.event,goals.last_visited_at').
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promocode_create">
+    Create a new promo code for a specific promo rule in a Mailchimp e-commerce store.
+
+**When to use:** When setting up discount codes for marketing campaigns, creating promotional offers, or adding codes to existing promo rules.
+
+**Context needed:** The id field is your internal identifier (max 50 UTF-8 chars), while code is the actual discount code customers will use (max 50 UTF-8 chars). The redemption_url should link to checkout with code applied or to a sale page (max 2000 UTF-8 chars). Set enabled to false if creating codes for future activation.
+
+**Safety:** POST operation creates new resources. Promo codes are tied to specific promo rules and stores - verify store_id and promo_rule_id exist before creation.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promocode_get">
+    Retrieve detailed information about a specific promo code within a store's promo rule.
+
+**When to use:** When you need to check promo code details like the discount code string, redemption URL, usage count, or enabled status for a specific promo code under a promo rule.
+
+**Context needed:** Requires the hierarchical relationship: store_id → promo_rule_id → promo_code_id. Use fields or exclude_fields parameters with dot notation to control response size (e.g., "code,usage_count" or "_links").
+
+**Token efficiency**: Use fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_conversation_get">
+    Retrieve details about a specific conversation thread from past campaign replies.
+
+**When to use:** When user needs to view conversation history, check message counts, or review subscriber replies to campaigns. Note: This endpoint only accesses legacy Conversations data - it does not include newer Inbox messages.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., "last_message.subject" to include specific nested fields).
+
+**Token efficiency**: Apply fields parameter to retrieve only needed data and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_get">
+    Retrieve detailed information about a specific order from a Mailchimp e-commerce store.
+
+**When to use:** When you need to view order details including customer information, line items, shipping/billing addresses, financial status, fulfillment status, or tracking information for a specific order.
+
+**Context needed:** Use fields parameter to request only specific data (e.g., 'id,customer.email_address,order_total') or exclude_fields to omit unwanted data, reducing response size for large orders with many line items.
+
+**Token efficiency**: Apply fields/exclude_fields parameters to limit response size when you don't need complete order details.
+  </Accordion>
+  <Accordion title="mailchimp_file_get">
+    Retrieve detailed information about a specific file stored in Mailchimp's File Manager.
+
+**When to use:** When you need to access file metadata (name, size, URLs, dimensions), verify a file exists, or get download/thumbnail URLs for images or documents previously uploaded to Mailchimp.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific file properties (e.g., just the full_size_url).
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folders_list">
+    Retrieve all folders in the Mailchimp File Manager.
+
+**When to use:** When organizing or browsing file storage structure, locating specific folders by creator or creation date, or checking folder contents before file operations.
+
+**Context needed:** Use created_by to filter by username. Date filters (before_created_at, since_created_at) require ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00). Use count and offset for pagination through large folder lists.
+
+**Token efficiency**: Set count parameter to limit results (default 10, max 1000). Use fields or exclude_fields to control response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_lines_list">
+    Retrieve all line items (products, quantities, prices) for a specific order in a Mailchimp e-commerce store.
+
+**When to use:** When analyzing order details, calculating order totals, generating receipts, or auditing product purchases within a specific order.
+
+**Context needed:** Use count and offset for pagination through orders with many line items (default 10, max 1000 per page). Use fields/exclude_fields with dot notation to control response size (e.g., "lines.product_id,lines.quantity").
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Large orders may require pagination.
+  </Accordion>
+  <Accordion title="mailchimp_list_create">
+    Create a new subscriber list (audience) in your Mailchimp account.
+
+**When to use:** When setting up a new email marketing audience, creating a separate list for a new product/service, or establishing a list for a specific campaign or segment.
+
+**Context needed:** The contact object requires physical address (company, address1, city, country) for CAN-SPAM compliance. Country must be a two-character ISO3166 code (defaults to US if invalid). The permission_reminder explains how subscribers joined your list. Set email_type_option to true to let subscribers choose HTML vs plain-text format. Enable double_optin to require email confirmation before subscription is active. Enable marketing_permissions for GDPR compliance.
+
+**Safety**: POST operation creates a new list. This is not reversible through this tool - list deletion requires separate action.
+  </Accordion>
+  <Accordion title="mailchimp_list_mergefield_get">
+    Retrieve configuration details for a specific merge field (custom audience field) in a Mailchimp list.
+
+**When to use:** When you need to inspect merge field properties like type, validation rules, display settings, or available choices for dropdown/radio fields before updating contacts or configuring forms.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., "options.choices" to get only dropdown options).
+
+**Token efficiency**: Apply fields parameter to retrieve only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_orderline_get">
+    Retrieve detailed information about a specific line item within an order in a Mailchimp e-commerce store.
+
+**When to use:** When you need to inspect individual product details, pricing, quantity, or discount information for a specific item in an order. Useful for order verification, customer support inquiries, or detailed order analysis.
+
+**Context needed:** Requires hierarchical identifiers: store_id, order_id, and line_id must all be valid and related. Use fields parameter to retrieve only specific attributes (e.g., "product_title,quantity,price") or exclude_fields to omit unwanted data for token efficiency.
+
+**Token efficiency**: Use fields parameter to limit response size when you only need specific attributes like pricing or product information.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_orderline_update">
+    Update an existing line item within a specific order in a Mailchimp e-commerce store.
+
+**When to use:** When modifying order line item details such as quantity, price, discount, or product associations after an order has been created.
+
+**Context needed:** All three identifiers (store_id, order_id, line_id) must reference existing resources. Use product_id and product_variant_id to change product associations. Price and discount are numeric values representing monetary amounts.
+
+**Safety**: PATCH operations modify existing data. Verify identifiers before updating to avoid unintended changes.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_variant_create">
+    Add a new variant to an existing product in a Mailchimp e-commerce store.
+
+**When to use:** When adding size, color, or other variations to a product already synced to Mailchimp (e.g., adding "Large" and "Small" sizes to an existing t-shirt product).
+
+**Context needed:** Both store_id and product_id must reference existing resources. The id field is your system's unique identifier for this variant (not auto-generated by Mailchimp). Price should be numeric without currency symbols.
+
+**Safety**: POST operations create new data. Ensure the variant doesn't already exist to avoid duplicates.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_variant_get">
+    Retrieve detailed information about a specific product variant in a Mailchimp e-commerce store.
+
+**When to use:** When you need to check pricing, inventory, SKU, or other details for a specific variant of a product. Useful for verifying variant data before updates or displaying variant information to users.
+
+**Context needed:** Requires store_id, product_id, and variant_id in hierarchical order. Use fields parameter to retrieve only specific attributes (e.g., "price,inventory_quantity") or exclude_fields to omit unwanted data for token efficiency.
+
+**Token efficiency**: Use fields parameter to limit response size when you only need specific variant attributes.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_images_list">
+    Retrieve all images associated with a specific product in a Mailchimp e-commerce store.
+
+**When to use:** When you need to display product images, verify image URLs, check which product variants use specific images, or audit product visual content.
+
+**Context needed:** Use count and offset for pagination through large image collections (default 10, max 1000 per page). Use fields/exclude_fields with dot notation to control response size (e.g., "images.url,images.id").
+
+**Token efficiency**: Specify count parameter to limit results. Use fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_segments_list">
+    Retrieve all audience segments for a specific Mailchimp list.
+
+**When to use:** When you need to view available segments for targeting campaigns, analyze audience segmentation, or check segment configurations before operations.
+
+**Context needed:** Use type parameter to filter by segment type (saved, static/tags, fuzzy). Date filters (since_created_at, before_created_at, since_updated_at, before_updated_at) require ISO 8601 format (2015-10-21T15:41:36+00:00). Use count and offset for pagination through large segment collections.
+
+**Token efficiency:** Set count parameter to limit results (default 10, max 1000). Use fields or exclude_fields to control response size. Apply type and date filters to narrow results.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_search">
+    Search all campaigns for specified query terms, returning matching campaigns and content snippets.
+
+**When to use:** When user needs to find campaigns by keyword, subject line, content, or other searchable attributes across all campaigns.
+
+**Context needed:** The query parameter is required and searches across campaign content. Use fields or exclude_fields to control response size and focus on specific campaign attributes.
+
+**Token efficiency**: Use fields parameter to return only needed campaign properties. Results include full campaign objects which can be large - filter to essential fields when possible.
+  </Accordion>
+  <Accordion title="mailchimp_member_search">
+    Search for list members by email address, first name, or last name across all lists or within a specific list.
+
+**When to use:** When you need to find a subscriber's details, verify if someone is subscribed, or locate members matching a name or email pattern.
+
+**Context needed:** The query parameter accepts a valid email address or a contact's first/last name. Omit list_id to search across all lists in the account, or provide list_id to restrict search to a specific list. Use fields or exclude_fields to control response size with dot notation for nested properties (e.g., 'stats.avg_open_rate').
+
+**Token efficiency**: Returns both exact_matches and full_search (partial matches) arrays. Use fields parameter to limit response to only needed properties. Response includes comprehensive member data (status, tags, stats, location, merge_fields).
+  </Accordion>
+  <Accordion title="mailchimp_list_member_archive">
+    Archive a list member, removing them from active status while preserving their data.
+
+**When to use:** When user requests to remove a subscriber from a list without permanently deleting their history, or when cleaning up inactive subscribers while maintaining records.
+
+**Context needed:** The subscriber_hash parameter accepts three formats: MD5 hash of lowercase email, the email address directly, or contact_id.
+
+**Safety**: DELETE operation archives the member. This is reversible - use delete-permanent action for irreversible deletion.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_facebookads_list">
+    Retrieve performance reports for all Facebook ad campaigns in your Mailchimp account.
+
+**When to use:** When analyzing Facebook ad campaign performance, comparing multiple campaigns, or building dashboards showing ad metrics (reach, impressions, clicks, ROI, ecommerce data).
+
+**Context needed:** Use count and offset for pagination through large result sets (default 10, max 1000 per page). Use sort_field (created_at, updated_at, end_time) with sort_dir (ASC/DESC) to control ordering. Use fields or exclude_fields to optimize response size by selecting specific data points.
+
+**Token efficiency**: Specify count limit and use fields parameter to return only needed metrics. Large ad reports with full audience activity data can be substantial.
+  </Accordion>
+  <Accordion title="mailchimp_member_event_create">
+    Add a custom event to a specific list member's activity timeline in Mailchimp.
+
+**When to use:** When tracking member behavior or actions (purchases, page visits, custom interactions) for segmentation, automation triggers, or reporting.
+
+**Context needed:** The subscriber_hash accepts MD5 hash of lowercase email, plain email address, or contact_id. Event name must be 2-30 characters. Set is_syncing to true to prevent triggering automations during bulk imports.
+
+**Safety**: POST operation creates new data. Events are permanent and cannot be deleted, only supplemented with additional events.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_survey_question_answers_list">
+    Retrieve all answers submitted for a specific survey question.
+
+**When to use:** When analyzing survey responses, reviewing feedback for a particular question, or exporting answer data for reporting.
+
+**Context needed:** Use respondent_familiarity_is to filter by contact type (new/known/unknown). Use fields/exclude_fields with dot notation for nested properties to control response size.
+
+**Token efficiency**: Apply fields parameter to return only needed properties. Filter by respondent_familiarity_is to narrow results when analyzing specific audience segments.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_note_delete">
+    Delete a specific note from a list member's profile.
+
+**When to use:** When removing outdated, incorrect, or no longer needed notes from a subscriber's record.
+
+**Context needed:** subscriber_hash accepts MD5 hash of lowercase email, plain email address, or contact_id.
+
+**Safety**: DELETE operation is irreversible. Verify list_id, subscriber_hash, and note_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_audience_list">
+    Retrieve all audiences (mailing lists) in the Mailchimp account with their IDs, names, contact counts, and enabled channels.
+
+**When to use:** When user needs to see available audiences, find a specific audience ID, or check audience statistics before performing operations on contacts or campaigns.
+
+**Context needed:** Use count and offset for pagination through large audience collections. Use fields or exclude_fields with dot notation to control response size (e.g., 'audiences.id,audiences.name' or 'audiences.stats').
+
+**Token efficiency**: Set count parameter to limit results (max 1000). Use fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_delete_permanent">
+    Permanently delete all personally identifiable information for a list member and remove them from a list.
+
+**When to use:** When user explicitly requests permanent deletion of a member's data for GDPR/privacy compliance or complete removal from the system.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase email address. This operation is irreversible and prevents re-importing the member.
+
+**Safety**: DESTRUCTIVE and IRREVERSIBLE operation. This permanently deletes all PII and makes re-import impossible. Verify intent before executing.
+  </Accordion>
+  <Accordion title="mailchimp_list_mergefields_list">
+    Retrieve all merge fields (custom contact data fields) configured for a specific Mailchimp audience/list.
+
+**When to use:** When you need to see what custom fields are available for contacts in a list, understand field types and requirements before adding/updating contacts, or audit audience data structure.
+
+**Context needed:** Use type parameter to filter by field type (text, number, address, phone, date, url, imageurl, radio, dropdown, birthday, zip). Use required parameter to filter for mandatory fields only.
+
+**Token efficiency:** Use count and offset parameters for pagination (default 10, max 1000 per page). Use fields or exclude_fields to control response size by specifying exact properties needed.
+  </Accordion>
+  <Accordion title="mailchimp_template_folder_list">
+    Retrieve all folders used to organize email templates in Mailchimp.
+
+**When to use:** When user needs to see available template folders, organize templates, or select a folder for template operations.
+
+**Context needed:** Use count and offset for pagination through large folder collections (default 10, max 1000 per page). Use fields/exclude_fields with dot notation to control response size.
+
+**Token efficiency**: Set count parameter to limit results. Use fields parameter to return only needed properties.
+  </Accordion>
+  <Accordion title="mailchimp_list_signupforms_list">
+    Retrieve all signup form configurations for a specific Mailchimp audience list.
+
+**When to use:** When you need to view existing signup form designs, inspect form styling and content, or retrieve signup form URLs for a list. Use this before modifying forms or when users ask about their list's signup forms.
+
+**Token efficiency**: Returns complete form configurations including header images, content sections, and CSS styling. Response includes all forms associated with the list.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contact_create">
+    Create a new omni-channel contact in a Mailchimp audience with email and/or SMS marketing channels.
+
+**When to use:** When adding a new contact to an audience for email or SMS marketing campaigns. Use this for new contacts only (not for updating existing ones).
+
+**Context needed:** At least one channel (email_channel or sms_channel) must be provided with marketing consent status. The merge_field_validation_mode parameter controls whether required merge fields are enforced (defaults to strict). Use data_mode=historical to prevent triggering automations and webhooks during bulk imports. Tags are append-only and preserve existing tags.
+
+**Safety**: POST operation creates new data. This action cannot be undone directly - use archive or forget actions to remove contacts.
+  </Accordion>
+  <Accordion title="mailchimp_survey_campaign_create">
+    Create an email campaign that links to a specific survey on a Mailchimp list.
+
+**When to use:** When you need to send a survey to list subscribers via email campaign. This generates a campaign pre-configured with the survey link.
+
+**Safety**: POST operation creates a new campaign. Returns a Campaign object with campaign_id for further configuration (content, scheduling, sending).
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_get">
+    Retrieve detailed information about a specific Mailchimp landing page including its status, content, tracking settings, and associated list or store.
+
+**When to use:** When you need to inspect a landing page's configuration, check its publication status (published/unpublished/draft), view its URL, or retrieve tracking settings. Use this before updating or publishing a landing page.
+
+**Context needed:** Use fields parameter to request specific properties (e.g., 'id,name,status,url') or exclude_fields to omit unwanted data for token efficiency.
+
+**Token efficiency**: Response includes extensive metadata. Use fields parameter to limit response size when you only need specific properties like status or URL.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_publish">
+    Publish a Mailchimp landing page that is currently in draft, unpublished, or has been previously published and edited.
+
+**When to use:** When user requests to make a landing page live or public, or to republish a page after making edits.
+
+**Safety**: POST operation publishes content publicly. This action is irreversible - once published, the page becomes visible to visitors. Verify page_id before publishing.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_content_get">
+    Retrieve the HTML and JSON structure for a specific landing page.
+
+**When to use:** When you need to view or analyze the content of an existing landing page, export page structure, or inspect the HTML/JSON for editing purposes.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size by specifying exact field paths with dot notation.
+
+**Token efficiency**: Use fields parameter to request only needed data (html or json) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_abuse_get">
+    Retrieve detailed information about a specific abuse complaint for a campaign.
+
+**When to use:** When investigating why a recipient marked a campaign as spam, or when analyzing abuse patterns for compliance and deliverability monitoring.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size and focus on relevant data (e.g., email_address, date, merge_fields).
+
+**Token efficiency**: Apply fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_click_subscriber_get">
+    Get detailed information about a specific subscriber who clicked a specific link in a campaign.
+
+**When to use:** When analyzing individual subscriber engagement with campaign links, investigating click behavior for a specific email address, or building detailed click-through reports.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase version of the subscriber's email address. Use fields or exclude_fields parameters to control response size when only specific data is needed.
+
+**Token efficiency**: Use fields parameter to request only needed data (e.g., email_address, clicks, vip). Returns subscriber profile, click count, campaign context, and list membership status.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_folder_get">
+    Retrieve information about a specific campaign folder, including its name and the number of campaigns it contains.
+
+**When to use:** When you need to verify a folder exists, check how many campaigns are in a folder, or retrieve folder details before organizing campaigns.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific folder properties.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., 'name,count') to minimize response size.
+  </Accordion>
+  <Accordion title="mailchimp_authorized_app_list">
+    Retrieve all third-party applications that have been authorized to access this Mailchimp account.
+
+**When to use:** When auditing account security, reviewing connected integrations, or checking which applications have API access to the account.
+
+**Token efficiency**: Use count and offset for pagination through large result sets (default 10, max 1000 per page). Use fields or exclude_fields to control response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_emailactivity_list">
+    Get detailed subscriber activity for a specific campaign, including opens, clicks, and bounces for each recipient.
+
+**When to use:** When analyzing campaign performance at the individual subscriber level, tracking engagement patterns, or investigating delivery issues.
+
+**Context needed:** Use since parameter with ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00) to filter activity after a specific time. Activity is limited to 1,000 open events and 1,000 click events per member per campaign.
+
+**Token efficiency**: Use count and offset for pagination (default 10, max 1000 per page). Use fields or exclude_fields to control response size.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_abuse_reports_list">
+    Retrieve all abuse complaints (spam reports) for a specific campaign.
+
+**When to use:** When investigating campaign deliverability issues, monitoring subscriber complaints, or auditing campaigns that may have triggered spam reports.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when retrieving specific data points.
+
+**Token efficiency**: Apply fields parameter to return only needed data. Abuse reports include subscriber details (email, merge fields, VIP status) and complaint timestamps.
+  </Accordion>
+  <Accordion title="mailchimp_report_recipients_list">
+    Retrieve detailed information about all recipients who were sent a specific campaign, including delivery status, open counts, and engagement metrics.
+
+**When to use:** When analyzing campaign performance, investigating delivery issues, or identifying which subscribers received a campaign and how they engaged with it.
+
+**Context needed:** Use count and offset for pagination through large recipient lists (max 1000 per page). Use fields/exclude_fields to control response size when working with large campaigns.
+
+**Token efficiency**: Specify count parameter to limit results. Use fields parameter to return only needed data (e.g., 'email_address,status,open_count') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_unsubscribed_get">
+    Get detailed information about a specific list member who unsubscribed from a campaign.
+
+**When to use:** When investigating why a particular subscriber unsubscribed, analyzing unsubscribe patterns for a campaign, or retrieving unsubscribe reasons and timestamps for reporting.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase email address. Use fields or exclude_fields to control response size when only specific data is needed.
+
+**Token efficiency**: Use fields parameter to return only needed properties (e.g., email_address, timestamp, reason) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_api_discover">
+    Retrieve account information and discover available API resources with their endpoint links.
+
+**When to use:** When you need to verify account details, check API access, or discover available endpoints before making other API calls. Useful for initial setup, debugging authentication issues, or understanding what resources are accessible.
+
+**Context needed:** Use fields parameter to request specific account properties (e.g., 'account_id,email,total_subscribers'). Use exclude_fields to omit unwanted data and reduce response size.
+
+**Token efficiency**: Response includes comprehensive account data and all API endpoint links. Use fields/exclude_fields parameters to limit response size when you only need specific information.
+  </Accordion>
+  <Accordion title="mailchimp_report_link_clicks_list">
+    Get list members who clicked a specific link in a campaign, including click counts and subscriber details.
+
+**When to use:** When analyzing campaign engagement to identify which subscribers interacted with a particular link, or when building targeted follow-up lists based on link click behavior.
+
+**Context needed:** Use count and offset for pagination through large result sets (max 1000 per page). Use fields or exclude_fields to control response size when working with large subscriber lists.
+
+**Token efficiency**: Specify count parameter to limit response size. Use fields parameter to return only needed subscriber data (email_address, clicks, vip, contact_status, etc.).
+  </Accordion>
+  <Accordion title="mailchimp_template_delete">
+    Permanently delete a specific email template from Mailchimp.
+
+**When to use:** When user requests to remove an unused or outdated template, or needs to clean up template library.
+
+**Safety**: DELETE operation is irreversible. Template will be permanently removed and cannot be recovered. Verify template_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_template_get_default_content">
+    Retrieve the editable sections and their default content for a specific email template.
+
+**When to use:** When you need to inspect what sections can be customized in a template before creating a campaign, or when building template editing interfaces.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., "sections.header" to include only header section).
+
+**Token efficiency**: Apply fields parameter to retrieve only needed sections and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_create">
+    Register a new e-commerce store in your Mailchimp account to enable order tracking and abandoned cart automations.
+
+**When to use:** When integrating a new online store with Mailchimp for the first time, or when setting up e-commerce tracking for a list.
+
+**Context needed:** The id must be unique across your account. The list_id permanently associates this store with a specific audience and cannot be changed later. Use currency_code as ISO 4217 format (e.g., USD, EUR, GBP). Set domain parameter if using Connected Sites or Google Ads integrations. Set is_syncing to true during initial data import to pause automations until sync completes.
+
+**Safety:** POST operation creates a new store record. The store-list association is permanent and cannot be modified after creation.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_delete">
+    Delete an abandoned cart from a connected e-commerce store in Mailchimp.
+
+**When to use:** When a cart is no longer needed (e.g., customer completed checkout through another system, cart expired, or cleaning up test data).
+
+**Safety**: DELETE operation permanently removes the cart. This action is irreversible.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_lines_list">
+    Retrieve all line items (products) in a specific shopping cart from a Mailchimp e-commerce store.
+
+**When to use:** When you need to see what products are in a customer's cart, analyze cart contents, or verify cart items before processing.
+
+**Context needed:** Use count and offset for pagination through carts with many items (default 10, max 1000 per page). Use fields or exclude_fields with dot notation to control response size (e.g., "lines.product_id,lines.quantity").
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data when dealing with large carts.
+  </Accordion>
+  <Accordion title="mailchimp_report_subscriber_opens_get">
+    Get detailed open activity for a specific subscriber in a campaign, including total opens count, timestamps of each open event, and subscriber profile information.
+
+**When to use:** When analyzing individual subscriber engagement with a campaign, investigating open patterns, or retrieving subscriber details who opened a specific campaign.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase email address. Use fields or exclude_fields to control response size when only specific data is needed.
+
+**Token efficiency**: Use fields parameter to request only needed data (e.g., 'opens_count,email_address'). The opens array contains timestamps for every open event and can be large for highly engaged subscribers.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_line_delete">
+    Delete a specific line item from a shopping cart in a Mailchimp e-commerce store.
+
+**When to use:** When a customer removes a product from their cart, or when cleaning up abandoned cart data.
+
+**Context needed:** All three IDs must match an existing cart line item: store_id identifies the e-commerce store, cart_id identifies the shopping cart, and line_id identifies the specific product line within that cart.
+
+**Safety**: DELETE operations are irreversible. This permanently removes the cart line item and cannot be undone.
+  </Accordion>
+  <Accordion title="mailchimp_audience_get">
+    Retrieve detailed information about a specific Mailchimp audience (list), including name, contact count, and enabled communication channels.
+
+**When to use:** When you need to verify an audience exists, check its configuration, or retrieve metadata before performing operations on its contacts.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., 'stats.total_contacts' or 'enabled_channels').
+
+**Token efficiency**: Specify fields parameter to return only needed data and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customers_list">
+    Retrieve customer records from a Mailchimp e-commerce store.
+
+**When to use:** When you need to view customer information, search for a specific customer by email, or analyze customer data for a store.
+
+**Context needed:** Use email_address to filter for a specific customer. Use count and offset for pagination (max 1000 records per request). Use fields/exclude_fields with dot notation to control response size (e.g., "customers.email_address,customers.total_spent").
+
+**Token efficiency**: Specify count to limit results and use fields parameter to return only needed data. Default returns 10 customers.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customer_upsert">
+    Add a new customer or update an existing customer in a Mailchimp e-commerce store.
+
+**When to use:** When syncing customer data from an external e-commerce platform to Mailchimp, or when updating customer information after a purchase or profile change.
+
+**Context needed:** The id field in the request body must match the customer_id path parameter. For updates, only include the id field to link existing orders; include additional fields to update customer details. The opt_in_status controls Mailchimp list membership but will not overwrite existing list member status. SMS phone numbers must be US format.
+
+**Safety**: PUT operations create or modify data. This will overwrite existing customer information with the provided fields.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customer_delete">
+    Permanently delete a customer record from a Mailchimp e-commerce store.
+
+**When to use:** When a customer requests data deletion, closes their account, or needs to be removed from the store's customer database.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the customer record and cannot be undone. Verify store_id and customer_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_promorules_list">
+    Retrieve all promotional rules configured for a specific Mailchimp e-commerce store.
+
+**When to use:** When you need to view existing promo rules (discounts, coupons) for a store, audit active promotions, or check rule configurations before creating new ones.
+
+**Context needed:** Use count and offset for pagination through large rule sets (default 10, max 1000 per page). Use fields or exclude_fields with dot notation to control response size (e.g., "promo_rules.title,promo_rules.amount").
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Large stores may have many promo rules.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promorule_delete">
+    Delete a promotional rule from a Mailchimp e-commerce store.
+
+**When to use:** When user requests to remove a promo rule that is no longer needed or was created in error.
+
+**Context needed:** Both store_id and promo_rule_id must be exact identifiers from Mailchimp. Deletion cannot be undone.
+
+**Safety**: DELETE operation permanently removes the promo rule. Verify the correct promo_rule_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promocodes_list">
+    Retrieve all promo codes for a specific promo rule in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view discount codes associated with a promotion rule, check code usage statistics, or verify which codes are currently enabled.
+
+**Context needed:** Both store_id and promo_rule_id are required path parameters. Use count and offset for pagination through large code lists (default 10, max 1000 per page). Use fields/exclude_fields with dot notation to control response size.
+
+**Token efficiency**: Specify count parameter to limit results. Use fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promocode_delete">
+    Permanently delete a promo code from a store's promo rule.
+
+**When to use:** When removing an expired, invalid, or no-longer-needed promo code from a specific promotional rule in your e-commerce store.
+
+**Context needed:** Requires the hierarchical relationship: store_id → promo_rule_id → promo_code_id. All three identifiers must exist and be valid.
+
+**Safety**: DELETE operation is irreversible. The promo code will be permanently removed and cannot be recovered.
+  </Accordion>
+  <Accordion title="mailchimp_automation_archive">
+    Permanently archive a Mailchimp automation workflow, ending all future sends while preserving report data.
+
+**When to use:** When user wants to permanently stop an automation but keep its historical performance data. Use this instead of pausing when the automation will not be restarted.
+
+**Context needed:** Archived automations can be replicated to create new workflows, but cannot be restarted or unarchived.
+
+**Safety**: This operation is irreversible. The automation will permanently stop sending and cannot be reactivated.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_orders_list">
+    Retrieve all orders from a specific e-commerce store in Mailchimp.
+
+**When to use:** When analyzing store performance, reviewing customer purchase history, tracking campaign-driven orders, or generating sales reports. Use customer_id to filter orders by customer, campaign_id or outreach_id to analyze marketing attribution, or has_outreach to identify orders influenced by campaigns.
+
+**Context needed:** Use count and offset for pagination (max 1000 records per request). Use fields to return only specific properties or exclude_fields to omit data, reducing response size for large order sets.
+
+**Token efficiency**: Specify count limit and use filters (customer_id, campaign_id, has_outreach) to narrow results. Use fields parameter to retrieve only needed order properties.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_upsert">
+    Add or update an order in a Mailchimp e-commerce store.
+
+**When to use:** When syncing order data from an external e-commerce platform to Mailchimp, creating new orders, or updating existing order details (status, totals, line items, customer info).
+
+**Context needed:** The id field in the request body must match the order_id path parameter. For existing customers, include only customer.id in the customer object. Use financial_status or fulfillment_status to trigger Order Notifications. Set cancelled_at_foreign to cancel an order. Dates must be in ISO 8601 format. For promos with free shipping, set amount_discounted to 0 and type to 'fixed'.
+
+**Safety:** PUT operations create or replace order data. Verify order_id and store_id before execution to avoid unintended modifications.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_products_list">
+    Retrieve all products from a Mailchimp e-commerce store.
+
+**When to use:** When you need to view product catalog, check product details (titles, descriptions, variants, images, pricing), or search for specific products in a store.
+
+**Context needed:** Use count and offset for pagination through large product catalogs. Use fields or exclude_fields to control response size by specifying exact field paths with dot notation.
+
+**Token efficiency**: Default returns 10 products (max 1000). Use count parameter to limit results and fields parameter to retrieve only needed data.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contacts_list">
+    Retrieve omni-channel contacts from a Mailchimp audience with support for email and SMS channels.
+
+**When to use:** When you need to view contacts in an audience, search for specific contacts by creation/update time, or export contact data for analysis.
+
+**Context needed:** Use cursor parameter with next_cursor from previous response for pagination. Time filters (created_before, created_since, updated_before, updated_since) require ISO 8601 format (e.g., 2025-04-23T15:41:36+00:00). Sort by created_at or updated_at with ASC/DESC direction.
+
+**Token efficiency:** Set count parameter to limit results (default 10, max 1000). Use fields or exclude_fields to control response size. Apply time filters to narrow results.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_variants_list">
+    Retrieve all variants for a specific product in a Mailchimp e-commerce store.
+
+**When to use:** When you need to see available options (sizes, colors, styles) for a product, check variant inventory levels, or retrieve variant pricing and SKU information.
+
+**Context needed:** Use count and offset for pagination through large variant lists (default 10, max 1000 per page). Use fields to retrieve specific variant properties or exclude_fields to reduce response size.
+
+**Token efficiency**: Specify count parameter to limit results. Use fields parameter to retrieve only needed properties (title, price, inventory_quantity, sku, etc.) for large variant catalogs.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_image_update">
+    Update an existing product image in a Mailchimp e-commerce store.
+
+**When to use:** When you need to change the URL of a product image, update which product variants use an image, or modify the image identifier.
+
+**Context needed:** The id field in the request body is the unique identifier for the image (not the same as image_id path parameter). Use variant_ids array to specify which product variants should display this image.
+
+**Safety**: PATCH operations modify existing data. Verify store_id, product_id, and image_id are correct before updating.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_facebookad_ecommerce_list">
+    Get product-level ecommerce performance data for a Facebook ad outreach campaign.
+
+**When to use:** When analyzing which products drove revenue from a specific Facebook ad campaign, or comparing product performance across Facebook ad outreaches.
+
+**Context needed:** The outreach_id identifies the Facebook ad campaign. Use sort_field to order by title, total_revenue, or total_purchased. Use count and offset for pagination (max 1000 records per request).
+
+**Token efficiency**: Set count parameter to limit response size. Use fields/exclude_fields to control which product attributes are returned.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_add_subscriber">
+    Manually add a subscriber to a specific email in an automation workflow, bypassing the workflow's default trigger settings.
+
+**When to use:** When you need to manually enroll a subscriber into a specific automation email step, or trigger an API 3.0 workflow type for a specific email address.
+
+**Context needed:** Requires both workflow_id and workflow_email_id to target the specific automation email. The subscriber must exist in the list associated with the automation.
+
+**Safety**: POST operation modifies data and will trigger email sends according to the workflow schedule. Verify workflow_id and workflow_email_id before adding subscribers.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_surveys_list">
+    Retrieve performance reports for all surveys in your Mailchimp account.
+
+**When to use:** When analyzing survey engagement metrics, checking response counts, or reviewing survey status across your account. Returns survey metadata including total responses, publication dates, and associated list information.
+
+**Context needed:** Use count and offset parameters for pagination through large survey collections (default 10, max 1000 per page). Use fields or exclude_fields to control response size by specifying dot-notation paths for nested properties.
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Large accounts may require pagination.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contact_update">
+    Update an existing omni-channel contact in a Mailchimp audience.
+
+**When to use:** When you need to modify contact information such as email address, SMS phone number, language preference, marketing consent status, merge fields, or tags for an existing contact.
+
+**Context needed:** Use merge_field_validation_mode='ignore_required_checks' to skip validation of required merge fields. Set data_mode='historical' to prevent triggering automations and webhooks during the update. Tags are append-only; existing tags are preserved and only new tags from the array are added. Marketing consent status values differ between email ('consented', 'denied', 'confirmed', 'unknown') and SMS ('consented', 'confirmed', 'unknown') channels.
+
+**Safety:** PATCH operations modify contact data. Verify audience_id and contact_id before updating. Changes in 'live' mode (default) trigger automations and webhooks.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contact_archive">
+    Archives a contact in a Mailchimp audience, removing them from active status while preserving their data.
+
+**When to use:** When user requests to archive a contact, remove someone from active audience without deleting their history, or needs to preserve contact data while marking them inactive.
+
+**Context needed:** Requires both audience_id and contact_id. This is a permanent state change - archived contacts cannot receive campaigns but their data remains accessible.
+
+**Safety**: POST operation modifies contact status. This is an irreversible archival action - verify the correct contact_id before archiving.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contact_forget">
+    Permanently removes all personal data for a contact from a Mailchimp audience, fulfilling data deletion requests.
+
+**When to use:** When processing GDPR/privacy requests to delete a contact's personal information, or when a user explicitly requests their data be forgotten.
+
+**Safety**: POST operation that irreversibly deletes contact data. This action cannot be undone - verify contact_id and audience_id before execution.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_survey_question_get">
+    Retrieve detailed analytics and response data for a specific survey question.
+
+**When to use:** When analyzing survey results, viewing response breakdowns by answer choice, or examining question-level metrics like total responses, average ratings, or contact counts.
+
+**Context needed:** Use fields or exclude_fields to control response size when retrieving specific metrics. For email-type questions, response includes contact segmentation (known/unknown/new). For range questions, includes average_rating. For choice questions, includes per-option response counts.
+  </Accordion>
+  <Accordion title="mailchimp_list_interestcategory_update">
+    Update an existing interest category (group title) within a Mailchimp audience list.
+
+**When to use:** When modifying the title, display order, or display type of an interest category to reorganize how subscriber preferences appear on signup forms.
+
+**Context needed:** The type parameter determines form display: 'checkboxes' for multiple selections, 'radio' for single selection, 'dropdown' for compact single selection, or 'hidden' to collect data without showing on forms. Lower display_order values appear first.
+
+**Safety**: PATCH operations modify existing data. Changes affect how signup forms display to subscribers.
+  </Accordion>
+  <Accordion title="mailchimp_automation_removed_subscriber_get">
+    Get information about a specific subscriber who was removed from a classic automation workflow.
+
+**When to use:** When you need to verify why a subscriber is no longer in an automation, check their removal status, or retrieve details about a removed subscriber for troubleshooting or reporting purposes.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase version of the subscriber's email address.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_get">
+    Retrieve detailed information about a specific audience segment in Mailchimp.
+
+**When to use:** When you need to inspect segment configuration, view segment conditions, check member count, or verify segment type (saved, static/tag, or fuzzy/similar subscribers).
+
+**Context needed:** Use include_cleaned, include_transactional, or include_unsubscribed to control which member types are counted. Use fields or exclude_fields with dot notation to control response size (e.g., 'options.conditions' to get only segment rules).
+
+**Token efficiency**: Use fields parameter to request only needed data. Segment conditions can be extensive—exclude them if you only need basic metadata.
+  </Accordion>
+  <Accordion title="mailchimp_batch_webhook_list">
+    Retrieve all configured webhooks that receive notifications about batch operation status updates.
+
+**When to use:** When you need to see what webhook endpoints are configured to receive batch completion notifications, or to verify webhook configurations before creating new ones.
+
+**Context needed:** Use count and offset for pagination through webhook lists. Use fields to request specific properties or exclude_fields to reduce response size.
+
+**Token efficiency**: Default returns 10 webhooks. Specify count (max 1000) and use field filtering to control response size.
+  </Accordion>
+  <Accordion title="mailchimp_batch_webhook_delete">
+    Permanently remove a batch webhook from Mailchimp, stopping all future webhook notifications to the configured URL.
+
+**When to use:** When user wants to disable batch webhook notifications or clean up unused webhook configurations.
+
+**Context needed:** Requires the batch_webhook_id from a previous webhook listing or creation. This identifier is unique to each batch webhook configuration.
+
+**Safety**: DELETE operation is irreversible. The webhook will immediately stop receiving notifications and cannot be recovered - a new webhook must be created if needed again.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_get">
+    Retrieve detailed information about a specific list member, including subscription status, engagement stats, tags, and profile data.
+
+**When to use:** When you need to check a member's current status, view their engagement metrics, retrieve their profile information, or verify their subscription details before performing updates.
+
+**Context needed:** The subscriber_hash parameter accepts three formats: MD5 hash of lowercase email, the email address directly, or the contact_id. Use fields or exclude_fields parameters with dot notation to control response size (e.g., "merge_fields.FNAME,stats.avg_open_rate").
+
+**Token efficiency**: This endpoint returns comprehensive member data including stats, location, tags, and marketing permissions. Use fields parameter to request only needed data, or exclude_fields to omit large objects like location or marketing_permissions.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_events_list">
+    Retrieve the event history for a specific list member in Mailchimp.
+
+**When to use:** When you need to see what events (e.g., 'purchased', 'visited') have been tracked for a contact, useful for understanding member engagement and behavior patterns.
+
+**Context needed:** The subscriber_hash accepts either an MD5 hash of the lowercase email, the email address directly, or the contact_id. Use count and offset for pagination through event history (max 1000 per request). Use fields or exclude_fields to control response size.
+
+**Token efficiency**: Specify count to limit results and use fields parameter to return only needed event properties.
+  </Accordion>
+  <Accordion title="mailchimp_report_unsubscribes_list">
+    Retrieve members who unsubscribed from a specific campaign, including their email addresses, unsubscribe timestamps, and reasons.
+
+**When to use:** When analyzing campaign performance, investigating unsubscribe patterns, or identifying members who opted out from a specific campaign.
+
+**Context needed:** Use count and offset for pagination through large unsubscribe lists (default 10, max 1000 per page). Use fields or exclude_fields to control response size and focus on specific data points.
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Large campaigns may have many unsubscribes requiring pagination.
+  </Accordion>
+  <Accordion title="mailchimp_template_get">
+    Retrieve detailed information about a specific email template in Mailchimp.
+
+**When to use:** When user needs to inspect template properties (name, type, creation date, editor type, responsive status, thumbnail URL, share URL) or verify template existence before using it in a campaign.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., "name,type,thumbnail" or exclude "_links").
+
+**Token efficiency**: Apply fields parameter to retrieve only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_automation_create">
+    Create a new classic automation workflow in your Mailchimp account.
+
+**When to use:** When setting up automated email sequences triggered by specific events (currently only abandoned cart workflows are supported).
+
+**Context needed:** The workflow_type in trigger_settings must be 'abandonedCart' (only supported type). Requires recipients.list_id to specify target audience. Optional recipients.store_id for e-commerce store association. Use settings for sender configuration (from_name, reply_to).
+
+**Safety**: POST operation creates a new automation workflow. Verify list_id exists before creation.
+  </Accordion>
+  <Accordion title="mailchimp_automation_get">
+    Retrieve detailed information about a specific classic automation workflow, including settings, trigger configuration, recipient list, tracking options, and performance summary.
+
+**When to use:** When you need to inspect an automation's configuration, check its status (save/paused/sending), review trigger settings, or analyze performance metrics (opens, clicks, emails sent).
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., 'settings.title,tracking.opens' or exclude 'report_summary').
+
+**Token efficiency:** This endpoint returns comprehensive workflow data. Use fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_automation_pause_all_emails">
+    Pause all emails in a specific classic automation workflow.
+
+**When to use:** When user needs to temporarily stop all automated emails from sending in a workflow without deleting the automation itself.
+
+**Safety**: POST operation modifies automation state. This pauses email delivery but does not delete the workflow or subscriber data.
+  </Accordion>
+  <Accordion title="mailchimp_automation_start">
+    Start all emails in a classic automation workflow.
+
+**When to use:** When user needs to activate or resume all email sends in a paused automation workflow.
+
+**Context needed:** The workflow_id must reference a classic automation workflow (not a Customer Journey).
+
+**Safety**: POST operation modifies automation state. Starting emails will immediately activate all emails in the workflow for sending to eligible subscribers.
+  </Accordion>
+  <Accordion title="mailchimp_automation_emails_list">
+    Retrieve all automated emails in a classic automation workflow.
+
+**When to use:** When you need to see the sequence of emails in an automation, check email settings, review trigger delays, or analyze performance metrics for workflow emails.
+
+**Token efficiency**: Returns detailed email objects including settings, tracking, recipients, and report summaries. Consider whether you need all this data or if a more specific endpoint would be more efficient.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_delete">
+    Removes an individual email from a classic automation workflow.
+
+**When to use:** When user needs to delete a specific email step from an automation sequence.
+
+**Context needed:** Cannot delete emails from Abandoned Cart (abandonedCart) or Product Retargeting (abandonedBrowse) workflow types. Operation requires both workflow_id and workflow_email_id.
+
+**Safety**: DELETE operation is irreversible. Verify workflow_id and workflow_email_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_queue_list">
+    List all subscribers currently queued to receive a specific automated email in a classic automation workflow.
+
+**When to use:** When monitoring automation delivery status, troubleshooting why subscribers haven't received an email yet, or auditing which contacts are scheduled for upcoming sends.
+
+**Context needed:** Both workflow_id and workflow_email_id are required to identify the specific email within the automation. Returns subscriber email addresses and their next_send timestamps.
+
+**Token efficiency**: Response includes full subscriber queue array. Consider the size of your automation queues when calling this endpoint.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_subscriber_get">
+    Get information about a specific subscriber queued to receive a classic automation email.
+
+**When to use:** When you need to check if a subscriber is scheduled to receive a specific automation email, verify their queue status, or see when the next send is scheduled.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase email address (e.g., MD5 of 'user@example.com' lowercased).
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_pause">
+    Pause a specific automated email within a Mailchimp automation workflow.
+
+**When to use:** When user needs to temporarily stop an automated email from sending without deleting it, such as during content updates or campaign adjustments.
+
+**Context needed:** Both workflow_id and workflow_email_id are required to identify the specific email within the automation sequence.
+
+**Safety**: POST operation modifies automation state. Pausing affects email delivery for active subscribers in the workflow.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_start">
+    Start a paused automated email within an automation workflow.
+
+**When to use:** When user needs to resume or activate a previously paused automation email in a workflow.
+
+**Safety**: POST operations modify data. Starting an email will activate it to send to subscribers based on workflow triggers.
+  </Accordion>
+  <Accordion title="mailchimp_automation_removed_subscribers_list">
+    Retrieve subscribers who were removed from a classic automation workflow.
+
+**When to use:** When auditing automation workflow changes, investigating why subscribers are no longer in a workflow, or analyzing automation exclusions.
+
+**Context needed:** The workflow_id must be for a classic automation workflow (not a Customer Journey).
+
+**Token efficiency**: Returns all removed subscribers for the workflow. Response includes email addresses, list IDs, and subscriber hashes.
+  </Accordion>
+  <Accordion title="mailchimp_automation_subscriber_remove">
+    Permanently remove a subscriber from a classic automation workflow by email address.
+
+**When to use:** When a user needs to stop a specific subscriber from receiving further emails in an automation sequence, or to manually exclude someone from an active workflow.
+
+**Context needed:** Removal is permanent - the subscriber cannot be re-added to the same workflow_id after removal, even if they meet the workflow's entry conditions again.
+
+**Safety**: POST operation permanently modifies automation enrollment. This action is irreversible - verify workflow_id and email_address before removal.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_get">
+    Retrieve detailed information about a specific e-commerce store connected to Mailchimp.
+
+**When to use:** When you need to view store configuration, verify store settings, check automation status (abandoned cart/browse), or retrieve store metadata like platform, currency, timezone, or connected site details.
+
+**Context needed:** Use fields parameter to request specific properties (e.g., 'id,name,platform') or exclude_fields to omit data (e.g., 'address,connected_site') for more efficient responses.
+
+**Token efficiency**: Specify fields or exclude_fields to reduce response size when you only need specific store properties.
+  </Accordion>
+  <Accordion title="mailchimp_batch_get">
+    Get the current status and progress of a batch operation.
+
+**When to use:** When checking if a previously submitted batch request has completed, monitoring progress of long-running batch operations, or retrieving the results URL for a finished batch.
+
+**Context needed:** The batch_id is returned when you initially create a batch operation. Status values progress through: pending → preprocessing → started → finalizing → finished. Once status is 'finished', use response_body_url to download the gzipped results archive.
+
+**Token efficiency**: Use fields parameter to return only needed properties (e.g., 'status,finished_operations'). Use exclude_fields to omit large nested objects like _links.
+  </Accordion>
+  <Accordion title="mailchimp_batch_delete">
+    Stops a running batch request and cancels any remaining operations.
+
+**When to use:** When you need to cancel a long-running batch operation that is currently executing. Use batch_id to specify which batch request to stop.
+
+**Safety**: DELETE operation is irreversible. Completed operations within the batch will not be available after deletion. Only one batch request runs at a time, so this immediately stops the current execution.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_carts_list">
+    Retrieve all shopping carts for a specific e-commerce store in Mailchimp.
+
+**When to use:** When analyzing abandoned carts, monitoring cart activity, or building cart recovery workflows. Essential for accessing cart data needed for Abandoned Cart automations.
+
+**Context needed:** Use count and offset for pagination through large cart collections (max 1000 per request). Use fields/exclude_fields with dot notation to control response size (e.g., "carts.customer.email_address").
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Default returns 10 carts with full details including customer info and line items.
+  </Accordion>
+  <Accordion title="mailchimp_batch_webhook_get">
+    Retrieve configuration details for a specific batch webhook by its ID.
+
+**When to use:** When you need to check the URL, enabled status, or other settings of an existing batch webhook.
+
+**Token efficiency**: Use fields parameter to request only needed properties, or exclude_fields to omit unnecessary data from the response.
+  </Accordion>
+  <Accordion title="mailchimp_template_folder_create">
+    Create a new template folder in Mailchimp to organize email templates.
+
+**When to use:** When organizing templates into categories or creating a new organizational structure for template management.
+
+**Safety**: POST operations modify data. This creates a new folder in your Mailchimp account.
+  </Accordion>
+  <Accordion title="mailchimp_template_folder_delete">
+    Delete a template folder and mark all templates in it as unfiled.
+
+**When to use:** When user wants to remove a template folder organization structure while preserving the templates themselves.
+
+**Context needed:** Provide folder_id from the template folder to delete. Templates inside will become unfiled, not deleted.
+
+**Safety**: DELETE operation is irreversible. The folder structure cannot be recovered, though templates remain accessible.
+  </Accordion>
+  <Accordion title="mailchimp_template_folder_update">
+    Rename an existing template folder in Mailchimp.
+
+**When to use:** When user requests to rename or change the name of a template folder to better organize their email templates.
+
+**Safety**: PATCH operations modify data. This updates the folder name only and does not affect templates stored within the folder.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_folder_create">
+    Create a new campaign folder in Mailchimp to organize campaigns.
+
+**When to use:** When user needs to organize campaigns by creating a folder structure, or before creating campaigns that should be grouped together.
+
+**Safety**: POST operations modify data. This creates a permanent folder in the account.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folder_create">
+    Create a new folder in the Mailchimp File Manager to organize uploaded files and images.
+
+**When to use:** When organizing marketing assets, creating a new content category, or setting up folder structure before uploading campaign files.
+
+**Safety**: POST operations modify data. Creates a permanent folder in the account's File Manager.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_line_update">
+    Update an existing line item in a shopping cart, modifying product details, quantity, or price.
+
+**When to use:** When a customer changes the quantity of items in their cart, updates product variants, or when cart item prices need adjustment.
+
+**Context needed:** All three identifiers (store_id, cart_id, line_id) are required to target the specific cart line item. At least one property (product_id, product_variant_id, quantity, or price) must be provided to update.
+
+**Safety**: PATCH operations modify existing data. Verify cart and line item exist before updating.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_folder_delete">
+    Delete a campaign folder and automatically mark all campaigns inside it as unfiled.
+
+**When to use:** When user wants to remove a campaign folder organization structure while preserving the campaigns themselves.
+
+**Safety**: DELETE operation is irreversible. The folder will be permanently removed, though campaigns are preserved as unfiled.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_folder_update">
+    Update the name of a campaign folder in Mailchimp.
+
+**When to use:** When user requests to rename a campaign folder to better organize their campaigns.
+
+**Context needed:** Requires folder_id (the unique identifier for the folder to update). The name parameter is required and will replace the existing folder name.
+
+**Safety**: PATCH operations modify data. Verify folder_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_list">
+    Retrieve all email campaigns from your Mailchimp account.
+
+**When to use:** When user needs to view campaigns, search for specific campaigns, or analyze campaign data. Use filters to narrow results by type, status, or date ranges.
+
+**Context needed:** Use count and offset for pagination (default 10, max 1000 per page). Filter by type (regular, plaintext, absplit, rss, variate) or status (save, paused, schedule, sending, sent). Date filters accept ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00). Use fields/exclude_fields with dot notation for nested properties to control response size.
+
+**Token efficiency**: Specify count limit and use filters (type, status, list_id, folder_id) to avoid large responses. Use fields parameter to return only needed properties.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_cancel_send">
+    Cancel a Regular or Plain-Text Campaign after sending but before all recipients receive it.
+
+**When to use:** When user needs to stop an in-progress campaign delivery to prevent remaining recipients from receiving it.
+
+**Context needed:** Only works for campaigns currently being sent. Requires Mailchimp Pro subscription. Use campaign_id to specify which campaign to cancel.
+
+**Safety**: POST operation is irreversible. Campaign cannot be resumed after cancellation.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_replicate">
+    Creates a duplicate copy of an existing campaign in saved or send status.
+
+**When to use:** When user needs to reuse a campaign's settings and content as a template for a new campaign, or wants to resend a similar campaign to a different audience.
+
+**Context needed:** The campaign_id must reference a campaign with status 'saved' or 'sent'. The replicated campaign will be created in 'save' status with all original settings and content copied.
+
+**Safety**: POST operation creates a new campaign resource. The original campaign remains unchanged.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_send">
+    Send a Mailchimp campaign immediately (or according to schedule for RSS campaigns).
+
+**When to use:** When user requests to send/launch/deliver a campaign that has been created and is ready to go out to subscribers.
+
+**Context needed:** Requires campaign_id from a previously created campaign. RSS campaigns send according to their configured schedule; all other campaign types send immediately upon calling this tool.
+
+**Safety**: POST operation sends campaign to subscribers - this action is irreversible once executed. Verify campaign_id and confirm user intent before sending.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customer_update">
+    Update an existing customer's profile information in a Mailchimp e-commerce store.
+
+**When to use:** When you need to modify customer details like name, company, address, or opt-in status for an existing e-commerce customer.
+
+**Context needed:** Requires both store_id and customer_id to identify the specific customer. The opt_in_status field will not overwrite existing Mailchimp list member status but applies to members added through e-commerce endpoints. Customers who don't opt in are added as Transactional members.
+
+**Safety**: PATCH operations modify existing data. Verify store_id and customer_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_unschedule">
+    Unschedule a scheduled campaign that hasn't started sending yet.
+
+**When to use:** When user needs to cancel a scheduled campaign before it begins sending, or wants to reschedule it for a different time.
+
+**Safety**: POST operation modifies campaign state. This only works for campaigns that are scheduled but haven't started sending - already-sent or currently-sending campaigns cannot be unscheduled.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_pause">
+    Pause an RSS-Driven campaign to stop it from sending automatically.
+
+**When to use:** When user needs to temporarily stop an active RSS campaign from sending new emails based on RSS feed updates.
+
+**Context needed:** Only works with RSS-Driven campaigns. The campaign_id must be for an RSS campaign type, not regular or automated campaigns.
+
+**Safety**: POST operation modifies campaign state. This action is reversible - paused campaigns can be resumed later.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_resume">
+    Resume a paused RSS-Driven campaign to restart automatic content delivery.
+
+**When to use:** When user needs to restart an RSS campaign that was previously paused, allowing it to resume sending automated emails based on RSS feed updates.
+
+**Safety**: POST operations modify campaign state. Verify campaign_id before resuming to avoid unintended email sends.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promorule_get">
+    Retrieve details about a specific promotional rule in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view configuration, status, or timing details of an existing promo rule (discount amount, type, target, enabled status, start/end dates).
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific promo rule attributes.
+
+**Token efficiency**: Specify fields parameter to return only needed attributes and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_resend_create">
+    Creates a duplicate campaign to resend to specific segments (non-openers, new subscribers, non-clickers, or non-purchasers).
+
+**When to use:** When you need to resend an existing campaign to recipients who didn't engage with it or to new subscribers added since the original send.
+
+**Context needed:** The shortcut_type parameter determines the target segment (defaults to 'to_non_openers'). Valid options: 'to_non_openers', 'to_new_subscribers', 'to_non_clickers', 'to_non_purchasers'.
+
+**Safety**: POST operation creates a new campaign duplicate. This action cannot be undone.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_content_set">
+    Set or replace the content for a Mailchimp campaign.
+
+**When to use:** When you need to define the email content for a campaign before sending - provide HTML directly, import from a URL, use a template, or upload an archive. For multivariate campaigns, use variate_contents to define multiple content variations.
+
+**Context needed:** Choose ONE content method: html (raw HTML), url (import from URL), template (use template ID with optional sections), or archive (base64-encoded zip/tar file). For template sections, keys must match mc:edit area names from the template. Plain text is auto-generated if not provided.
+
+**Safety**: PUT operation replaces all existing campaign content. Verify campaign_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_feedback_add">
+    Add a feedback comment to a specific campaign.
+
+**When to use:** When team members need to leave review comments or notes on campaign content, or mark feedback items as complete.
+
+**Context needed:** Use block_id to associate feedback with specific editable blocks in the campaign. Set is_complete to true when marking feedback as resolved.
+
+**Safety**: POST operations modify data. Feedback will be permanently added to the campaign.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_feedback_delete">
+    Permanently removes a specific feedback message from a campaign.
+
+**When to use:** When a user requests to delete a feedback comment or note that was previously added to a campaign.
+
+**Safety**: DELETE operation is irreversible. The feedback message will be permanently removed and cannot be recovered.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_feedback_update">
+    Update an existing feedback message on a campaign.
+
+**When to use:** When modifying feedback content, changing the block it addresses, or marking feedback as complete/incomplete.
+
+**Context needed:** Use block_id to associate feedback with specific editable blocks in the campaign. Set is_complete to true to mark feedback as resolved.
+
+**Safety**: PATCH operations modify existing data. Verify campaign_id and feedback_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_connected_site_list">
+    Retrieve all websites and ecommerce stores connected to this Mailchimp account.
+
+**When to use:** When user needs to see which websites are integrated with Mailchimp, check connected site details (domain, platform, integration scripts), or verify ecommerce store associations.
+
+**Context needed:** Use fields or exclude_fields to control response size. Use count and offset for pagination through large result sets (max 1000 per page).
+
+**Token efficiency**: Specify count to limit results. Use fields parameter to return only needed properties (e.g., 'sites.domain,sites.platform').
+  </Accordion>
+  <Accordion title="mailchimp_connected_site_create">
+    Register a new connected site in Mailchimp to enable tracking and integration capabilities.
+
+**When to use:** When setting up a new website or e-commerce platform to track visitor activity and enable Mailchimp features like abandoned cart emails or product recommendations.
+
+**Context needed:** The foreign_id must be a unique identifier you control (e.g., your internal site ID). The domain should be the actual domain where you'll install the tracking script (e.g., "example.com"). Response includes a site_script with integration code to embed on your site.
+
+**Safety:** POST operation creates a new resource. Each foreign_id can only be registered once.
+  </Accordion>
+  <Accordion title="mailchimp_connected_site_delete">
+    Remove a connected site from your Mailchimp account.
+
+**When to use:** When user requests to disconnect or remove a website integration from their Mailchimp account.
+
+**Context needed:** Use the connected_site_id to identify which site to remove.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the site connection from the account.
+  </Accordion>
+  <Accordion title="mailchimp_connected_site_verify_script">
+    Verify that the Mailchimp tracking script has been successfully installed on a connected site.
+
+**When to use:** After adding a connected site or updating its tracking script, use this to confirm the script installation is working correctly.
+
+**Context needed:** The connected_site_id must be from an existing connected site in your Mailchimp account.
+
+**Safety**: POST operation that performs verification. Returns 204 on successful verification, 400 if script is not properly installed.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promocode_update">
+    Update an existing promo code for a store's promo rule in Mailchimp.
+
+**When to use:** When you need to modify promo code details like the code string, redemption URL, usage count, enabled status, or timestamps for an existing promotional code.
+
+**Context needed:** The code field is restricted to 50 UTF-8 characters max. The redemption_url field accepts URLs up to 2000 UTF-8 characters that either apply the promo code at checkout or link to a sale page. Use enabled to activate/deactivate the promo code without deleting it.
+
+**Safety**: PATCH operations modify existing data. Verify store_id, promo_rule_id, and promo_code_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_conversation_message_get">
+    Retrieve a specific message from a legacy Mailchimp conversation.
+
+**When to use:** When you need to view details of a specific message within a conversation thread, including sender info, subject, content, and read status.
+
+**Context needed:** This endpoint accesses legacy Conversations data only - it does not include newer Inbox messages or campaign replies. Use fields or exclude_fields parameters to control response size.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., "message,subject,timestamp") or exclude_fields to omit unnecessary data.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_file_create">
+    Upload a new image or file to Mailchimp's File Manager.
+
+**When to use:** When user needs to add images or files for use in campaigns, templates, or landing pages.
+
+**Context needed:** file_data must be base64-encoded file contents. Use folder_id to organize files into specific folders.
+
+**Safety**: POST operations modify data and create new resources. This upload is permanent once created.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_file_delete">
+    Permanently remove a specific file from the Mailchimp File Manager.
+
+**When to use:** When user requests to delete an uploaded file, clean up unused assets, or remove outdated content from File Manager.
+
+**Safety**: DELETE operation is irreversible. File will be permanently removed and cannot be recovered. Verify file_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_file_update">
+    Update the name or folder location of a file in Mailchimp's File Manager.
+
+**When to use:** When user needs to rename a file or move it to a different folder (or remove it from folders by setting folder_id to 0).
+
+**Context needed:** Set folder_id to 0 to remove the file from its current folder and place it at the root level.
+
+**Safety**: PATCH operations modify existing data. Verify file_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folder_delete">
+    Delete a specific folder from the Mailchimp File Manager.
+
+**When to use:** When user requests to remove an empty folder or clean up File Manager organization.
+
+**Safety**: DELETE operation is irreversible. Verify folder_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folder_update">
+    Update the name of a specific File Manager folder.
+
+**When to use:** When user requests to rename an existing folder in the File Manager.
+
+**Safety**: PATCH operations modify data. Verify folder_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folder_files_list">
+    List all images and files stored in a specific File Manager folder.
+
+**When to use:** When user needs to view files in a folder, search for specific files by type or creator, or retrieve file URLs for use in campaigns.
+
+**Context needed:** Use count and offset for pagination (default 10, max 1000 per page). Filter by type (image/file), created_by username, or date ranges using before_created_at/since_created_at in ISO 8601 format. Sort results using sort_field (added_date, name, size) and sort_dir (ASC/DESC).
+
+**Token efficiency**: Use count parameter to limit response size. Apply type and date filters to narrow results before retrieval.
+  </Accordion>
+  <Accordion title="mailchimp_list_list">
+    Retrieve all audience lists (subscriber lists) in the Mailchimp account.
+
+**When to use:** When you need to view available audiences, find a specific list by name or email membership, or get list statistics and metadata.
+
+**Context needed:** Use count and offset for pagination (default 10, max 1000 per page). Filter by date ranges using before_date_created, since_date_created, before_campaign_last_sent, or since_campaign_last_sent in ISO 8601 format. Use email parameter to find lists containing a specific subscriber. Use fields or exclude_fields with dot notation for nested properties to control response size.
+
+**Token efficiency**: Set count parameter to limit results. Use fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_batch_webhook_update">
+    Update the URL or enabled status of an existing batch webhook that fires when batch requests complete processing.
+
+**When to use:** When you need to change the webhook endpoint URL or enable/disable notifications for batch operation completions.
+
+**Context needed:** The batch_webhook_id must be from an existing webhook. Set enabled to false to temporarily stop receiving notifications without deleting the webhook.
+
+**Safety**: PATCH operations modify existing resources. Changing the URL will redirect all future batch completion notifications to the new endpoint.
+  </Accordion>
+  <Accordion title="mailchimp_list_members_batch">
+    Batch subscribe or unsubscribe up to 500 members to/from a Mailchimp list in a single operation.
+
+**When to use:** When adding multiple new subscribers, updating existing member statuses in bulk, or performing mass unsubscribe operations. Use this instead of individual member operations when processing multiple contacts simultaneously.
+
+**Context needed:** The members array accepts up to 500 member objects per request. Each member requires email_address and status (subscribed/unsubscribed/cleaned/pending/transactional). Set update_existing to true to modify existing members' subscription status, false to only add new members. Use skip_merge_validation to bypass required merge field validation, skip_duplicate_check to process first occurrence when duplicates exist in request.
+
+**Safety**: POST operation modifies list membership data. Batch operations affect multiple subscribers simultaneously and cannot be undone. Verify member data and status values before execution.
+
+**Token efficiency**: Response includes separate arrays for new_members, updated_members, and errors. Large batch operations return detailed member objects - consider processing in smaller batches if response size is a concern.
+  </Accordion>
+  <Accordion title="mailchimp_list_delete">
+    Permanently delete a list from your Mailchimp account.
+
+**When to use:** When user explicitly requests to remove a list entirely from their account.
+
+**Context needed:** Provide the list_id for the specific list to delete.
+
+**IRREVERSIBLE OPERATION**: Deleting a list permanently removes all list history including subscriber activity, unsubscribes, complaints, bounces, and all subscriber email addresses. This data cannot be recovered unless previously exported. Confirm user intent before executing.
+  </Accordion>
+  <Accordion title="mailchimp_list_update">
+    Update settings for a specific Mailchimp audience list.
+
+**When to use:** When modifying list configuration such as name, contact information, campaign defaults, permission reminders, double opt-in settings, or notification preferences.
+
+**Context needed:** The contact.country field requires ISO3166 two-character country codes (defaults to US if invalid). All required fields from the original list configuration must be included in the update request (name, contact details, permission_reminder, campaign_defaults, email_type_option).
+
+**Safety**: PATCH operations modify existing list settings. Changes affect all future campaigns using this list.
+  </Accordion>
+  <Accordion title="mailchimp_list_abusereports_list">
+    Retrieve all abuse reports for a specific Mailchimp audience/list, showing subscribers who marked emails as spam.
+
+**When to use:** When investigating deliverability issues, monitoring list health, or identifying subscribers who reported campaigns as spam. An abuse complaint occurs when recipients click 'report spam' in their email program.
+
+**Context needed:** Use count and offset for pagination through large result sets (default 10 records, max 1000 per request). Use fields or exclude_fields to control response size by specifying exact field paths with dot notation.
+
+**Token efficiency**: Specify count limit and use fields parameter to return only needed data. Large lists may require pagination.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_get">
+    Retrieve detailed information about a specific product in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view product details (title, description, price, variants, images, inventory) for a specific product_id within a store_id. Use this to check product information before updates, display product details to users, or verify product data.
+
+**Context needed:** Returns up to 50 product variants in the response; for stores with products having more variants, use the separate Product Variants endpoint. Use fields parameter to request only specific properties (dot notation for nested fields) or exclude_fields to reduce response size.
+
+**Token efficiency:** Specify fields parameter to retrieve only needed properties and minimize response size. Use exclude_fields to omit large nested objects like variants or images if not needed.
+  </Accordion>
+  <Accordion title="mailchimp_list_activity_get">
+    Retrieve up to 180 days of daily aggregated activity statistics for a specific list, including emails sent, opens, clicks, bounces, subscribes, and unsubscribes.
+
+**When to use:** When analyzing list performance trends, monitoring engagement metrics over time, or generating activity reports. Does not include Automation or AutoResponder activity.
+
+**Context needed:** Use count and offset for pagination through activity records. Use fields or exclude_fields to control response size by specifying exact field paths with dot notation.
+
+**Token efficiency**: Default returns 10 days of activity. Specify count parameter to control result size (max 1000). Use fields parameter to retrieve only needed metrics.
+  </Accordion>
+  <Accordion title="mailchimp_list_growth_history_get">
+    Retrieve month-by-month growth statistics for a specific Mailchimp list, including subscriber counts, unsubscribes, cleaned addresses, and other membership changes.
+
+**When to use:** When analyzing list performance trends, generating growth reports, or tracking subscriber acquisition and churn patterns over time.
+
+**Context needed:** Use count and offset for pagination through historical data (max 1000 records per request). Sort by month using sort_field and sort_dir parameters. Use fields/exclude_fields to optimize response size.
+
+**Token efficiency**: Specify count parameter to limit records returned. Use fields parameter to request only needed metrics (subscribed, unsubscribed, cleaned, etc.) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_interestcategories_list">
+    Retrieve all interest categories (group titles) configured for a specific audience list.
+
+**When to use:** When you need to see what interest groups are available for subscriber segmentation, before adding subscribers to specific interest groups, or when building signup forms that display interest options.
+
+**Context needed:** Use type parameter to filter by display format (checkboxes, dropdown, radio, hidden). Use count and offset for pagination through large category sets (max 1000 per page).
+
+**Token efficiency**: Specify count parameter to limit response size. Use fields or exclude_fields to control which properties are returned.
+  </Accordion>
+  <Accordion title="mailchimp_list_interestcategory_create">
+    Create a new interest category (group title) for organizing subscriber preferences within a list.
+
+**When to use:** When setting up subscriber segmentation options like newsletter topics, product interests, or preference groups that will appear on signup forms.
+
+**Context needed:** The title parameter should be phrased as a question (e.g., "What topics interest you?") as it appears directly on signup forms. The type parameter determines UI presentation: checkboxes (multiple selection), dropdown (single from list), radio (single exclusive), or hidden (backend only). Use display_order to control category sequence on forms (lower numbers appear first).
+
+**Safety:** POST operation creates new data. Interest categories are containers for interests - you'll need to add individual interests separately after creation.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_category_get">
+    Retrieve details about a specific interest category within a Mailchimp audience list.
+
+**When to use:** When you need to inspect an interest category's configuration (title, display type, display order) before updating it or displaying category information to users.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific properties.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., fields=title,type,display_order) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_interestcategory_delete">
+    Delete a specific interest category from a Mailchimp audience list.
+
+**When to use:** When user requests to remove an interest category (group) from a list's subscription preferences, or when cleaning up unused segmentation options.
+
+**Safety**: DELETE operations permanently remove data and cannot be undone. Verify the interest_category_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_list">
+    Retrieve all interests (group options) within a specific interest category for an audience list.
+
+**When to use:** When you need to see available interest options within a category before assigning subscribers to interests, or when displaying interest choices for subscription preferences.
+
+**Context needed:** Both list_id and interest_category_id are required path parameters. Use count and offset for pagination through large interest sets (default 10, max 1000 per page). Use fields or exclude_fields to control response size with dot notation for nested properties.
+
+**Token efficiency**: Specify count parameter to limit response size. Use fields parameter to return only needed properties and reduce token usage.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_create">
+    Create a new interest (group name) within a specific interest category for audience segmentation.
+
+**When to use:** When setting up subscriber segmentation options, adding new interest groups to an existing category, or creating subscription preference choices that will appear on signup forms.
+
+**Context needed:** The name parameter will be publicly visible on subscription forms. Use display_order to control the sequence in which interests appear to subscribers.
+
+**Safety**: POST operations modify data and create new interests that become available to subscribers.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_get">
+    Retrieve details for a specific interest (group name) within an interest category for a list.
+
+**When to use:** When you need to view properties of a specific interest group, such as its name, subscriber count, or display order. Use this after obtaining the interest_id from listing interests in a category.
+
+**Context needed:** Requires three hierarchical IDs: list_id (the audience), interest_category_id (the grouping), and interest_id (the specific interest). Use fields or exclude_fields parameters with dot notation to control response size.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., 'name,subscriber_count') or exclude_fields to omit unnecessary data like _links.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_delete">
+    Delete a specific interest (group name) from an interest category within a Mailchimp audience list.
+
+**When to use:** When user needs to remove an interest option from a category, such as cleaning up unused group names or restructuring audience segmentation options.
+
+**Safety**: DELETE operation permanently removes the interest. This action is irreversible and will affect any subscribers currently tagged with this interest.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_image_get">
+    Retrieve details about a specific product image in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view image URL, associated variant IDs, or other metadata for a specific product image that's already been added to a store product.
+
+**Context needed:** Requires store_id, product_id, and image_id from previous operations. Use fields or exclude_fields parameters with dot notation to control response size (e.g., "id,url" or "_links").
+
+**Token efficiency**: Use fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_create">
+    Create a new audience segment in a Mailchimp list to group subscribers based on conditions or static email lists.
+
+**When to use:** When user needs to organize list members into targeted groups for campaigns (e.g., by location, engagement, purchase behavior, demographics).
+
+**Context needed:** Choose between static_segment (array of emails) or options (conditional rules with match type and conditions array). These fields are mutually exclusive. For conditional segments, see Mailchimp's condition types documentation for the 40+ available condition schemas (campaign interaction, ecommerce, location, merge fields, etc.). Static segments ignore emails not present on the list.
+
+**Safety**: POST operation creates new data. Segment name is required.
+  </Accordion>
+  <Accordion title="mailchimp_segment_members_batch">
+    Batch add or remove list members from a static segment in Mailchimp.
+
+**When to use:** When you need to add multiple members to a segment or remove multiple members from a segment in a single operation, rather than updating them individually.
+
+**Context needed:** Provide email addresses in members_to_add or members_to_remove arrays. Maximum 500 members per request. Emails not present on the list will be ignored. The operation is for static segments only.
+
+**Safety**: POST operations modify data. This will change segment membership for the specified emails. Review member lists before executing.
+
+**Token efficiency**: Response includes full member objects for all added/removed members. For large batches, expect substantial response data.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_update">
+    Update an existing audience segment in a Mailchimp list.
+
+**When to use:** When modifying segment criteria, renaming a segment, or updating static segment membership (tags).
+
+**Context needed:** Use static_segment to update tag membership by providing an array of email addresses (empty array clears all members). Use options.conditions to update saved segment criteria with match type ('any' or 'all') and condition arrays. Cannot provide both static_segment and options in the same request.
+
+**Safety**: PATCH operations modify existing data. Changes to segment criteria immediately affect which contacts are included.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_member_add">
+    Add an existing list member to a static segment by their email address.
+
+**When to use:** When organizing subscribers into targeted groups for campaigns, such as adding customers to a "VIP" segment or grouping users by behavior or preferences.
+
+**Context needed:** Only works with static segments (manually managed). The member must already exist in the list - use this to organize existing subscribers, not to add new ones. The email_address must match an existing list member exactly.
+
+**Safety**: POST operation modifies segment membership. Verify list_id and segment_id before adding members.
+  </Accordion>
+  <Accordion title="mailchimp_segment_member_remove">
+    Remove a member from a static segment in a Mailchimp list.
+
+**When to use:** When user needs to remove a specific subscriber from a segment without removing them from the main list.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase email address. Only works with static segments (not auto-updating segments).
+
+**Safety**: DELETE operation permanently removes the member from the segment. This action is irreversible.
+  </Accordion>
+  <Accordion title="mailchimp_list_tags_search">
+    Search for tags on a Mailchimp list by name prefix, or retrieve all tags if no search term is provided.
+
+**When to use:** When you need to find specific tags on a list, verify tag existence before operations, or retrieve all available tags for a list.
+
+**Context needed:** The name parameter performs prefix matching (e.g., 'VIP' matches 'VIP', 'VIP-Gold', 'VIP-Silver'). Omit name to retrieve all tags on the list.
+
+**Token efficiency**: Returns tag IDs and names only. Use total_items to understand result set size.
+  </Accordion>
+  <Accordion title="mailchimp_list_members_list">
+    Retrieve member information from a specific Mailchimp list, including subscribers, unsubscribed, pending, and archived contacts.
+
+**When to use:** When you need to view list members, search for specific subscribers, analyze subscriber data, or export member information. Use this to check subscription status, review member details, or filter members by various criteria.
+
+**Context needed:** Use status parameter to filter by subscription state (subscribed, unsubscribed, cleaned, pending, transactional, archived). For interest-based filtering, interest_category_id, interest_ids, and interest_match must be used together. Timestamp parameters require ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00). Use count and offset for pagination through large member lists.
+
+**Token efficiency:** Default returns 10 members (max 1000 per request). Use count to limit response size, offset for pagination, and fields/exclude_fields to control which member properties are returned. Apply status and timestamp filters to narrow results before retrieval.
+  </Accordion>
+  <Accordion title="mailchimp_facebook_ad_get">
+    Retrieve details of a specific Facebook ad campaign from Mailchimp.
+
+**When to use:** When user needs to view configuration, performance metrics, audience settings, budget details, or content for a specific Facebook ad campaign.
+
+**Context needed:** Requires outreach_id (the unique identifier for the Facebook ad). Use fields parameter to request specific properties (e.g., 'status,budget,audience') or exclude_fields to omit properties from the response.
+
+**Token efficiency**: Use fields parameter to retrieve only needed properties and reduce response size. Large ad objects include extensive audience targeting, segment conditions, and performance data.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_upsert">
+    Add a new member to a Mailchimp list or update an existing member's information.
+
+**When to use:** When adding subscribers to a list, updating subscriber details (email preferences, merge fields, interests, VIP status), or changing subscription status. This operation creates the member if they don't exist or updates them if they do.
+
+**Context needed:** The subscriber_hash parameter accepts three formats: MD5 hash of lowercase email, the email address directly, or contact_id. For new members, both email_address and status_if_new are required. Use skip_merge_validation=true to bypass required merge field validation when needed.
+
+**Safety**: PUT operations modify data. This creates or updates member records and changes subscription status. Verify email addresses and status values before execution.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_update">
+    Update information for a specific list member in a Mailchimp audience.
+
+**When to use:** When you need to modify subscriber details (email, status, merge fields, interests, VIP status, location, marketing permissions, or preferences) for an existing list member.
+
+**Context needed:** The subscriber_hash accepts MD5 hash of lowercase email, plain email address, or contact_id. Use skip_merge_validation=true to bypass required merge field validation. Status values: subscribed, unsubscribed, cleaned, pending. Merge fields use tag-based keys (e.g., FNAME). Interests use interest IDs as keys with boolean values.
+
+**Safety**: PATCH operations modify existing data. Changes to status affect email deliverability and compliance.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_activity_recent_get">
+    Retrieve the last 50 activity events for a specific list member, including opens, clicks, bounces, unsubscribes, and ecommerce actions.
+
+**When to use:** When analyzing member engagement history, troubleshooting delivery issues, or investigating specific subscriber behavior on a list.
+
+**Context needed:** The subscriber_hash parameter accepts either an MD5 hash of the lowercase email, the plain email address, or the contact_id. Use the action parameter to filter by specific event types (abuse, bounce, click, open, sent, unsub, ecomm).
+
+**Token efficiency**: Returns up to 50 events maximum. Use action parameter to filter for specific event types and reduce response size. Use fields or exclude_fields to control which properties are returned.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_landingpages_list">
+    Retrieve performance reports for all landing pages in the Mailchimp account.
+
+**When to use:** When analyzing landing page effectiveness, comparing performance across multiple pages, or generating marketing reports that include landing page metrics (visits, conversions, revenue).
+
+**Context needed:** Returns comprehensive metrics including visits, unique visits, subscribes, clicks, conversion rates, ecommerce data, and time-series data (daily/weekly stats). Use count and offset for pagination through large result sets. Use fields or exclude_fields to control response size and focus on specific metrics.
+
+**Token efficiency**: Default returns 10 pages (max 1000). Specify count parameter and use fields parameter to request only needed metrics to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_tags_update">
+    Add or remove tags from a list member to organize and segment your audience.
+
+**When to use:** When you need to categorize members (e.g., tagging customers as 'VIP', 'Newsletter Subscriber'), remove outdated tags, or update member segmentation. New tags are automatically created when set to 'active'.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase email address. Set tag status to 'active' to add or 'active' to remove. Use is_syncing=true to prevent tag-based automations from triggering during bulk operations.
+
+**Safety**: POST operation modifies member tags. Verify list_id and subscriber_hash before updating.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_notes_list">
+    Retrieve all notes associated with a specific list member in Mailchimp.
+
+**When to use:** When you need to view the history of notes/comments added to a subscriber's profile, such as tracking customer interactions, support history, or account annotations.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase email address (not the plain email). Use sort_field and sort_dir to control ordering (created_at, updated_at, or note_id). Use count and offset for pagination through large note histories.
+
+**Token efficiency**: Default returns 10 notes. Specify count parameter to control response size (max 1000). Use fields or exclude_fields to limit returned data.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_note_create">
+    Add a new note to a specific list member's profile.
+
+**When to use:** When you need to record information, interactions, or context about a subscriber for future reference or team collaboration.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase email address. Note content is limited to 1,000 characters.
+
+**Safety**: POST operations modify data. This creates a permanent note record on the member's profile.
+  </Accordion>
+  <Accordion title="mailchimp_list_mergefield_create">
+    Add a custom merge field (audience field) to a Mailchimp list for collecting additional contact information.
+
+**When to use:** When you need to add a new data field to a list's signup form or contact records (e.g., company name, job title, custom preferences).
+
+**Context needed:** The type parameter determines field behavior - use 'radio' or 'dropdown' types with options.choices array to provide selectable values. Set required=true to make the field mandatory for contact imports. Use display_order to control field positioning on signup forms.
+
+**Safety**: POST operation creates a new merge field. This is permanent and will affect all contacts in the list.
+  </Accordion>
+  <Accordion title="mailchimp_list_mergefield_delete">
+    Permanently delete a custom merge field from an audience list.
+
+**When to use:** When removing a custom data field that is no longer needed for subscriber segmentation or personalization. Common scenarios include cleaning up unused fields, removing deprecated data points, or restructuring audience data schema.
+
+**Context needed:** Use list_id to specify the audience and merge_id to identify the specific merge field. Both IDs must be exact matches from your Mailchimp account.
+
+**Safety**: DELETE operation is irreversible. All subscriber data stored in this merge field will be permanently lost. Verify the merge_id before deletion to avoid removing the wrong field.
+  </Accordion>
+  <Accordion title="mailchimp_list_webhooks_list">
+    Retrieve all webhook configurations for a specific Mailchimp audience list.
+
+**When to use:** When you need to audit existing webhook integrations, verify webhook event subscriptions, or check which external systems are receiving list activity notifications.
+
+**Token efficiency**: Returns complete webhook details including event triggers (subscribe, unsubscribe, profile updates, campaign sends, SMS events) and sources (user, admin, API) for each webhook.
+  </Accordion>
+  <Accordion title="mailchimp_list_webhook_create">
+    Create a new webhook for a specific Mailchimp list to receive real-time notifications about list events.
+
+**When to use:** When you need to set up automated notifications for list activities like subscriber additions, unsubscribes, profile updates, email changes, or campaign sends.
+
+**Context needed:** The url parameter must be a publicly accessible HTTPS endpoint. Configure events object to enable specific triggers (subscribe, unsubscribe, profile, cleaned, upemail, campaign, plus SMS events in beta). Use sources object to filter by action origin (user, admin, or api). All event and source flags are optional booleans.
+
+**Safety**: POST operation creates a new webhook. Verify the destination URL is correct before creation.
+  </Accordion>
+  <Accordion title="mailchimp_list_webhook_get">
+    Retrieve configuration details for a specific webhook on a Mailchimp audience list.
+
+**When to use:** When you need to inspect webhook settings, verify which events trigger notifications, check the webhook URL, or troubleshoot webhook behavior for a list.
+
+**Context needed:** Returns comprehensive webhook configuration including enabled events (subscribe, unsubscribe, profile updates, campaign sends, SMS events), trigger sources (user, admin, API), and the destination URL.
+  </Accordion>
+  <Accordion title="mailchimp_list_webhook_delete">
+    Delete a specific webhook from a Mailchimp audience list.
+
+**When to use:** When user requests to remove webhook integrations, stop receiving event notifications for a list, or clean up unused webhooks.
+
+**Safety**: DELETE operation permanently removes the webhook. This action is irreversible.
+  </Accordion>
+  <Accordion title="mailchimp_list_signupform_update">
+    Customize the appearance and content of a list's default signup form by configuring header images, body text, and visual styles.
+
+**When to use:** When user needs to brand or customize the signup form for a specific audience list, modify form messaging (signup/unsubscribe/thank you messages), or adjust form styling (colors, fonts, button styles).
+
+**Context needed:** The contents array accepts section values: 'signup_message', 'unsub_message', or 'signup_thank_you_title'. The styles array uses specific selector names (e.g., 'page_background', 'forms_buttons', 'body_link_style') with property-value pairs for CSS-like styling. Image dimensions use string format (e.g., '800' for pixels).
+
+**Safety:** POST operation modifies list configuration. Changes affect the live signup form immediately.
+  </Accordion>
+  <Accordion title="mailchimp_list_locations_list">
+    Get geographic distribution of subscribers in a list based on IP address geocoding.
+
+**When to use:** When analyzing subscriber demographics, understanding audience geographic reach, or segmenting campaigns by location.
+
+**Context needed:** Returns country-level data with ISO 3166 2-digit codes, subscriber counts, and percentage distribution. Use fields or exclude_fields parameters to control response size.
+
+**Token efficiency**: Use fields parameter to return only needed location properties (country, cc, percent, total) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_surveys_list">
+    Retrieve all surveys associated with a specific Mailchimp audience list.
+
+**When to use:** When you need to see what surveys exist for a list, check survey availability before displaying survey options to users, or audit survey configurations across lists.
+
+**Token efficiency**: Returns all surveys for the list. If you only need specific survey details, consider filtering results after retrieval.
+  </Accordion>
+  <Accordion title="mailchimp_list_survey_get">
+    Retrieve details about a specific survey associated with a Mailchimp audience list.
+
+**When to use:** When you need to view survey configuration, questions, response settings, or metadata for a survey that's been created for a list. Use this before analyzing survey responses or modifying survey settings.
+
+**Token efficiency**: Returns complete survey details including all questions and settings in a single response.
+  </Accordion>
+  <Accordion title="mailchimp_survey_publish">
+    Publish a survey that is in draft, unpublished, or has been previously published and edited.
+
+**When to use:** When user wants to make a survey live and available to list members, or republish a survey after making edits.
+
+**Safety**: POST operation publishes the survey immediately. Once published, the survey becomes visible to the audience. Verify list_id and survey_id before publishing.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_create">
+    Create an unpublished and contentless Mailchimp landing page.
+
+**When to use:** When user needs to create a new landing page for email signup or product promotion. The page is created in draft/unpublished state and requires content to be added separately before publishing.
+
+**Context needed:** Either provide list_id to associate with a specific audience list, or set use_default_list=true to use the account's default list. Type must be either 'signup' or 'product'. Template_id specifies which landing page template to use.
+
+**Safety**: POST operation creates a new resource. Verify list_id or use_default_list setting before creation.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_delete">
+    Permanently delete a landing page from Mailchimp.
+
+**When to use:** When user requests to remove a landing page that is no longer needed.
+
+**Context needed:** Requires page_id (the unique identifier for the landing page to delete).
+
+**Safety**: DELETE operation is irreversible. This permanently removes the landing page and cannot be undone. Verify the correct page_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_unpublish">
+    Unpublish a Mailchimp landing page, removing it from public view.
+
+**When to use:** When user requests to take down a published landing page or revert a page to draft status.
+
+**Context needed:** Requires page_id (the unique identifier for the landing page). Works on pages in draft or published status.
+
+**Safety**: POST operation modifies landing page state. This action is reversible - pages can be republished later.
+  </Accordion>
+  <Accordion title="mailchimp_report_get">
+    Retrieve comprehensive performance metrics and analytics for a specific sent campaign.
+
+**When to use:** When analyzing campaign effectiveness, generating performance reports, or comparing campaign results against industry benchmarks. Only works for campaigns that have already been sent.
+
+**Context needed:** Use fields parameter to request specific metrics (e.g., "opens.open_rate,clicks.click_rate") or exclude_fields to reduce response size. Supports dot notation for nested objects.
+
+**Token efficiency**: Response includes extensive nested data (opens, clicks, bounces, forwards, timeseries, A/B split stats, e-commerce metrics). Use fields parameter to retrieve only needed metrics and reduce token usage.
+  </Accordion>
+  <Accordion title="mailchimp_report_advice_get">
+    Get AI-generated feedback and recommendations for a campaign based on its performance statistics (opens, clicks, unsubscribes, bounces).
+
+**When to use:** After a campaign has been sent and you need actionable insights to improve future campaigns or understand current performance issues.
+
+**Context needed:** Use fields or exclude_fields to control response size when you only need specific advice types (positive, negative, or neutral feedback).
+
+**Token efficiency**: Consider using fields parameter to limit response data if you only need specific feedback categories.
+  </Accordion>
+  <Accordion title="mailchimp_report_campaign_click_details_list">
+    Get detailed click analytics for all links in a specific campaign, including total clicks, unique clicks, click percentages, and A/B split performance.
+
+**When to use:** When analyzing campaign performance to understand which links received the most engagement, comparing A/B test results, or identifying the most effective CTAs in a sent campaign.
+
+**Context needed:** Use sort_field (total_clicks or unique_clicks) with sort_dir (ASC or DESC) to rank links by performance. Use count and offset for pagination through campaigns with many links (default 10, max 1000 per page).
+
+**Token efficiency**: Set count parameter to limit results. Use fields or exclude_fields to retrieve only needed data points and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_link_get">
+    Get detailed click statistics for a specific link in a campaign.
+
+**When to use:** When analyzing which links in a campaign are performing best, investigating click-through rates for specific URLs, or comparing A/B test performance for individual links.
+
+**Context needed:** Use fields or exclude_fields to control response size when you only need specific metrics (e.g., total_clicks, unique_clicks, click_percentage). For A/B split campaigns, response includes separate metrics for groups A and B.
+
+**Token efficiency**: Use fields parameter to request only needed metrics and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_account_export_list">
+    Retrieve a list of account exports for the Mailchimp account, showing export status, download URLs, and metadata.
+
+**When to use:** When user needs to check the status of account data exports, retrieve download URLs for completed exports, or view export history.
+
+**Context needed:** Download URLs are only valid for 90 days after export completion. Use count and offset for pagination through large export lists (max 1000 per page). Use fields/exclude_fields to control response size with dot notation for nested properties.
+
+**Token efficiency**: Set count parameter to limit results. Use fields parameter to return only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_report_campaign_opens_list">
+    Get detailed information about which list members opened a specific campaign email, including individual open timestamps and counts.
+
+**When to use:** When analyzing campaign engagement to see who opened emails, how many times they opened them, and when opens occurred. Useful for identifying engaged subscribers or tracking campaign performance at the member level.
+
+**Context needed:** Use since parameter with ISO 8601 format (e.g., 2016-04-12T12:00:00+00:00) to filter opens after a specific time. Use count and offset for pagination through large result sets (max 1000 per page). Sort by opens_count to identify most engaged members.
+
+**Token efficiency**: Use count parameter to limit response size. Apply since filter to narrow results to recent activity. Use fields/exclude_fields to control response payload size.
+  </Accordion>
+  <Accordion title="mailchimp_account_export_get">
+    Retrieve status and details of a specific Mailchimp account export by its ID.
+
+**When to use:** When checking the progress of an account export job, retrieving download URLs for completed exports, or verifying export metadata (size, timestamps).
+
+**Context needed:** The download_url is only available after export completion and remains valid for 90 days. Use fields or exclude_fields parameters with dot notation to control response size (e.g., "fields=export_id,download_url").
+
+**Token efficiency**: Use fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_list">
+    Retrieve all landing pages from the Mailchimp account.
+
+**When to use:** When user needs to view existing landing pages, check landing page status (published/unpublished/draft), or find a specific landing page by name or properties.
+
+**Context needed:** Use sort_field (created_at or updated_at) and sort_dir (ASC or DESC) to control result ordering. Use count parameter to limit results (default 10, max 1000). Use fields/exclude_fields with dot notation to control response size.
+
+**Token efficiency**: Set count parameter to limit response size. Use fields parameter to retrieve only needed properties and reduce token usage.
+  </Accordion>
+  <Accordion title="mailchimp_report_eepurl_get">
+    Get social activity summary for a campaign tracked by EepURL, including Twitter engagement, click-through data, geographic locations, and referrer sources.
+
+**When to use:** When analyzing social media impact of a campaign, tracking how the campaign URL was shared on Twitter, or understanding click patterns and traffic sources.
+
+**Context needed:** Use fields or exclude_fields to control response size when you only need specific metrics (e.g., 'twitter.tweets,clicks.clicks' for basic counts).
+
+**Token efficiency**: Response includes detailed Twitter statuses, click locations, and referrer data. Use fields parameter to request only needed sections for large campaigns.
+  </Accordion>
+  <Accordion title="mailchimp_landing_page_update">
+    Update an existing landing page's properties, metadata, or tracking settings.
+
+**When to use:** When user needs to modify a landing page's name, title, description, associated list/store, or tracking configuration. Use after retrieving the page_id from a list or get operation.
+
+**Context needed:** The tracking object allows configuring Mailchimp visitor tracking (track_with_mailchimp) and Google restricted data processing for CCPA compliance (enable_restricted_data_processing). All fields are optional - only include properties you want to change.
+
+**Safety:** PATCH operations modify existing resources. Verify page_id before updating to avoid unintended changes.
+  </Accordion>
+  <Accordion title="mailchimp_report_list">
+    Retrieve performance reports for sent email campaigns.
+
+**When to use:** When analyzing campaign effectiveness, comparing campaign performance, or generating marketing analytics. Returns comprehensive metrics including opens, clicks, bounces, unsubscribes, e-commerce data, and industry benchmarks.
+
+**Context needed:** Use type to filter by campaign type (regular, plaintext, absplit, rss, variate). Use before_send_time and since_send_time with ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00) to filter by send date. Use count and offset for pagination through large result sets.
+
+**Token efficiency:** Set count parameter to limit response size (default 10, max 1000). Use fields to request only needed metrics, or exclude_fields to omit unnecessary data like timeseries or timewarp breakdowns.
+  </Accordion>
+  <Accordion title="mailchimp_report_subreports_list">
+    Retrieve performance reports for all child campaigns within a parent campaign.
+
+**When to use:** When analyzing A/B split test results, multivariate campaign variants, or any campaign with child variations to compare their performance metrics.
+
+**Context needed:** Use fields parameter to request specific metrics (e.g., 'reports.opens,reports.clicks') or exclude_fields to reduce response size. Both use dot notation for nested properties.
+
+**Token efficiency**: Response includes comprehensive metrics (opens, clicks, bounces, e-commerce data) for each child campaign. Use fields/exclude_fields parameters to limit data to only needed metrics.
+  </Accordion>
+  <Accordion title="mailchimp_audience_contact_get">
+    Retrieve detailed information about a specific contact in a Mailchimp audience, including email/SMS channel data, subscription status, marketing consent, merge fields, and tags.
+
+**When to use:** When you need to look up a contact's complete profile, verify their subscription status, check their marketing consent across channels, or retrieve their custom field data and tags.
+
+**Context needed:** The contact_id parameter accepts either a Mailchimp contact ID or a channel hash in format email:[md5_hash] (MD5 of lowercased email) or sms:[sha256_hash] (SHA256 of E.164 phone number). Use fields or exclude_fields parameters to control response size when you only need specific data.
+
+**Token efficiency:** Use fields parameter to request only needed data (e.g., "email_channel.email,status,tags") or exclude_fields to omit large nested objects like merge_fields when not needed.
+  </Accordion>
+  <Accordion title="mailchimp_activity_feed_list">
+    Retrieve recent Chimp Chatter activity messages for the account, ordered by most recent.
+
+**When to use:** When user wants to see recent account activity like new subscribers, unsubscribes, profile updates, campaign forwards, or Facebook likes.
+
+**Context needed:** Returns up to 200 total messages. Use count and offset for pagination through results (count max 1000, default 10).
+
+**Token efficiency**: Specify count parameter to control response size. Default returns only 10 messages.
+  </Accordion>
+  <Accordion title="mailchimp_template_list">
+    Retrieve all email templates available in the Mailchimp account.
+
+**When to use:** When user needs to browse available templates, find a specific template by name/type/category, or select a template for campaign creation.
+
+**Context needed:** Use content_type to filter by editor type ('template' for legacy editor, 'multichannel' for new editor, 'html' for custom code). Date filters require ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00). Use count and offset for pagination through large template collections.
+
+**Token efficiency**: Set count parameter to limit results (default 10, max 1000). Use type, category, or folder_id filters to narrow results before retrieval.
+  </Accordion>
+  <Accordion title="mailchimp_template_create">
+    Create a new Classic template in Mailchimp with custom HTML content.
+
+**When to use:** When user needs to create a reusable email template with custom HTML design for campaigns.
+
+**Context needed:** The html parameter must contain raw HTML and supports Mailchimp Template Language syntax. Use folder_id to organize templates into specific folders.
+
+**Safety**: POST operation creates a new template. Only Classic templates are supported - drag-and-drop templates cannot be created via API.
+  </Accordion>
+  <Accordion title="mailchimp_verified_domain_create">
+    Initiate domain verification for the Mailchimp account by sending a two-factor challenge email.
+
+**When to use:** When user needs to add and verify a custom domain for sending email campaigns through Mailchimp.
+
+**Context needed:** The verification_email must be an address at the domain being verified (e.g., admin@yourdomain.com to verify yourdomain.com). This triggers a verification challenge email that must be completed separately. Free email providers (Gmail, Yahoo, etc.) cannot be verified.
+
+**Safety**: POST operation creates a new domain verification request. The domain will be in VERIFICATION_IN_PROGRESS status until the email challenge is completed.
+  </Accordion>
+  <Accordion title="mailchimp_account_export_create">
+    Create a new account export to download Mailchimp account data including audiences, campaigns, events, gallery files, reports, and templates.
+
+**When to use:** When user needs to backup account data, migrate to another platform, or analyze historical data outside Mailchimp.
+
+**Context needed:** The include_stages parameter accepts specific values: audiences, campaigns, events, gallery_files, reports, templates. Use since_timestamp (ISO 8601 format) to limit export to records created after a specific date - note that audiences are excluded from this time filter. Export URLs are only valid for 90 days after completion.
+
+**Safety**: POST operation creates a new export job. Export generation may take time for large accounts.
+  </Accordion>
+  <Accordion title="mailchimp_report_domain_performance_get">
+    Get performance statistics for the top 5 email domains in a campaign, including delivery, open, click, bounce, and unsubscribe metrics.
+
+**When to use:** When analyzing which email providers (Gmail, Yahoo, Hotmail, etc.) had the best or worst engagement with a campaign, or when troubleshooting deliverability issues by domain.
+
+**Context needed:** Returns top 5 domains only, ranked by total delivered emails. Use fields or exclude_fields to control response size if needed.
+
+**Token efficiency**: Use fields parameter to request only needed metrics (e.g., 'domains.domain,domains.opens,domains.clicks') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_authorized_app_get">
+    Retrieve details about a specific authorized application connected to your Mailchimp account.
+
+**When to use:** When you need to inspect an authorized app's name, description, or list of users who have linked it. Use this to verify app connections or audit third-party integrations.
+
+**Context needed:** The app_id must be the unique identifier for the authorized application. Use fields or exclude_fields parameters to control response size by specifying exact field names with dot notation for nested properties.
+
+**Token efficiency**: Use fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_automation_list">
+    Retrieve a paginated list of classic automation workflows in the Mailchimp account.
+
+**When to use:** When user needs to view all automations, check automation status, or find specific workflows by creation/start date or status.
+
+**Context needed:** Use count and offset for pagination. Filter by status (save, paused, sending) or time ranges using before_create_time, since_create_time, before_start_time, since_start_time in ISO 8601 format. Use fields/exclude_fields to control response size.
+
+**Token efficiency**: Set count parameter to limit results (default 10, max 1000). Use fields parameter to retrieve only needed properties.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_get">
+    Retrieve detailed information about a specific email within a classic automation workflow.
+
+**When to use:** When you need to inspect email settings, content configuration, delay triggers, recipient targeting, tracking options, or performance metrics for a specific automation email. Use this to verify email setup before modifications or to analyze automation email configuration.
+
+**Context needed:** Requires both workflow_id and workflow_email_id from the automation structure. Returns comprehensive email details including delay settings, recipient segments, campaign settings, tracking configuration, and report summaries for sent emails.
+
+**Token efficiency**: Response includes extensive nested objects (recipients, settings, tracking, social_card, trigger_settings, report_summary). Consider which fields you actually need before processing the full response.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_delete">
+    Permanently delete an e-commerce store and all its associated data from Mailchimp.
+
+**When to use:** When user requests to remove a store integration or clean up unused store connections.
+
+**Context needed:** Provide the store_id from the connected e-commerce platform. This operation cascades to delete all Customers, Orders, Products, and Carts associated with the store.
+
+**Safety**: DELETE operation is irreversible and permanently removes the store and all subresources. Confirm intent before executing.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_store_update">
+    Update an existing e-commerce store's configuration and settings in Mailchimp.
+
+**When to use:** When user needs to modify store details like name, domain, contact information, platform, currency settings, timezone, or physical address. Use to update store metadata without changing the associated list_id (which cannot be modified).
+
+**Context needed:** Use is_syncing parameter to temporarily disable automations during bulk data synchronization. Currency_code must be ISO 4217 format (e.g., USD, EUR). Country_code and province_code must be two-letter codes.
+
+**Safety**: PATCH operations modify existing store data. Verify store_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_report_subscriber_activity_get">
+    Get a specific subscriber's email activity in a campaign including opens, clicks, and bounces.
+
+**When to use:** When analyzing individual subscriber engagement with a campaign, troubleshooting delivery issues, or investigating specific user interactions.
+
+**Context needed:** The subscriber_hash must be the MD5 hash of the lowercase email address. Use since parameter (ISO 8601 format) to filter activity after a specific time. Activity is limited to 1,000 opens and 1,000 clicks per subscriber per campaign.
+
+**Token efficiency**: Use fields or exclude_fields parameters to control response size when only specific data is needed.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_update">
+    Update an existing shopping cart in a Mailchimp e-commerce store.
+
+**When to use:** When customer modifies cart contents (adds/removes items, changes quantities), updates customer information, changes totals, or associates a campaign with the cart.
+
+**Context needed:** Use checkout_url to enable Abandoned Cart automations. For existing customers, include only customer.id in the customer object. Currency code must be ISO 4217 format (e.g., USD, EUR). Line items require product_id and product_variant_id matching existing store products.
+
+**Safety**: PATCH operations modify existing data. Verify store_id and cart_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_cart_line_add">
+    Add a new line item to an existing cart in a Mailchimp e-commerce store.
+
+**When to use:** When a customer adds a product to their shopping cart, or when updating cart contents with additional items.
+
+**Context needed:** The id parameter must be unique for this line item within the cart. Both product_id and product_variant_id must reference existing products in the store. Price should be in the store's currency.
+
+**Safety**: POST operations modify data. This creates a new cart line item.
+  </Accordion>
+  <Accordion title="mailchimp_report_locations_list">
+    Get top geographic locations where recipients opened a specific campaign, ranked by number of opens.
+
+**When to use:** When analyzing campaign performance by geography, identifying regional engagement patterns, or determining where a campaign resonated most.
+
+**Context needed:** Use count and offset for pagination through location results (default 10, max 1000 per page). Returns country codes (ISO 3166), regions, and open counts including proxy-excluded metrics.
+
+**Token efficiency**: Set count parameter to limit response size. Use fields/exclude_fields to control which data is returned.
+  </Accordion>
+  <Accordion title="mailchimp_automation_email_update">
+    Update settings for a classic automation workflow email in Mailchimp.
+
+**When to use:** When modifying email content settings (subject line, preview text, from name, reply-to) or delay timing for an existing automation email. Only works with abandonedBrowse, abandonedCart, emailFollowup, or singleWelcome workflow types.
+
+**Context needed:** Requires both workflow_id and workflow_email_id path parameters. The delay.action field must match one of the supported trigger actions (signup, ecomm_abandoned_browse, ecomm_abandoned_cart). Delay direction is restricted to 'after' only.
+
+**Safety**: PATCH operations modify existing automation email configurations. Changes affect future sends of this automation email.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_customer_create">
+    Add a new customer record to a Mailchimp e-commerce store.
+
+**When to use:** When tracking e-commerce customers for marketing automation, order history, or audience segmentation in Mailchimp.
+
+**Context needed:** The id parameter is your system's unique customer identifier (max 50 characters). Set opt_in_status to control marketing permissions - false adds customers as Transactional members only, true opts them into marketing lists. This will not overwrite existing list member opt-in status.
+
+**Safety**: POST operation creates new data. Verify store_id and customer id before creation.
+  </Accordion>
+  <Accordion title="mailchimp_report_recipient_get">
+    Get detailed delivery and engagement information for a specific subscriber who received a campaign.
+
+**When to use:** When analyzing individual subscriber engagement with a sent campaign, troubleshooting delivery issues, or checking if a specific person opened an email.
+
+**Context needed:** subscriber_hash must be the MD5 hash of the lowercase email address (not the plain email). Use fields or exclude_fields to control response size for token efficiency.
+
+**Token efficiency**: Use fields parameter to request only needed data (e.g., 'status,open_count,last_open') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_batch_list">
+    Retrieve a summary of all batch requests that have been submitted to Mailchimp.
+
+**When to use:** When you need to check the status of asynchronous batch operations, monitor batch processing progress, or retrieve results from completed batch requests.
+
+**Context needed:** Use count and offset for pagination through large result sets (default 10, max 1000 per page). Use fields to return only specific properties or exclude_fields to omit unnecessary data.
+
+**Token efficiency**: Specify count to control response size. Use fields/exclude_fields to minimize token usage by requesting only needed data.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_promorule_create">
+    Create a new promotional rule for a Mailchimp e-commerce store.
+
+**When to use:** When setting up discounts, sales promotions, or special offers for an e-commerce store (percentage off, fixed amount discounts, or free shipping).
+
+**Context needed:** The amount parameter interpretation depends on type: for 'percentage' type, use decimal values between 0.0 and 1.0 (e.g., 0.5 for 50% off); for 'fixed' type, use monetary values. For free shipping promotions, set type to 'fixed' and target to 'shipping'. The ends_at timestamp must be after starts_at. All timestamps use ISO 8601 format.
+
+**Safety**: POST operation creates new data. Verify store_id and promo rule details before creation.
+  </Accordion>
+  <Accordion title="mailchimp_report_ecommerce_product_activity_list">
+    Get breakdown of product activity for a campaign, showing revenue, purchase counts, and recommendation performance for each product.
+
+**When to use:** When analyzing which products drove the most revenue or purchases from a specific campaign, or when comparing product performance across recommendations.
+
+**Context needed:** Use count and offset for pagination through large product lists (max 1000 per page). Sort by title, total_revenue, or total_purchased using sort_field parameter.
+
+**Token efficiency**: Set count parameter to limit response size. Use fields/exclude_fields to retrieve only needed product attributes.
+  </Accordion>
+  <Accordion title="mailchimp_template_update">
+    Update an existing email template's name, HTML content, or folder location in Mailchimp.
+
+**When to use:** When user needs to modify a template's properties, rename it, move it to a different folder, or update its HTML code.
+
+**Context needed:** The html parameter supports Mailchimp Template Language for dynamic content. All three fields (name, html, folder_id) are required in the request body even if only updating one field.
+
+**Safety**: PATCH operations modify existing data. Verify template_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_orders_list">
+    Retrieve e-commerce orders from the Mailchimp account with detailed customer, product, and transaction information.
+
+**When to use:** When analyzing order history, tracking campaign attribution, reviewing customer purchase patterns, or generating sales reports. Use filters to narrow results by customer_id, campaign_id, outreach_id, or has_outreach flag.
+
+**Context needed:** Use count and offset for pagination (max 1000 per page). Use fields/exclude_fields with dot notation to control response size (e.g., "customer.email_address,order_total"). Filter by campaign_id or outreach_id to analyze marketing attribution.
+
+**Token efficiency:** Returns comprehensive order objects including line items, addresses, and customer details. Use fields parameter to request only needed data. Apply filters (customer_id, campaign_id, has_outreach) to reduce result set size.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_stores_list">
+    Retrieve all e-commerce stores connected to the Mailchimp account.
+
+**When to use:** When you need to view all connected stores, check store configurations, verify store integrations, or find a specific store by name/domain before performing store-specific operations.
+
+**Context needed:** Use count and offset for pagination through large store lists. Use fields or exclude_fields to control response size by specifying exact field paths with dot notation (e.g., 'stores.name,stores.domain').
+
+**Token efficiency**: Default returns 10 stores (max 1000). Use count parameter to limit results and fields parameter to retrieve only needed properties.
+  </Accordion>
+  <Accordion title="mailchimp_batch_create">
+    Submit multiple Mailchimp API operations to be processed asynchronously as a single batch request.
+
+**When to use:** When you need to perform multiple API operations (GET, POST, PUT, PATCH, DELETE) efficiently in one request, such as bulk updating subscribers, creating multiple campaigns, or performing mixed operations across different resources.
+
+**Context needed:** Each operation in the operations array requires method (GET/POST/PUT/PATCH/DELETE) and path (relative API path like /lists). The body field must be a JSON string, not an object. Use operation_id to track individual operations in results. Returns a batch ID to check status later - operations are not executed synchronously.
+
+**Safety**: POST operation that initiates batch processing. Individual operations within the batch may be destructive (DELETE, archive, forget) depending on the methods and paths specified. Review all operations before submission.
+
+**Token efficiency**: Batch operations process asynchronously. Use GET /batches/\{batch_id\} to check status and retrieve results from response_body_url when finished.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_create">
+    Create a new order record in a Mailchimp e-commerce store.
+
+**When to use:** When recording a completed purchase, tracking order data for marketing automation, or syncing orders from an external e-commerce platform to Mailchimp.
+
+**Context needed:** The customer.id must reference an existing customer or include full customer details. Each line item requires product_id and product_variant_id that match existing products in the store. Use financial_status and fulfillment_status to trigger Order Notifications. Currency code must be ISO 4217 format (e.g., USD, EUR). Dates use ISO 8601 format. Setting cancelled_at_foreign will cancel the order being created.
+
+**Safety:** POST operations create new data. Verify store_id, customer details, and line items before submission to avoid duplicate or invalid orders.
+  </Accordion>
+  <Accordion title="mailchimp_batch_webhook_create">
+    Configure a webhook that fires whenever any batch request completes processing in Mailchimp.
+
+**When to use:** When you need to receive notifications about batch operation completions. Use this to set up automated monitoring of batch processing status.
+
+**Context needed:** Maximum of 20 batch webhooks allowed per account. The url parameter must be a valid HTTP/HTTPS endpoint that can receive webhook POST requests. Set enabled to false to create an inactive webhook that can be enabled later.
+
+**Safety**: POST operation creates a new webhook configuration. Verify the webhook URL is correct before creation.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_create">
+    Create a new shopping cart in a Mailchimp e-commerce store.
+
+**When to use:** When tracking a customer's active shopping session before checkout, or when syncing cart data from an external e-commerce platform to enable Abandoned Cart automations.
+
+**Context needed:** The checkout_url parameter is required to enable Abandoned Cart automations. For existing customers, provide only the customer.id; for new customers, include full customer details. Each line item requires product_id and product_variant_id that must already exist in the store. Currency code must be ISO 4217 format (e.g., USD, EUR).
+
+**Safety:** POST operation creates new data. Ensure cart ID is unique to avoid conflicts.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_get">
+    Retrieve detailed information about a specific shopping cart in a Mailchimp e-commerce store.
+
+**When to use:** When you need to view cart contents, customer details, line items, totals, or checkout URL for abandoned cart workflows. Use this to check cart status before updating or to gather data for customer support.
+
+**Context needed:** Use fields parameter to request specific properties (e.g., 'customer.email_address,lines') or exclude_fields to reduce response size. Both use dot notation for nested objects.
+
+**Token efficiency**: Apply fields or exclude_fields parameters to limit response size when you only need specific cart properties.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_delete">
+    Permanently delete an order from a Mailchimp e-commerce store.
+
+**When to use:** When user requests to remove an order record from their store's order history, or when cleaning up test/invalid order data.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the order record and cannot be undone. Verify store_id and order_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_update">
+    Update an existing e-commerce order in a Mailchimp store.
+
+**When to use:** When order details change (status, totals, shipping info, line items) or when updating customer information, addresses, or tracking details for an existing order.
+
+**Context needed:** Use financial_status or fulfillment_status to trigger Order Notifications. Setting cancelled_at_foreign will cancel the order. For existing customers, include only customer.id (not full customer details). The promos array completely replaces existing promos. Dates must be in ISO 8601 format.
+
+**Safety**: PATCH operations modify existing order data. Changes to financial_status, fulfillment_status, or cancelled_at_foreign trigger notifications to customers.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_order_line_add">
+    Add a new line item to an existing order in a Mailchimp e-commerce store.
+
+**When to use:** When adding products to an order after initial creation, such as when a customer adds items to their purchase or when updating order details with additional line items.
+
+**Context needed:** The product parameter is optional but allows embedding full product details if the product doesn't already exist in the store. If product_id references an existing product, only id, product_id, product_variant_id, quantity, and price are needed.
+
+**Safety**: POST operations modify data and cannot be undone. Verify store_id, order_id, and product identifiers before adding line items.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_cart_line_get">
+    Retrieve detailed information about a specific line item within a shopping cart in a Mailchimp e-commerce store.
+
+**When to use:** When you need to inspect product details, quantity, or pricing for a specific item in a customer's cart. Useful for verifying cart contents, troubleshooting cart issues, or analyzing individual line item data.
+
+**Token efficiency:** Use fields parameter to return only needed properties (e.g., 'id,product_title,quantity,price'). Use exclude_fields to omit unnecessary data from the response.
+  </Accordion>
+  <Accordion title="mailchimp_template_folder_get">
+    Retrieve details about a specific template folder, including its name and template count.
+
+**When to use:** When you need to verify a folder exists, check how many templates it contains, or get folder details before organizing templates.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when only specific folder properties are needed.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., 'name,count') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_order_line_delete">
+    Delete a specific line item from an order in a Mailchimp ecommerce store.
+
+**When to use:** When removing a product line from an existing order, such as when an item is cancelled or the order is being modified.
+
+**Safety**: DELETE operations permanently remove data and cannot be undone. Verify store_id, order_id, and line_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_create">
+    Add a new product to a Mailchimp e-commerce store.
+
+**When to use:** When syncing product catalog data to Mailchimp for e-commerce tracking, abandoned cart campaigns, or product recommendations. Use after creating the store with mailchimp_ecommerce_store_create.
+
+**Context needed:** The variants array requires at least one variant - a variant can reuse the parent product's id and title for simple products. The images array links to variants via variant_ids. Use your external system's product ID for the id field to maintain sync.
+
+**Safety**: POST operations create new resources. Duplicate id values will fail - use mailchimp_ecommerce_product_update for existing products.
+
+**Token efficiency**: Response includes up to 50 variants. For products with more variants, retrieve additional variants separately using Product Variants endpoints.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_folder_list">
+    Retrieve all campaign folders used to organize campaigns in Mailchimp.
+
+**When to use:** When user needs to see available campaign folders, organize campaigns into folders, or reference folder IDs for campaign operations.
+
+**Context needed:** Use count and offset for pagination through large folder lists (default 10, max 1000 per page). Use fields/exclude_fields with dot notation to control response size.
+
+**Token efficiency**: Specify count parameter to limit results. Use fields parameter to return only needed properties.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_upsert">
+    Create or update a product in a Mailchimp e-commerce store.
+
+**When to use:** When syncing product catalog data to Mailchimp, either adding new products or updating existing product details (title, description, pricing, variants, images).
+
+**Context needed:** The id field in the request body must match the product_id path parameter. At least one variant is required in the variants array - a variant can use the same id and title as the parent product. Use published_at_foreign to set the product's original publication date in ISO 8601 format.
+
+**Safety**: PUT operations create or replace product data. This will overwrite existing product information if the product_id already exists.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_delete">
+    Delete a product from a Mailchimp e-commerce store.
+
+**When to use:** When a product is discontinued, removed from inventory, or needs to be permanently removed from the store catalog.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the product and all associated data from the store.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_update">
+    Update an existing product in a Mailchimp e-commerce store.
+
+**When to use:** When product details need to be modified (title, description, price, inventory, images, variants, etc.) for an existing store product.
+
+**Context needed:** At least one variant is required in the variants array. Use published_at_foreign in ISO 8601 format for publish timestamps. The variants array can include nested properties for pricing, inventory, SKU, and visibility settings.
+
+**Safety**: PATCH operations modify existing data. Verify store_id and product_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_variant_update">
+    Add or update a product variant in a Mailchimp e-commerce store.
+
+**When to use:** When syncing product variant details (size, color, SKU) from an external e-commerce system to Mailchimp, or when updating variant pricing, inventory, or visibility.
+
+**Context needed:** The variant_id must match the id in the request body. Use this for both creating new variants and updating existing ones (upsert operation).
+
+**Safety**: PUT operations modify data. This will overwrite existing variant information if the variant_id already exists.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_variant_delete">
+    Permanently delete a product variant from a Mailchimp e-commerce store.
+
+**When to use:** When a product variant (size, color, style option) is discontinued and should be removed from the store catalog.
+
+**Context needed:** Requires store_id, product_id, and variant_id in that hierarchy. Ensure the variant exists before deletion.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the variant and cannot be undone. Verify all three IDs are correct before executing.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_variant_update">
+    Update an existing product variant in a Mailchimp e-commerce store.
+
+**When to use:** When you need to modify variant details like title, price, inventory quantity, SKU, URL, image, backorders, or visibility for a specific product variant.
+
+**Context needed:** Requires store_id, product_id, and variant_id to identify the specific variant. All body fields are optional - only include fields you want to update.
+
+**Safety**: PATCH operations modify existing data. Verify store_id, product_id, and variant_id are correct before updating.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_image_add">
+    Add a new image to a product in a Mailchimp e-commerce store.
+
+**When to use:** When adding product images to enhance product listings, associate images with specific product variants, or updating product visual content in your connected store.
+
+**Context needed:** The id parameter must be a unique identifier you assign to this image (not auto-generated). The url parameter must be a publicly accessible image URL. Use variant_ids array to associate this image with specific product variants.
+
+**Safety**: POST operations modify data. This creates a new image record for the specified product.
+  </Accordion>
+  <Accordion title="mailchimp_ecommerce_product_image_delete">
+    Permanently delete a product image from a Mailchimp e-commerce store.
+
+**When to use:** When removing outdated, incorrect, or unwanted product images from your store catalog.
+
+**Safety**: DELETE operation is irreversible. The image will be permanently removed and cannot be recovered.
+  </Accordion>
+  <Accordion title="mailchimp_ping_get">
+    Check the health status of the Mailchimp API.
+
+**When to use:** Before making other API calls to verify the service is operational, or when diagnosing connectivity issues. This endpoint requires no parameters and returns no account-specific data.
+
+**Token efficiency**: Returns a single constant string response ("Everything's Chimpy!") when healthy.
+  </Accordion>
+  <Accordion title="mailchimp_facebook_ad_list">
+    Retrieve a paginated list of Facebook ads from your Mailchimp account.
+
+**When to use:** When you need to view all Facebook ads, check ad statuses, or find specific ads by sorting/filtering.
+
+**Context needed:** Use count and offset for pagination (default 10, max 1000 per page). Use sort_field (created_at, updated_at, end_time) with sort_dir (ASC/DESC) to order results. Use fields/exclude_fields for selective data retrieval.
+
+**Token efficiency**: Specify count limit and use fields parameter to retrieve only needed data. Apply sorting to find relevant ads faster.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_facebookad_get">
+    Retrieve performance metrics and configuration details for a specific Facebook ad campaign.
+
+**When to use:** When analyzing Facebook ad performance, reviewing campaign settings, or generating reports on ad reach, clicks, revenue, and engagement metrics.
+
+**Context needed:** Use fields parameter to request specific data points (e.g., 'report_summary.clicks,budget.total_amount') or exclude_fields to reduce response size. Supports dot notation for nested properties.
+
+**Token efficiency:** Specify fields parameter to retrieve only needed metrics and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_landingpage_get">
+    Retrieve comprehensive performance analytics for a specific landing page.
+
+**When to use:** When analyzing landing page effectiveness, tracking visitor engagement, monitoring conversion rates, or reviewing ecommerce revenue generated from a landing page.
+
+**Context needed:** The outreach_id is the unique identifier for the landing page. Use fields parameter to retrieve only specific metrics (e.g., 'visits,conversion_rate,ecommerce.total_revenue') or exclude_fields to omit data you don't need.
+
+**Token efficiency**: Response includes detailed timeseries data (daily and weekly stats). Use fields parameter to limit response size when you only need summary metrics.
+  </Accordion>
+  <Accordion title="mailchimp_survey_get_report">
+    Retrieve analytics and response data for a specific Mailchimp survey.
+
+**When to use:** When user needs to view survey performance metrics, total responses, publication status, or other reporting data for a survey.
+
+**Context needed:** Use fields or exclude_fields parameters with dot notation to control response size (e.g., "fields=id,title,total_responses" or "exclude_fields=list_name,url").
+
+**Token efficiency**: Use fields parameter to request only needed data and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_survey_questions_list">
+    Retrieve analytics reports for all questions in a specific Mailchimp survey, including response counts, answer distributions, and contact breakdowns.
+
+**When to use:** When analyzing survey performance, reviewing question-level metrics, or exporting survey results for a specific survey_id.
+
+**Context needed:** Use fields or exclude_fields to control response size when working with surveys containing many questions or detailed response data.
+
+**Token efficiency**: Apply fields parameter to retrieve only needed metrics (e.g., 'questions.id,questions.total_responses,questions.options') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_survey_responses_list">
+    Retrieve all responses submitted to a specific Mailchimp survey.
+
+**When to use:** When analyzing survey results, exporting response data, or checking who responded to a survey. Returns contact details, submission timestamps, and whether respondents are new contacts.
+
+**Context needed:** Use answered_question and chose_answer to filter responses by specific question/answer combinations. The respondent_familiarity_is parameter filters by contact type (new/known/unknown). Use fields or exclude_fields to control response size when dealing with many responses.
+
+**Token efficiency**: Apply filters (answered_question, chose_answer, respondent_familiarity_is) to narrow results. Use fields parameter to return only needed data.
+  </Accordion>
+  <Accordion title="mailchimp_reporting_survey_response_get">
+    Retrieve detailed information about a specific survey response, including contact details, submission timestamp, and all question-answer pairs.
+
+**When to use:** When analyzing individual survey submissions, reviewing specific respondent feedback, or investigating survey response details for a particular contact.
+
+**Token efficiency**: Returns complete response data including all questions and answers. Consider whether you need full details or if aggregate survey reporting would be more efficient.
+  </Accordion>
+  <Accordion title="mailchimp_verified_domain_get">
+    Retrieve verification and authentication status details for a specific domain on the Mailchimp account.
+
+**When to use:** When checking if a domain is verified for sending emails, reviewing domain authentication status, or troubleshooting domain configuration issues.
+
+**Context needed:** The domain_name must be the exact domain string (e.g., 'example.com'). Returns verification status, authentication status, verification email, and whether the domain is a free email provider.
+  </Accordion>
+  <Accordion title="mailchimp_verified_domain_delete">
+    Delete a verified domain from the Mailchimp account.
+
+**When to use:** When user requests to remove a domain that was previously verified for sending emails, or when cleaning up unused domains from the account.
+
+**Safety**: DELETE operation permanently removes the domain. This action is irreversible - the domain will need to be re-verified if added again later.
+  </Accordion>
+  <Accordion title="mailchimp_verified_domain_verify">
+    Complete domain verification by submitting the verification code sent to the domain's verification email.
+
+**When to use:** After adding a domain to Mailchimp and receiving a verification code via email, use this to verify ownership and enable the domain for sending.
+
+**Context needed:** The code parameter must match the verification code sent to the verification_email address. Domain verification must be in VERIFICATION_IN_PROGRESS status before calling this.
+
+**Safety**: POST operation modifies domain status. Verification cannot be undone - failed attempts may require requesting a new verification code.
+  </Accordion>
+  <Accordion title="mailchimp_verified_domain_list">
+    Retrieve all sending domains configured on the Mailchimp account with their verification and authentication status.
+
+**When to use:** When checking domain verification status, troubleshooting email sending issues, or auditing which domains are authorized for campaigns.
+
+**Token efficiency**: Returns all domains in a single response with total_items count. No pagination parameters available.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_get">
+    Retrieve detailed information about a specific Mailchimp campaign.
+
+**When to use:** When you need to view campaign settings, content, status, performance metrics, or delivery information for a specific campaign ID.
+
+**Context needed:** Use fields parameter to request specific properties (e.g., 'settings.subject_line,status') or exclude_fields to omit properties. Set include_resend_shortcut_eligibility to true to check if campaign qualifies for resend shortcuts. Set include_resend_shortcut_usage to true to see related campaigns created via shortcuts.
+
+**Token efficiency**: Use fields parameter to limit response size when you only need specific campaign properties. Exclude large nested objects like segment_opts conditions if not needed.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_delete">
+    Permanently remove a campaign from your Mailchimp account.
+
+**When to use:** When user requests to delete a draft, scheduled, or sent campaign that is no longer needed.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the campaign and cannot be undone. Confirm campaign_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_update">
+    Update settings for an existing Mailchimp campaign.
+
+**When to use:** When modifying campaign properties like subject line, sender info, recipients, tracking options, or A/B test settings before sending.
+
+**Context needed:** Requires campaign_id path parameter. The settings object requires from_name, reply_to, and subject_line fields. Use recipients.segment_opts for audience targeting with saved_segment_id or custom conditions. For A/B testing, configure variate_settings with winner_criteria, wait_time, and test_size.
+
+**Safety**: PATCH operations modify campaign data. Changes affect unsent campaigns only—sent campaigns cannot be updated.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_schedule">
+    Schedule a Mailchimp campaign for delivery at a specific date and time.
+
+**When to use:** When user wants to schedule a campaign to send at a future time instead of sending immediately. Use the send action instead for Multivariate Campaigns testing send times or RSS Campaigns.
+
+**Context needed:** schedule_time must be in ISO 8601 format and on the quarter-hour (:00, :15, :30, :45). Timewarp and batch_delivery are mutually exclusive - cannot both be true.
+
+**Safety**: POST operation modifies campaign state. Scheduling is irreversible once confirmed - campaign will send at specified time.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_send_test">
+    Send a test email for a campaign to specified email addresses.
+
+**When to use:** When user wants to preview how a campaign will appear in recipients' inboxes before sending to the full audience, or needs to verify campaign content and formatting.
+
+**Context needed:** The send_type parameter determines format: use 'html' to test the HTML version or 'plaintext' to test the plain text version. Campaign must exist and be in a testable state.
+
+**Safety**: POST operation sends actual test emails to the specified addresses. Verify campaign_id and test_emails before execution.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_content_get">
+    Retrieve the HTML and plain-text content for a specific campaign.
+
+**When to use:** When you need to view, analyze, or export the actual email content of a campaign, including multivariate test variations if present.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size and retrieve only needed content portions (html, plain_text, archive_html, or variate_contents).
+
+**Token efficiency**: Campaign content can be large. Use fields parameter to request only specific content types needed (e.g., fields=html or fields=plain_text).
+  </Accordion>
+  <Accordion title="mailchimp_campaign_feedback_list">
+    Retrieve all team feedback comments for a specific Mailchimp campaign.
+
+**When to use:** When reviewing team collaboration feedback on a campaign draft, checking comment threads, or auditing feedback history before campaign launch.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size and focus on specific feedback attributes (e.g., message, is_complete, created_by).
+
+**Token efficiency**: Apply fields parameter to return only needed feedback properties. Response includes threaded comments (parent_id links replies) and metadata like completion status.
+  </Accordion>
+  <Accordion title="mailchimp_list_webhook_update">
+    Update the configuration of an existing webhook for a Mailchimp list.
+
+**When to use:** When you need to change a webhook's URL, modify which events trigger it (subscribe, unsubscribe, profile updates, campaign sends, SMS events), or adjust which sources (user, admin, API) activate the webhook.
+
+**Context needed:** The events object controls 10 different trigger types including email events (subscribe, unsubscribe, profile, cleaned, upemail, campaign) and SMS events (sms_subscribe, sms_unsubscribe, upsms, sms_campaign - all marked BETA). The sources object filters triggers by origin (user-initiated, admin web interface, or API calls). All fields are optional - only include the settings you want to change.
+
+**Safety:** PATCH operations modify existing webhook configurations. Changes take effect immediately and will alter how your integration receives list activity notifications.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_feedback_get">
+    Retrieve a specific feedback message from a campaign.
+
+**When to use:** When you need to view details of a particular feedback comment on a campaign, including the message content, completion status, author, timestamps, and which content block it references.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific properties.
+
+**Token efficiency**: Use fields parameter to request only needed properties (e.g., 'message,is_complete,created_by') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_campaign_get_send_checklist">
+    Retrieve the pre-send validation checklist for a campaign, showing readiness status and any issues that must be resolved before sending.
+
+**When to use:** Before sending a campaign to verify it meets all requirements, or when troubleshooting why a campaign cannot be sent.
+
+**Context needed:** Returns is_ready boolean and items array with success/warning/error feedback. Use fields or exclude_fields to control response size if needed.
+
+**Token efficiency**: Use fields parameter to return only needed properties (e.g., 'is_ready,items.type,items.heading') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_survey_unpublish">
+    Unpublish a survey that is currently published, removing it from public availability.
+
+**When to use:** When user needs to take down a live survey from their audience, stop collecting new responses, or make a published survey inactive.
+
+**Safety**: POST operation modifies survey state. This action is reversible - surveys can be republished later.
+  </Accordion>
+  <Accordion title="mailchimp_connected_site_get">
+    Retrieve detailed information about a specific connected site, including platform, domain, integration scripts, and associated ecommerce store.
+
+**When to use:** When you need to view configuration details, integration scripts, or verify the setup of a specific connected site by its ID.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when you only need specific properties (e.g., fields=domain,platform for basic info only).
+
+**Token efficiency**: Apply fields parameter to request only needed properties and reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_conversation_list">
+    Retrieve legacy conversation threads from campaign replies (deprecated feature - does not include current Inbox messages).
+
+**When to use:** When accessing historical conversation data from campaigns sent before Mailchimp migrated to Inbox. Not suitable for current campaign replies or Inbox messages.
+
+**Context needed:** Filter by list_id or campaign_id to narrow results. Use has_unread_messages to find conversations requiring attention. Pagination via count (max 1000) and offset parameters for large result sets.
+
+**Token efficiency**: Apply filters (list_id, campaign_id, has_unread_messages) to reduce response size. Use count parameter to limit records returned.
+  </Accordion>
+  <Accordion title="mailchimp_conversation_messages_list">
+    Retrieve all messages from a specific conversation thread in Mailchimp.
+
+**When to use:** When viewing conversation history, checking for unread messages, or retrieving messages within a specific time range.
+
+**Context needed:** Use is_read to filter by read status. Use before_timestamp and since_timestamp (ISO 8601 format) to retrieve messages within specific time windows. Use fields/exclude_fields with dot notation for nested properties to control response size.
+
+**Deprecation notice:** Conversations API is deprecated in favor of Inbox. This endpoint only accesses legacy Conversations data and does not include new Inbox messages or campaign replies.
+
+**Token efficiency:** Use fields parameter to return only needed properties. Apply timestamp filters to limit result size.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_list">
+    Retrieve a list of images and files stored in the Mailchimp File Manager for the account.
+
+**When to use:** When user needs to browse available files, search for specific images or documents, or audit file storage before using files in campaigns or templates.
+
+**Context needed:** Use type parameter to filter by 'image' or 'file'. Filter by creator using created_by parameter. Date filters (before_created_at, since_created_at) require ISO 8601 format (e.g., 2015-10-21T15:41:36+00:00). Use sort_field (added_date, name, size) with sort_dir (ASC, DESC) to control ordering.
+
+**Token efficiency**: Use count parameter (max 1000) and offset for pagination. Use fields/exclude_fields parameters to control response size and retrieve only needed data.
+  </Accordion>
+  <Accordion title="mailchimp_file_manager_folder_get">
+    Retrieve detailed information about a specific folder in the Mailchimp File Manager.
+
+**When to use:** When you need to check folder properties (name, file count, creation date, creator) or verify a folder exists before performing file operations.
+
+**Token efficiency**: Use fields parameter to request only needed properties, or exclude_fields to omit unnecessary data from the response.
+  </Accordion>
+  <Accordion title="mailchimp_list_get">
+    Retrieve detailed information about a specific Mailchimp audience list, including configuration, contact information, campaign defaults, and statistics.
+
+**When to use:** When you need to view list settings, check subscriber counts, review campaign performance metrics, or verify list configuration before performing operations on list members.
+
+**Context needed:** Use include_total_contacts to get comprehensive contact counts across all statuses (subscribed, unsubscribed, pending, cleaned, deleted). Use fields or exclude_fields with dot notation to control response size (e.g., "stats.member_count,name" or exclude "_links").
+
+**Token efficiency**: Response includes extensive statistics and configuration data. Use fields parameter to request only needed properties, or exclude_fields to omit large nested objects like stats or _links.
+  </Accordion>
+  <Accordion title="mailchimp_list_abusereport_get">
+    Retrieve detailed information about a specific abuse complaint report for a list member.
+
+**When to use:** When investigating why a subscriber marked an email as spam, reviewing abuse complaint details for compliance, or auditing spam reports associated with specific campaigns.
+
+**Context needed:** Use fields or exclude_fields parameters to control response size when only specific data is needed (e.g., email_address, campaign_id, date).
+
+**Token efficiency**: Apply fields parameter to return only needed data. Abuse reports include merge_fields and member details that may be unnecessary for basic lookups.
+  </Accordion>
+  <Accordion title="mailchimp_list_clients_list">
+    Retrieve analytics showing the top email clients used by subscribers in a list, based on user-agent strings.
+
+**When to use:** When analyzing subscriber engagement patterns, optimizing email design for specific clients, or understanding which email platforms (Gmail, Outlook, Apple Mail, etc.) your audience uses.
+
+**Context needed:** Use fields or exclude_fields to control response size when you only need specific data points.
+
+**Token efficiency**: Apply fields parameter to return only needed data (e.g., 'clients.client,clients.members') to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_growth_get">
+    Retrieve growth activity metrics for a specific audience list during a specific month and year.
+
+**When to use:** When analyzing list performance trends, tracking subscriber changes over time, or generating growth reports for a particular month.
+
+**Context needed:** The month parameter must be in YYYY-MM format. Use fields or exclude_fields to control response size when only specific metrics are needed (e.g., subscribed, unsubscribed, cleaned counts).
+
+**Token efficiency**: Use fields parameter to return only needed metrics. Response includes deprecated fields (existing, imports, optins) that can be excluded.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_create">
+    Add a new member to a Mailchimp audience list.
+
+**When to use:** When user requests to subscribe someone to a mailing list, add a contact to an audience, or create a new list member.
+
+**Context needed:** The status parameter determines subscription state: 'subscribed' (confirmed opt-in), 'pending' (awaiting confirmation), 'unsubscribed', 'cleaned', or 'transactional'. Use merge_fields for custom contact data (keys are merge tags like FNAME, LNAME). Set skip_merge_validation to true to bypass required merge field validation. Use interests object with interest IDs as keys and boolean values to assign group memberships.
+
+**Safety**: POST operation creates new data. This adds a permanent member record to the list.
+  </Accordion>
+  <Accordion title="mailchimp_list_interest_update">
+    Update the name or display order of an interest (group name) within a specific interest category on a list.
+
+**When to use:** When renaming an interest group or changing its display position in subscription forms.
+
+**Context needed:** The name field is what subscribers see on subscription forms. Use display_order to control the visual ordering of interests within the category.
+
+**Safety**: PATCH operations modify data. Verify list_id, interest_category_id, and interest_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_delete">
+    Permanently delete a specific segment from a Mailchimp audience list.
+
+**When to use:** When user requests to remove a segment that is no longer needed or was created in error.
+
+**Safety**: DELETE operation is irreversible. This permanently removes the segment and cannot be undone. Verify list_id and segment_id before deletion.
+  </Accordion>
+  <Accordion title="mailchimp_list_segment_members_list">
+    Retrieve all members in a specific list segment.
+
+**When to use:** When you need to see which subscribers belong to a particular segment, analyze segment composition, or export segment member data.
+
+**Context needed:** Use count and offset for pagination (max 1000 per page). Set include_cleaned, include_transactional, or include_unsubscribed to true to include members with those statuses. Use fields or exclude_fields to control response size.
+
+**Token efficiency**: Specify count to limit results and use fields parameter to return only needed data. Default returns 10 members per request.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_activity_get_feed">
+    Retrieve a list member's activity history including email opens, clicks, bounces, unsubscribes, and other engagement events.
+
+**When to use:** When analyzing subscriber engagement, investigating delivery issues, or building member activity timelines. Use to understand how a specific contact has interacted with campaigns and other Mailchimp touchpoints.
+
+**Context needed:** The subscriber_hash accepts MD5 hash of lowercase email, plain email address, or contact_id. Use activity_filters to narrow results to specific event types (open, click, bounce, unsub, etc.). Use count and offset for pagination through activity history (max 1000 per request).
+
+**Token efficiency**: Apply activity_filters to retrieve only relevant event types. Set count parameter to limit response size. Use fields/exclude_fields to control returned data structure.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_tags_list">
+    Retrieve all tags assigned to a specific list member in Mailchimp.
+
+**When to use:** When you need to see what tags are currently applied to a subscriber, for segmentation analysis, or before updating member tags.
+
+**Context needed:** The subscriber_hash parameter accepts either an MD5 hash of the lowercase email address, the plain email address, or the contact_id. Use count and offset parameters for pagination through large tag collections (default 10, max 1000 per page).
+
+**Token efficiency**: Use count parameter to limit response size. Use fields or exclude_fields to control which data is returned.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_note_get">
+    Retrieve a specific note attached to a list member in Mailchimp.
+
+**When to use:** When you need to view the content, author, or timestamps of a particular note on a subscriber's profile.
+
+**Context needed:** The subscriber_hash accepts either an MD5 hash of the lowercase email, the email address directly, or the contact_id. Use fields or exclude_fields to control response size when working with multiple notes.
+
+**Token efficiency**: Use fields parameter to return only needed properties (e.g., note, created_at, created_by) to reduce response size.
+  </Accordion>
+  <Accordion title="mailchimp_list_member_note_update">
+    Update the content of an existing note attached to a list member.
+
+**When to use:** When modifying or correcting information in a previously created member note.
+
+**Context needed:** The subscriber_hash accepts either an MD5 hash of the lowercase email, the email address directly, or the contact_id. Note content is limited to 1,000 characters.
+
+**Safety**: PATCH operations modify existing data. Verify list_id, subscriber_hash, and note_id before updating.
+  </Accordion>
+  <Accordion title="mailchimp_list_mergefield_update">
+    Update an existing merge field (audience field) in a Mailchimp list.
+
+**When to use:** When modifying merge field properties like name, display settings, validation requirements, or help text for an existing audience field.
+
+**Context needed:** The name parameter is required. Use options object to configure field-type-specific settings (choices for radio/dropdown, date_format for date fields, phone_format for phone fields, default_country for address fields). The tag parameter cannot be changed after creation.
+
+**Safety**: PATCH operations modify existing data. Verify list_id and merge_id before updating.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Mailchimp** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Klaviyo" href="/server-catalog/klaviyo" icon="https://d338mlbnszozgc.cloudfront.net/logos/klaviyo.svg" />
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+</CardGroup>

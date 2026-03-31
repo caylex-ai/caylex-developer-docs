@@ -1,0 +1,275 @@
+---
+title: "Google Contacts"
+description: "Automate form creation and response management"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/google-contacts.svg"
+---
+
+The Google Forms MCP Server integrates with the Google Forms API to create, edit, and retrieve forms, enabling AI agents to automate data collection, streamline surveys, and enhance user interactions through natural language processing.
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Productivity & Collaboration, Business Operations, Google |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `openid`, `email`, `profile`, `https://www.googleapis.com/auth/contacts`, `https://www.googleapis.com/auth/contacts.readonly`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Google Contacts Authentication guide](/oauth-guides/google-contacts) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **16** tools:
+
+<AccordionGroup>
+  <Accordion title="contacts_get_current_user">
+    Returns the authenticated user's account information for use with Contacts tools. Use the returned email as user_google_email when calling contacts_* tools. Uses the Bearer token from the request's Authorization header.
+  </Accordion>
+  <Accordion title="get_contact">
+    Get detailed information about a specific contact.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    contact_id (str): The contact ID (e.g., "c1234567890" or full resource name "people/c1234567890").
+
+Returns:
+    str: Detailed contact information.
+  </Accordion>
+  <Accordion title="contacts_create_contact">
+    Create a new contact.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    given_name (Optional[str]): First name.
+    family_name (Optional[str]): Last name.
+    email (Optional[str]): Email address.
+    phone (Optional[str]): Phone number.
+    organization (Optional[str]): Company/organization name.
+    job_title (Optional[str]): Job title.
+    notes (Optional[str]): Additional notes.
+
+Returns:
+    str: Confirmation with the new contact's details.
+  </Accordion>
+  <Accordion title="contacts_get_contact_group">
+    Get details of a specific contact group including its members.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    group_id (str): The contact group ID.
+    max_members (int): Maximum number of members to return (default: 100, max: 1000).
+
+Returns:
+    str: Contact group details including members.
+  </Accordion>
+  <Accordion title="contacts_batch_update_contacts">
+    Update multiple contacts in a batch operation.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    updates (List[Dict[str, str]]): List of update dictionaries with fields:
+<ul>
+<li>contact_id: The contact ID to update (required)</li>
+<li>given_name: New first name</li>
+<li>family_name: New last name</li>
+<li>email: New email address</li>
+<li>phone: New phone number</li>
+<li>organization: New company name</li>
+<li>job_title: New job title</li>
+</ul>
+
+Returns:
+    str: Confirmation with updated contacts.
+  </Accordion>
+  <Accordion title="contacts_update_contact">
+    Update an existing contact. Note: This replaces fields, not merges them.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    contact_id (str): The contact ID to update.
+    given_name (Optional[str]): New first name.
+    family_name (Optional[str]): New last name.
+    email (Optional[str]): New email address.
+    phone (Optional[str]): New phone number.
+    organization (Optional[str]): New company/organization name.
+    job_title (Optional[str]): New job title.
+    notes (Optional[str]): New notes.
+
+Returns:
+    str: Confirmation with updated contact details.
+  </Accordion>
+  <Accordion title="contacts_delete_contact">
+    Delete a contact.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    contact_id (str): The contact ID to delete.
+
+Returns:
+    str: Confirmation message.
+  </Accordion>
+  <Accordion title="contacts_batch_delete_contacts">
+    Delete multiple contacts in a batch operation.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    contact_ids (List[str]): List of contact IDs to delete.
+
+Returns:
+    str: Confirmation message.
+  </Accordion>
+  <Accordion title="contacts_create_contact_group">
+    Create a new contact group (label).
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    name (str): The name of the new contact group.
+
+Returns:
+    str: Confirmation with the new group details.
+  </Accordion>
+  <Accordion title="contacts_update_contact_group">
+    Update a contact group's name.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    group_id (str): The contact group ID to update.
+    name (str): The new name for the contact group.
+
+Returns:
+    str: Confirmation with updated group details.
+  </Accordion>
+  <Accordion title="contacts_delete_contact_group">
+    Delete a contact group.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    group_id (str): The contact group ID to delete.
+    delete_contacts (bool): If True, also delete contacts in the group (default: False).
+
+Returns:
+    str: Confirmation message.
+  </Accordion>
+  <Accordion title="contacts_list_contact_groups">
+    List contact groups (labels) for the user.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    page_size (int): Maximum number of groups to return (default: 100, max: 1000).
+    page_token (Optional[str]): Token for pagination.
+
+Returns:
+    str: List of contact groups with their details.
+  </Accordion>
+  <Accordion title="contacts_batch_create_contacts">
+    Create multiple contacts in a batch operation.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    contacts (List[Dict[str, str]]): List of contact dictionaries with fields:
+<ul>
+<li>given_name: First name</li>
+<li>family_name: Last name</li>
+<li>email: Email address</li>
+<li>phone: Phone number</li>
+<li>organization: Company name</li>
+<li>job_title: Job title</li>
+</ul>
+
+Returns:
+    str: Confirmation with created contacts.
+  </Accordion>
+  <Accordion title="contacts_modify_contact_group_members">
+    Add or remove contacts from a contact group.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    group_id (str): The contact group ID.
+    add_contact_ids (Optional[List[str]]): Contact IDs to add to the group.
+    remove_contact_ids (Optional[List[str]]): Contact IDs to remove from the group.
+
+Returns:
+    str: Confirmation with results.
+  </Accordion>
+  <Accordion title="contacts_list_contacts">
+    List contacts for the authenticated user.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    page_size (int): Maximum number of contacts to return (default: 100, max: 1000).
+    page_token (Optional[str]): Token for pagination.
+    sort_order (Optional[str]): Sort order: "LAST_MODIFIED_ASCENDING", "LAST_MODIFIED_DESCENDING", "FIRST_NAME_ASCENDING", or "LAST_NAME_ASCENDING".
+
+Returns:
+    str: List of contacts with their basic information.
+  </Accordion>
+  <Accordion title="contacts_search_contacts">
+    Search contacts by name, email, phone number, or other fields.
+
+Use contacts_get_current_user to get the user_google_email or account information.
+
+Args:
+    user_google_email (str): The user's Google email address. Required.
+    query (str): Search query string (searches names, emails, phone numbers).
+    page_size (int): Maximum number of results to return (default: 30, max: 30).
+
+Returns:
+    str: Matching contacts with their basic information.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Google Contacts** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Gmail" href="/server-catalog/gmail" icon="https://d338mlbnszozgc.cloudfront.net/logos/gmail.svg" />
+  <Card title="Google Calendar" href="/server-catalog/google-calendar" icon="https://d338mlbnszozgc.cloudfront.net/logos/google-calendar.svg" />
+  <Card title="Hunter" href="/server-catalog/hunter" icon="https://d338mlbnszozgc.cloudfront.net/logos/hunter.svg" />
+</CardGroup>

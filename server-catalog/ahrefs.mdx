@@ -1,0 +1,71 @@
+---
+title: "Ahrefs"
+description: "Real-time SEO insights from Ahrefs API"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/ahrefs.svg"
+---
+
+The Ahrefs MCP Server brings the full power of Ahrefs' industry-leading SEO platform into your Caylex projects, allowing AI agents to securely access real-time Ahrefs data and enrich their responses with actionable digital marketing insights. Once connected, agents can analyze site rankings, investigate backlink profiles, uncover organic competitors, and surface keyword opportunities — all driven by live Ahrefs data. The server is available to Ahrefs subscribers on a Lite plan or higher, and authentication is managed via an API key scoped specifically to MCP usage. Each API call made by your AI agent consumes monthly API units from your Ahrefs account allowance, and workspace admins can cap usage per key to prevent overages. This integration is designed for interactive, AI-driven workflows and is not intended as a replacement for direct programmatic API access.
+
+<Warning>
+**Prerequisites:**
+- An active Ahrefs subscription at the Lite plan level or higher is required to use this server.
+- Authentication requires an MCP-scoped API key from your Ahrefs account; this can be generated manually in Account Settings → API Keys or obtained via the OAuth authorization consent flow.
+- Workspace admin access is needed to manage per-key API unit limits within the Ahrefs API Keys report.
+</Warning>
+
+<Note>
+**Important API details:**
+- Each Ahrefs plan has a maximum number of rows per request that an AI agent can retrieve; higher-tier plans allow access to more data per call.
+- Every tool invocation consumes monthly API units from your Ahrefs account; usage can be monitored in Account Settings → Limits and Usage.
+- Workspace admins can set a monthly API unit cap per API key in the Ahrefs API Keys report to prevent unintentional over-consumption.
+- Enterprise customers can purchase additional monthly API unit add-ons if the included allowance is insufficient.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | SEO & Analytics, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### OAuth
+**Scopes:** `apiv3-mcp`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Ahrefs Authentication guide](/oauth-guides/ahrefs) for step-by-step credential configuration.
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Ahrefs** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Firecrawl" href="/server-catalog/firecrawl" icon="https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg" />
+  <Card title="Exa" href="/server-catalog/exa" icon="https://d338mlbnszozgc.cloudfront.net/logos/exa.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.ahrefs.com/docs/mcp/reference/introduction" href="https://docs.ahrefs.com/docs/mcp/reference/introduction" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/ahrefs/ahrefs-mcp-server" href="https://github.com/ahrefs/ahrefs-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

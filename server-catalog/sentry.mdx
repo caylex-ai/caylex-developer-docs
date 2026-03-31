@@ -1,0 +1,75 @@
+---
+title: "Sentry"
+description: "Integrate Sentry issue context into LLMs"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/sentry.svg"
+---
+
+The Sentry MCP Server connects AI agents in Caylex directly to your Sentry account, providing access to issues, errors, projects, and AI-powered Seer analysis. By integrating Sentry's debugging data into AI workflows, agents can automate issue triage, retrieve code snippets tied to errors, and enhance development processes without manual context switching. Authentication is handled via OAuth, allowing you to log in with your Sentry organization credentials and selectively grant access to specific tool groups — keeping your agent's context window focused on only the capabilities you need. For self-hosted Sentry installations, a User Auth Token with appropriate scopes can be used in place of OAuth.
+
+<Warning>
+**Prerequisites:**
+- An active Sentry account with access to at least one organization.
+- For self-hosted Sentry: a User Auth Token with the required scopes (org:read, project:read, project:write, team:read, team:write, event:write) and your self-hosted Sentry host URL.
+</Warning>
+
+<Note>
+**Important API details:**
+- During OAuth authentication, you can select which tool groups are enabled — this limits the tools available to your agent and helps manage context window size.
+- Required token scopes for self-hosted (non-OAuth) setups: org:read, project:read, project:write, team:read, team:write, and event:write.
+- If you join a new Sentry organization after connecting, you must re-authenticate to refresh access and see the new organization's data.
+- MCP support in Sentry is production-ready but considered an evolving technology — breaking changes and bugs should be expected.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Monitoring & Observability, Development & DevOps |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `org:read`, `project:read`, `project:write`, `team:read`, `team:write`, `event:write`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Sentry Authentication guide](/oauth-guides/sentry) for step-by-step credential configuration.
+
+## Server Configuration
+
+The following parameters can be set in the server URL when adding this server to your Caylex project:
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `SENTRY_HOST` | query | For self-hosted Sentry installations, specify the host URL of your Sentry instance. Not required when using the cloud-hosted Sentry with OAuth. | `https://sentry.yourcompany.com` |
+| `SENTRY_ACCESS_TOKEN` | query | A Sentry User Auth Token used for authentication with self-hosted Sentry instances instead of OAuth. | `sntryu_abc123...` |
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Sentry** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Datadog" href="/server-catalog/datadog" icon="https://d338mlbnszozgc.cloudfront.net/logos/datadog.svg" />
+  <Card title="BetterStack" href="/server-catalog/betterstack" icon="https://d338mlbnszozgc.cloudfront.net/logos/betterstack.svg" />
+  <Card title="Github" href="/server-catalog/github" icon="https://d338mlbnszozgc.cloudfront.net/logos/github.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.sentry.io/ai/mcp" href="https://docs.sentry.io/ai/mcp" icon="arrow-up-right-from-square" />
+</CardGroup>

@@ -1,0 +1,72 @@
+---
+title: "Apify"
+description: "Web data extraction for AI agents"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/apify.svg"
+---
+
+The Apify MCP Server brings the full power of the Apify platform into your Caylex projects, enabling AI agents to discover and run web scraping and automation workflows called Actors from the Apify Store. Agents can extract data from social media, search engines, e-commerce sites, and virtually any website, then access and query the resulting datasets and key-value stores directly. The server also exposes Actor management tools so agents can search for the right Actor, inspect its details, trigger runs, and monitor logs — all programmatically. Additionally, AI agents can search and fetch Apify's official documentation, making this server useful for both production data extraction pipelines and development workflows. Authentication is handled via your Apify API token supplied as a Bearer header in Caylex.
+
+<Warning>
+**Prerequisites:**
+- An active Apify account is required — sign up at apify.com if you do not have one.
+- An Apify API token from the Integrations section of Apify Console (console.apify.com/account#/integrations) is needed to authenticate requests.
+- Rental Actors must be manually activated on your Apify account before they can be used through the server.
+</Warning>
+
+<Note>
+**Important API details:**
+- The hosted Apify MCP server supports output schema inference for structured Actor results, providing field-level type information so agents understand expected result structures before calling an Actor.
+- Rental Actors from the Apify Store require manual activation on your Apify account before they can be discovered or used as tools.
+- Dataset and key-value store retrieval tools support pagination and filtering, which agents should use when handling large result sets.
+- SSE transport is deprecated and will be fully removed on April 1, 2026; only Streamable HTTP is supported going forward.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Web Scraping, Web Scraping & Browser Automation |
+
+## Authentication
+
+This server supports the following authentication methods:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+### OAuth
+**Scopes:** `full_api_access`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Apify Authentication guide](/oauth-guides/apify) for step-by-step credential configuration.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Apify** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Firecrawl" href="/server-catalog/firecrawl" icon="https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg" />
+  <Card title="Bright Data" href="/server-catalog/bright-data" icon="https://d338mlbnszozgc.cloudfront.net/logos/brightdata.png" />
+  <Card title="Simplescraper" href="/server-catalog/simplescraper" icon="https://d338mlbnszozgc.cloudfront.net/logos/simplescraper.png" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.apify.com/platform/integrations/mcp" href="https://docs.apify.com/platform/integrations/mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://mcp.apify.com/" href="https://mcp.apify.com/" icon="arrow-up-right-from-square" />
+</CardGroup>

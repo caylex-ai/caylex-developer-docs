@@ -1,0 +1,63 @@
+---
+title: "Dropcontact"
+description: "Automated B2B contact enrichment solutions"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/dropcontact.svg"
+---
+
+The Dropcontact MCP Server brings powerful B2B contact data enrichment and email finding capabilities directly into your Caylex AI agents. Dropcontact is the first Email Finder with its own MCP server, enabling agents to automatically discover and verify professional email addresses, enrich contact profiles, and validate lead data without any manual intervention. By connecting this server to your Caylex project, AI agents can process enrichment requests conversationally — for example, looking up contact details for a named individual at a specific company — making it a fast alternative to manual single searches. This integration streamlines lead generation pipelines, improves CRM data accuracy, and accelerates B2B outreach automation at scale.
+
+<Warning>
+**Prerequisites:**
+- An active Dropcontact account with API access enabled is required to authenticate and use this server.
+- A valid Dropcontact API key must be obtained from your Dropcontact developer/account dashboard before connecting in Caylex.
+</Warning>
+
+<Note>
+**Important API details:**
+- Dropcontact is specifically designed for B2B contact enrichment; personal or non-business email addresses and contacts are outside its intended scope.
+- Enrichment requests require at minimum a person's first name, last name, and company name or domain to return meaningful results.
+- The MCP server is a faster alternative to Dropcontact's single search interface, but API credit consumption still applies per enrichment request based on your Dropcontact plan.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Sales Engagement, Sales & Marketing |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Header Authentication
+
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Dropcontact** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Hunter" href="/server-catalog/hunter" icon="https://d338mlbnszozgc.cloudfront.net/logos/hunter.svg" />
+  <Card title="LinkedIn Research" href="/server-catalog/linkedin-research" icon="https://d338mlbnszozgc.cloudfront.net/logos/linkedin.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://www.dropcontact.com/mcp-dropcontact" href="https://www.dropcontact.com/mcp-dropcontact" icon="arrow-up-right-from-square" />
+</CardGroup>

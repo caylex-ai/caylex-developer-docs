@@ -1,0 +1,102 @@
+---
+title: "Exa"
+description: "Real-time web search for AI models and assistants"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/exa.svg"
+---
+
+The Exa MCP Server brings real-time web search and content extraction capabilities to your Caylex AI agents, powered by Exa's search API. Agents can perform intelligent web searches, crawl and extract content from specific URLs, and retrieve code-focused context for technical research and development tasks. This makes the server well-suited for use cases such as academic research, competitive analysis, market intelligence, and staying current with rapidly evolving topics. The server is open-source and backed by Exa's purpose-built search infrastructure, designed specifically for AI agent consumption rather than traditional keyword-based retrieval.
+
+<Warning>
+**Prerequisites:**
+- An active Exa account with a valid API key, obtainable from the Exa dashboard.
+</Warning>
+
+<Note>
+**Important API details:**
+- An Exa API key is required to authenticate requests; the key must be provided when connecting the server in Caylex.
+- The server supports OAuth-based authentication in addition to API key header authentication.
+- Web search results reflect real-time data from Exa's index, so result freshness depends on Exa's crawl schedule.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Search & Research, Analytics & Data |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### Query Parameter Authentication
+
+This server requires query parameters to be appended to the server URL. These are typically API keys or tokens.
+
+## Available Tools
+
+This server provides **3** tools:
+
+### Search
+
+<AccordionGroup>
+  <Accordion title="web_search_exa">
+    Search the web for any topic and get clean, ready-to-use content.
+
+Best for: Finding current information, news, facts, or answering questions about any topic.
+Returns: Clean text content from top search results, ready for LLM use.
+
+Query tips: describe the ideal page, not keywords. "blog post comparing React and Vue performance" not "React vs Vue".
+If highlights are insufficient, follow up with crawling_exa on the best URLs.
+  </Accordion>
+  <Accordion title="get_code_context_exa">
+    Find code examples, documentation, and programming solutions. 
+
+Best for: Any programming question - API usage, library examples, code snippets, debugging help.
+Returns: Relevant code and documentation.
+
+Query tips: describe what you're looking for specifically. "Python requests library POST with JSON body" not "python http".
+If highlights are insufficient, follow up with crawling_exa on the best URLs.
+  </Accordion>
+</AccordionGroup>
+
+### Content Extraction
+
+<AccordionGroup>
+  <Accordion title="crawling_exa">
+    Read a webpage's full content as clean markdown. Use after web_search_exa when highlights are insufficient or to read any URL.
+
+Best for: Extracting full content from known URLs. Batch multiple URLs in one call.
+Returns: Clean text content and metadata from the page(s).
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Exa** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Tavily" href="/server-catalog/tavily" icon="https://d338mlbnszozgc.cloudfront.net/logos/tavily.svg" />
+  <Card title="Firecrawl" href="/server-catalog/firecrawl" icon="https://d338mlbnszozgc.cloudfront.net/logos/firecrawl.svg" />
+  <Card title="Perplexity" href="/server-catalog/perplexity" icon="https://d338mlbnszozgc.cloudfront.net/logos/perplexity.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://docs.exa.ai/docs/reference/exa-mcp" href="https://docs.exa.ai/docs/reference/exa-mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://github.com/exa-labs/exa-mcp-server" href="https://github.com/exa-labs/exa-mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>

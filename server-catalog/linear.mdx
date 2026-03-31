@@ -1,0 +1,240 @@
+---
+title: "Linear"
+description: "AI-powered project management and automation"
+icon: "https://d338mlbnszozgc.cloudfront.net/logos/linear.svg"
+---
+
+The Linear MCP Server connects AI agents to Linear's project management platform, enabling automated creation, retrieval, and updating of Linear objects such as issues, projects, milestones, documents, initiatives, cycles, teams, and comments. Built on the authenticated remote MCP spec, it provides a secure, centrally hosted interface that allows AI agents within Caylex to interact with your full Linear workspace. Authentication is handled via OAuth 2.1, so once connected in Caylex your agents can read and write Linear data without manual credential management. This server is well-suited for automating project reporting, managing documentation, tracking initiative progress, and orchestrating issue workflows across teams.
+
+<Warning>
+**Prerequisites:**
+- A Linear account is required; access to workspace data depends on the permissions of the authenticated user.
+- To generate a personal API key (if using header-based auth), navigate to Linear Settings > Account > Security & Access.
+</Warning>
+
+<Note>
+**Important API details:**
+- Authentication uses OAuth 2.1 with dynamic client registration — Caylex handles the OAuth flow on your behalf.
+- The server is centrally hosted and managed by Linear, meaning tool availability and behavior may be updated by Linear independently.
+- More functionality is actively being added to the server; some advanced Linear features may not yet be exposed as tools.
+- For Jules-style API key authentication, a personal API key can be generated under Linear Settings > Account > Security & Access.
+</Note>
+
+## Server Details
+
+| Property | Value |
+|----------|-------|
+| **Transport** | Streamable HTTP |
+| **Hosting** | Remote (externally hosted) |
+| **Categories** | Project Management, Business Operations |
+
+## Authentication
+
+This server supports the following authentication method:
+
+### OAuth
+**Scopes:** `read`, `write`, `issues:create`, `comments:create`, `timeSchedule:write`
+
+During the server onboarding flow, you will be prompted to complete the OAuth flow to grant access. See the [Linear Authentication guide](/oauth-guides/linear) for step-by-step credential configuration.
+
+## Available Tools
+
+This server provides **38** tools:
+
+### Issues
+
+<AccordionGroup>
+  <Accordion title="get_issue">
+    Retrieve detailed information about an issue by ID, including attachments and git branch name
+  </Accordion>
+  <Accordion title="save_issue">
+    Create or update a Linear issue. If `id` is provided, updates the existing issue; otherwise creates a new one. When creating, `title` and `team` are required.
+  </Accordion>
+  <Accordion title="list_issues">
+    List issues in the user's Linear workspace. For my issues, use "me" as the assignee. Use "null" for no assignee.
+  </Accordion>
+  <Accordion title="list_issue_statuses">
+    List available issue statuses in a Linear team
+  </Accordion>
+  <Accordion title="get_issue_status">
+    Retrieve detailed information about an issue status in Linear by name or ID
+  </Accordion>
+  <Accordion title="list_issue_labels">
+    List available issue labels in a Linear workspace or team
+  </Accordion>
+  <Accordion title="create_issue_label">
+    Create a new Linear issue label
+  </Accordion>
+</AccordionGroup>
+
+### Comments
+
+<AccordionGroup>
+  <Accordion title="list_comments">
+    List comments for a specific Linear issue
+  </Accordion>
+  <Accordion title="save_comment">
+    Create or update a comment on a Linear issue. If `id` is provided, updates the existing comment; otherwise creates a new one. When creating, `issueId` and `body` are required.
+  </Accordion>
+  <Accordion title="delete_comment">
+    Delete a comment from a Linear issue
+  </Accordion>
+</AccordionGroup>
+
+### Projects
+
+<AccordionGroup>
+  <Accordion title="get_project">
+    Retrieve details of a specific project in Linear
+  </Accordion>
+  <Accordion title="list_projects">
+    List projects in the user's Linear workspace
+  </Accordion>
+  <Accordion title="save_project">
+    Create or update a Linear project. If `id` is provided, updates the existing project; otherwise creates a new one. When creating, `name` and at least one team (via `addTeams` or `setTeams`) are required.
+  </Accordion>
+  <Accordion title="list_project_labels">
+    List available project labels in the Linear workspace
+  </Accordion>
+</AccordionGroup>
+
+### Documents
+
+<AccordionGroup>
+  <Accordion title="list_documents">
+    List documents in the user's Linear workspace
+  </Accordion>
+  <Accordion title="get_document">
+    Retrieve a Linear document by ID or slug
+  </Accordion>
+  <Accordion title="create_document">
+    Create a new document in Linear
+  </Accordion>
+  <Accordion title="update_document">
+    Update an existing Linear document
+  </Accordion>
+  <Accordion title="search_documentation">
+    Search Linear's documentation to learn about features and usage
+  </Accordion>
+</AccordionGroup>
+
+### Milestones
+
+<AccordionGroup>
+  <Accordion title="get_milestone">
+    Retrieve details of a specific milestone by ID or name
+  </Accordion>
+  <Accordion title="list_milestones">
+    List all milestones in a Linear project
+  </Accordion>
+  <Accordion title="save_milestone">
+    Create or update a milestone in a Linear project. If `id` is provided, updates the existing milestone; otherwise creates a new one. When creating, `name` is required.
+  </Accordion>
+</AccordionGroup>
+
+### Initiatives
+
+<AccordionGroup>
+  <Accordion title="list_initiatives">
+    List initiatives in the user's Linear workspace
+  </Accordion>
+  <Accordion title="get_initiative">
+    Retrieve detailed information about a specific initiative in Linear
+  </Accordion>
+  <Accordion title="save_initiative">
+    Create or update a Linear initiative. If `id` is provided, updates the existing initiative; otherwise creates a new one. When creating, `name` is required.
+  </Accordion>
+</AccordionGroup>
+
+### Cycles
+
+<AccordionGroup>
+  <Accordion title="list_cycles">
+    Retrieve cycles for a specific Linear team
+  </Accordion>
+</AccordionGroup>
+
+### Status Updates
+
+<AccordionGroup>
+  <Accordion title="get_status_updates">
+    List or get project/initiative status updates. Pass `id` to get a specific update, or filter to list.
+  </Accordion>
+  <Accordion title="save_status_update">
+    Create or update a project/initiative status update. Omit `id` to create, provide `id` to update.
+  </Accordion>
+  <Accordion title="delete_status_update">
+    Delete (archive) a project or initiative status update.
+  </Accordion>
+</AccordionGroup>
+
+### Attachments
+
+<AccordionGroup>
+  <Accordion title="create_attachment">
+    Create a new attachment on a specific Linear issue by uploading base64-encoded content.
+  </Accordion>
+  <Accordion title="get_attachment">
+    Retrieve an attachment's content by ID.
+  </Accordion>
+  <Accordion title="delete_attachment">
+    Delete an attachment by ID
+  </Accordion>
+  <Accordion title="extract_images">
+    Extract and fetch images from markdown content. Use this to view screenshots, diagrams, or other images embedded in Linear issues, comments, or documents. Pass the markdown content (e.g., issue description) and receive the images as viewable data.
+  </Accordion>
+</AccordionGroup>
+
+### Teams
+
+<AccordionGroup>
+  <Accordion title="get_team">
+    Retrieve details of a specific Linear team
+  </Accordion>
+  <Accordion title="list_teams">
+    List teams in the user's Linear workspace
+  </Accordion>
+</AccordionGroup>
+
+### Users
+
+<AccordionGroup>
+  <Accordion title="get_user">
+    Retrieve details of a specific Linear user
+  </Accordion>
+  <Accordion title="list_users">
+    Retrieve users in the Linear workspace
+  </Accordion>
+  <Accordion title="get_authenticated_user">
+    Retrieve the profile of the currently authenticated user
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Linear** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
+
+## Related Servers
+
+<CardGroup cols={2}>
+  <Card title="Github" href="/server-catalog/github" icon="https://d338mlbnszozgc.cloudfront.net/logos/github.svg" />
+  <Card title="Slack" href="/server-catalog/slack" icon="https://d338mlbnszozgc.cloudfront.net/logos/slack.svg" />
+  <Card title="Notion" href="/server-catalog/notion" icon="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" />
+</CardGroup>
+
+## References
+
+<CardGroup cols={1}>
+  <Card title="https://linear.app/docs/mcp" href="https://linear.app/docs/mcp" icon="arrow-up-right-from-square" />
+  <Card title="https://developers.linear.app/docs/ai/mcp-server" href="https://developers.linear.app/docs/ai/mcp-server" icon="arrow-up-right-from-square" />
+</CardGroup>
