@@ -1,10 +1,10 @@
 ---
 title: "Analytics & Session Logs"
-description: "Monitor tool usage, performance, errors, and user activity across your agent deployments."
+description: "Monitor tool usage, performance, errors, and user activity across your deployments."
 icon: "chart-line"
 ---
 
-Caylex provides real-time analytics and detailed session logs for every interaction that passes through the proxy. Use these to monitor agent performance, debug issues, and understand how your tools are being used.
+Caylex provides real-time analytics and detailed session logs for every interaction that passes through the Navigator. Use these to monitor performance, debug issues, and understand how your tools are being used.
 
 ## Dashboard overview
 
@@ -14,10 +14,10 @@ The analytics dashboard is accessible from the main navigation in the Caylex pla
 
 | Metric | Description |
 | --- | --- |
-| **Sessions processed** | Total number of sessions (agent interactions) processed |
+| **Sessions processed** | Total number of sessions processed |
 | **Tool calls** | Total number of individual tool calls executed |
 | **Error rate** | Percentage of tool calls that resulted in errors |
-| **Average latency** | Average time for the proxy to process a tool call |
+| **Average latency** | Average time for the Navigator to process a tool call |
 | **Average runtime** | Average execution time of tool calls on external servers |
 | **Active users** | Weekly active users (WAU) and monthly active users (MAU) |
 | **Tool calls per session** | Average number of tool calls per session (indicates session complexity) |
@@ -32,7 +32,7 @@ The dashboard includes interactive graphs for:
 - **Tool calls over time** — track tool execution volume
 - **Error rate over time** — monitor error trends and spikes
 - **Error types over time** — see the breakdown of error categories (authentication, rate limit, timeout, execution errors)
-- **Latency over time** — track proxy processing time trends
+- **Latency over time** — track Navigator processing time trends
 - **Runtime over time** — monitor external server response times
 - **Tool calls per session over time** — observe session complexity trends
 
@@ -46,7 +46,7 @@ The dashboard also shows:
 
 - **Top tools** — the most frequently used tools, ranked by call count
 - **Servers** — which servers are being accessed and how often
-- **Agent-tool connections** — which agents are using which tools, visualized as a relationship map
+- **Navigator-tool connections** — which navigators are using which tools, visualized as a relationship map
 
 ## Filtering
 
@@ -55,16 +55,16 @@ All analytics can be filtered by:
 | Filter | Description |
 | --- | --- |
 | **Project** | Scope to a specific project |
-| **Agent** | Scope to a specific agent instance |
+| **Navigator** | Scope to a specific navigator instance |
 | **Server** | Scope to a specific server instance |
 | **User** | Scope to a specific user |
 | **Time window** | Select the date range to analyze |
 
-Combine filters to drill down into specific areas. For example, filter by a specific agent and server to see how that agent uses a particular integration.
+Combine filters to drill down into specific areas. For example, filter by a specific navigator and server to see how that navigator uses a particular integration.
 
 ## Session logs
 
-Session logs provide a detailed view of every session processed by the proxy. Navigate to a project and open the **Session Logs** tab to see all sessions.
+Session logs provide a detailed view of every session processed by the Navigator. Navigate to a project and open the **Session Logs** tab to see all sessions.
 
 Each session log entry shows:
 
@@ -74,11 +74,11 @@ Each session log entry shows:
 | **Tool Calls** | Total number of tool calls executed in the session |
 | **Errors** | Number of tool calls that failed |
 | **Servers Invoked** | Icons showing which servers were accessed |
-| **Agent** | Which agent instance processed the session |
+| **Navigator** | Which navigator instance processed the session |
 | **User** | Which user triggered the session |
 | **Timestamp** | When the session was received |
 
-You can filter sessions by agent, server, and date range. Sort by newest or oldest first.
+You can filter sessions by navigator, server, and date range. Sort by newest or oldest first.
 
 ### Session details
 
@@ -120,7 +120,7 @@ Session traces are invaluable for debugging. If an agent is not behaving as expe
 Per-user analytics are available in the project's **Users** tab. For each user, you can see:
 
 - **Activity timeline** — sessions and tool calls over time
-- **Top tools** — the tools used most by this user's agent interactions
+- **Top tools** — the tools used most by this user's interactions
 - **Top servers** — the servers accessed most on behalf of this user
 - **Error rate** — the percentage of tool calls that failed for this user
 
@@ -128,14 +128,14 @@ See [Managing Users](/auth/managing-users) for more on the user view.
 
 ## Efficiency analytics
 
-The agent instance analytics drawer includes two metrics that measure how effectively your agent uses the proxy's tool suggestion system. These appear under **Efficiency Analytics** on the agent instance's Analytics tab.
+The navigator instance analytics drawer includes two metrics that measure how effectively your agent uses the Navigator's tool suggestion system. These appear under **Efficiency Analytics** on the navigator instance's Analytics tab.
 
 | Metric | Description |
 | --- | --- |
 | **Tool Discovery Efficiency** | The ratio of tool invocations to tool discovery operations (`suggest_tools` + `get_tool_schemas` calls). Higher values mean your agent is invoking more tools per discovery operation — indicating efficient tool selection with less overhead. |
 | **Tool Suggestion Spread** | The ratio of tool invocations to the total number of suggested tools. Higher values mean a larger proportion of suggested tools are actually being invoked, indicating that the suggestions are relevant and high quality. |
 
-These metrics are scoped to the selected time window (hour, day, week, or month) and are filtered by project and agent instance.
+These metrics are scoped to the selected time window (hour, day, week, or month) and are filtered by project and navigator instance.
 
 ## Error monitoring
 
