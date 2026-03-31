@@ -8,7 +8,7 @@ When your agent is connected to multiple servers, it may not know what informati
 
 ## What it does
 
-When enabled, the proxy exposes a `get_context_map` MCP tool to your agent. Calling this tool returns a set of **cards** — each summarizing the type of information available in a connected server — along with **relations** between cards that highlight cross-server connections.
+When enabled, the Navigator exposes a `get_context_map` MCP tool to your agent. Calling this tool returns a set of **cards** — each summarizing the type of information available in a connected server — along with **relations** between cards that highlight cross-server connections.
 
 For example, a Context Map might tell your agent:
 
@@ -24,8 +24,8 @@ This helps your agent understand **where to look** before making queries, rather
   <Step title="Ensure extraction is configured">
     Context Maps require at least **2 server instances** in the project with data extraction enabled. Extraction configuration is managed per server instance and defines which tools to use for data exploration and how frequently to update.
   </Step>
-  <Step title="Enable Context Maps on the Agent Instance">
-    Go to the Agent Instance settings and toggle **Context Maps** to on.
+  <Step title="Enable Context Maps on the Navigator Instance">
+    Go to the Navigator Instance settings and toggle **Context Maps** to on.
   </Step>
 </Steps>
 

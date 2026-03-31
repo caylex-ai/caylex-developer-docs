@@ -1,0 +1,86 @@
+---
+title: "In-Chat Authentication"
+description: "Let users authenticate with MCP servers directly from within a conversation with your agent."
+icon: "key"
+---
+
+When your agent is connected to servers that require user-level authentication, some users may not have completed authentication for all servers before starting a conversation. **In-Chat Authentication** solves this by giving the agent a tool to provide an authentication link directly within the conversation.
+
+## What it does
+
+When enabled, the Navigator exposes a `get_authentication_link` MCP tool to your agent. This tool returns:
+
+- The **authentication status** of the current user — whether they need to authenticate, are fully authenticated, or no authentication is required
+- An **authentication link** the user can click to authenticate with any servers they haven't connected to yet
+- A list of **unauthenticated servers** so the agent knows which services are not yet available
+
+This allows your agent to proactively check the user's auth status and guide them through authentication without leaving the conversation.
+
+## How to enable
+
+<Steps>
+  <Step title="Ensure user-level auth servers exist">
+    In-Chat Authentication requires at least one server instance in the project that uses **user-level authentication** (not project-level). This is because the authentication link is for individual users to provide their own credentials.
+  </Step>
+  <Step title="Enable In-Chat Authentication on the Navigator Instance">
+    Go to the Navigator Instance settings under **Caylex Capabilities** and toggle **In-Chat Authentication** to on.
+  </Step>
+</Steps>
+
+<Note>
+The In-Chat Authentication toggle is only available when the project has at least one user-level auth server connected. If all user-level servers are removed from a project, In-Chat Authentication is automatically disabled.
+</Note>
+
+## How it works
+
+1. **Default auth link** — when In-Chat Authentication is enabled, Caylex creates a **default authentication link** for the project. This link includes all user-level server instances in the project and does not expire. It automatically stays in sync as servers are added or removed.
+
+2. **Agent calls `get_authentication_link`** — during a conversation, the agent can call this tool to check if the current user needs to authenticate. The tool looks up the user's authentication status for each user-level server in the project.
+
+3. **Response to the agent** — the tool returns one of three statuses:
+   - `authentication_needed` — the user has not authenticated with one or more servers. The response includes the auth link and the list of unauthenticated server names.
+   - `fully_authenticated` — the user has authenticated with all available user-level servers.
+   - `no_auth_required` — the project has no user-level auth servers (all servers use project-level auth or no auth).
+
+4. **User authenticates** — the agent shares the link with the user. The user clicks it, signs in, and authenticates with the listed servers through the guided flow.
+
+5. **Verification** — the agent can call `get_authentication_link` again to confirm the user has completed authentication. The unauthenticated servers list will reflect the latest state.
+
+## Example conversation flow
+
+```
+User: Can you check my Slack messages and create a Linear issue?
+
+Agent: Let me check your authentication status first.
+       [calls get_authentication_link]
+
+Agent: It looks like you haven't connected your Slack and Linear accounts yet.
+       Please authenticate using this link: https://auth.caylex.ai?auth_link_id=abc-123
+       Once you've completed authentication, let me know and I'll proceed.
+
+User: Done! I've authenticated both.
+
+Agent: [calls get_authentication_link again to verify]
+       Great, you're all set! Let me check your Slack messages now...
+```
+
+## Important notes
+
+- **Available MCP Servers list** — the list of servers shown in the agent's tool descriptions only includes servers the user has already authenticated into. After authenticating via the link, new servers become immediately available for tool execution within the current conversation, but they will not appear in the tool description list until a new session is started.
+
+- **Automatic sync** — the default auth link automatically updates when user-level servers are added to or removed from the project. You do not need to manually manage it.
+
+- **Auto-disable** — if all user-level auth servers are removed from a project, In-Chat Authentication is automatically disabled on all navigator instances in that project.
+
+## Preview the auth link
+
+When In-Chat Authentication is enabled, you can preview the authentication link directly from the Navigator Instance settings page. Click the link icon next to the toggle to open the authentication page and see exactly what your users will see.
+
+## When to enable In-Chat Authentication
+
+| Scenario | Recommendation |
+| --- | --- |
+| Users interact with the agent before authenticating with all servers | **Enable** — lets the agent guide users through auth on the spot |
+| All servers use project-level auth (shared credentials) | **Not applicable** — no user-level auth needed |
+| Users always authenticate before their first conversation | **Optional** — the agent can still use it as a fallback for expired credentials |
+| Agent is deployed in a controlled environment where auth is pre-configured | **Disable** — unnecessary overhead |

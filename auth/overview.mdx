@@ -8,7 +8,7 @@ Caylex has two layers of authentication: **platform authentication** (how develo
 
 ## Platform authentication
 
-Caylex uses SSO for platform access. When you sign up or log in to the Caylex dashboard, you authenticate through the platform's identity provider. This gives you access to manage your organization's projects, servers, agents, and analytics.
+Caylex uses SSO for platform access. When you sign up or log in to the Caylex dashboard, you authenticate through the platform's identity provider. This gives you access to manage your organization's projects, servers, navigators, and analytics.
 
 Platform authentication is separate from server authentication — logging into Caylex does not automatically grant access to external MCP servers.
 
@@ -22,11 +22,11 @@ Caylex supports two levels of authentication for each server:
 
 <Tabs>
   <Tab title="User-level auth">
-    Each end user provides **their own credentials** for the server. When the agent executes a tool on behalf of a user, the proxy uses that user's personal credentials.
+    Each end user provides **their own credentials** for the server. When the agent executes a tool on behalf of a user, the Navigator uses that user's personal credentials.
 
     **How it works:**
     - Each user authenticates individually via an [Auth Link](/auth/auth-links)
-    - The proxy stores each user's credentials separately
+    - The Navigator stores each user's credentials separately
     - Tool calls use the credentials of the specific user identified by `x-user-email`
 
     **Best for:**
@@ -75,27 +75,27 @@ Caylex never stores raw secrets in its database. OAuth tokens are managed by the
 
 ## How auth flows at runtime
 
-When your agent invokes a tool through the Caylex Proxy, the authentication flow happens automatically:
+When your agent invokes a tool through the Caylex Navigator, the authentication flow happens automatically:
 
 ```mermaid
 sequenceDiagram
     participant Agent as Your Agent
-    participant Proxy as Caylex Proxy
+    participant Navigator as Caylex Navigator
     participant Creds as Credential Store
     participant Server as External MCP Server
 
-    Agent->>Proxy: invoke_tools (x-api-key, x-user-email)
-    Proxy->>Proxy: Identify agent, project, and user
-    Proxy->>Creds: Get credentials for user + server
-    Creds-->>Proxy: Return credentials
-    Proxy->>Server: Execute tool with injected credentials
-    Server-->>Proxy: Tool result
-    Proxy-->>Agent: Return result
+    Agent->>Navigator: invoke_tools (x-api-key, x-user-email)
+    Navigator->>Navigator: Identify navigator instance, project, and user
+    Navigator->>Creds: Get credentials for user + server
+    Creds-->>Navigator: Return credentials
+    Navigator->>Server: Execute tool with injected credentials
+    Server-->>Navigator: Tool result
+    Navigator-->>Agent: Return result
 ```
 
-1. Your agent sends a tool invocation to the proxy with the `x-api-key` and `x-user-email` headers
-2. The proxy identifies the agent instance, project, and user
-3. The proxy retrieves the user's credentials for the target server
+1. Your agent sends a tool invocation to the Navigator with the `x-api-key` and `x-user-email` headers
+2. The Navigator identifies the navigator instance, project, and user
+3. The Navigator retrieves the user's credentials for the target server
 4. Credentials are injected into the request (as headers, path parameters, query parameters, or OAuth tokens)
 5. The tool is executed on the external server and the result is returned to your agent
 

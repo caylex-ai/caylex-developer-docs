@@ -8,9 +8,9 @@ When your agent is connected to many servers with dozens or hundreds of tools, c
 
 ## What it does
 
-When enabled, the proxy exposes a `suggest_tools` MCP tool to your agent. Instead of scanning through a long list of tools, your agent describes what it wants to accomplish, and the proxy returns a **ranked list of the most relevant tools** across all connected servers.
+When enabled, the Navigator exposes a `suggest_tools` MCP tool to your agent. Instead of scanning through a long list of tools, your agent describes what it wants to accomplish, and the Navigator returns a **ranked list of the most relevant tools** across all connected servers.
 
-For example, if your agent says *"I want to create a new issue"*, the proxy might return:
+For example, if your agent says *"I want to create a new issue"*, the Navigator might return:
 
 1. `create_issue` from Linear MCP (relevance: 0.94)
 2. `create_issue` from GitHub MCP (relevance: 0.91)
@@ -21,11 +21,11 @@ Your agent can then pick the right tool based on its context and proceed with th
 ## How to enable
 
 <Steps>
-  <Step title="Navigate to Agent Instance settings">
-    Go to the **Agents** page, select your agent, and open the Agent Instance for your project.
+  <Step title="Navigate to Navigator Instance settings">
+    Go to the **Navigators** page, select your navigator, and open the Navigator Instance for your project.
   </Step>
   <Step title="Enable Dynamic Suggestions">
-    Toggle **Dynamic Suggestions** to on. This enables the `suggest_tools` tool for this Agent Instance.
+    Toggle **Dynamic Suggestions** to on. This enables the `suggest_tools` tool for this Navigator Instance.
   </Step>
 </Steps>
 
@@ -39,7 +39,7 @@ The tool suggestion system uses **RAG (Retrieval-Augmented Generation)** with pr
 
 2. **Historical enrichment** — as tools are used over time, successful query-tool pairs are embedded and added to the search index. This means the system learns from real usage patterns and improves its recommendations.
 
-3. **Intent matching** — when your agent calls `suggest_tools` with an intent (e.g., "I want to list active incidents"), the proxy embeds the intent and performs a vector similarity search against all available tools.
+3. **Intent matching** — when your agent calls `suggest_tools` with an intent (e.g., "I want to list active incidents"), the Navigator embeds the intent and performs a vector similarity search against all available tools.
 
 4. **Ranked results** — tools are ranked by a weighted similarity score that considers:
    - Tool description similarity (primary signal)

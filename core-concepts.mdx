@@ -1,14 +1,14 @@
 ---
 title: "Core Concepts"
-description: "Understand Projects, Servers, Agents, and how they work together in Caylex."
+description: "Understand Projects, Servers, Navigators, and how they work together in Caylex."
 icon: "sitemap"
 ---
 
-Caylex organizes your agents, servers, and permissions into a few key concepts. Understanding these concepts is essential for setting up your deployment.
+Caylex organizes your navigators, servers, and permissions into a few key concepts. Understanding these concepts is essential for setting up your deployment.
 
 ## Projects
 
-A **Project** represents a deployment of your agent system. Think of each project as:
+A **Project** represents a deployment for a specific customer, team, or environment. Think of each project as:
 
 - A deployment for a specific customer
 - A deployment for a specific team in your company
@@ -17,8 +17,8 @@ A **Project** represents a deployment of your agent system. Think of each projec
 Each project contains:
 
 - **Server Instances** — which MCP servers are connected
-- **Agent Instances** — which agents are deployed
-- **User Auth Credentials** — authentication credentials that agents use to connect with external services on behalf of users
+- **Navigator Instances** — which navigators are deployed
+- **User Auth Credentials** — authentication credentials used to connect with external services on behalf of users
 
 Projects provide **complete isolation** — each one has independent configurations, credentials, and permissions.
 
@@ -47,37 +47,37 @@ A **Server Instance** is a Server connected to a specific Project. It:
 **Example:** You connect the GitHub MCP to your "Customer A" project with one set of credentials and to your "Customer B" project with different credentials. That creates two Server Instances of the same Server.
 </Info>
 
-## Agents and Agent Instances
+## Navigators and Navigator Instances
 
-### Agent Identity
+### Navigator Identity
 
-An **Agent Identity** is the definition or template of an agent. It defines the agent's name and purpose. Examples: "Customer Support Bot", "Data Analyst Agent", "Code Review Assistant".
+A **Navigator Identity** is the definition or template of a navigator. It defines the navigator's name and purpose. Examples: "Customer Support Navigator", "Data Analyst Navigator", "Code Review Navigator".
 
-### Agent Instance
+### Navigator Instance
 
-An **Agent Instance** is an Agent Identity deployed in a specific Project. It:
+A **Navigator Instance** is a Navigator Identity deployed in a specific Project. It:
 
-- Links an Agent Identity to a Project
+- Links a Navigator Identity to a Project
 - Has its own **API key** for authentication
 - Can have **tool restrictions** (block specific tools for this deployment)
 - Can have **server restrictions** (block entire servers for this deployment)
-- Allows the same agent to be deployed across multiple Projects with different permissions
+- Allows the same navigator to be deployed across multiple Projects with different permissions
 
 <Info>
-**Example:** You deploy your "Support Bot" agent to "Customer A" with full tool access and to "Customer B" with restricted access to sensitive tools. That creates two Agent Instances of the same Agent Identity.
+**Example:** You deploy your "Support Navigator" to "Customer A" with full tool access and to "Customer B" with restricted access to sensitive tools. That creates two Navigator Instances of the same Navigator Identity.
 </Info>
 
 ## How they work together
 
 When your agent connects to Caylex, two pieces of information identify the context:
 
-1. **API Key** (`x-api-key` header) — identifies the Agent Instance, which tells Caylex which Project the request belongs to
+1. **API Key** (`x-api-key` header) — identifies the Navigator Instance, which tells Caylex which Project the request belongs to
 2. **User Email** (`x-user-email` header) — identifies the end user interacting with the agent
 
 This gives Caylex the context needed to:
 
-- Show only the tools available to that agent in that project
-- Apply any tool or server restrictions configured for that agent
+- Show only the tools available to that navigator in that project
+- Apply any tool or server restrictions configured for that navigator
 - Use the right authentication credentials for each MCP server (based on the user's email for user-level auth)
 - Track usage and provide per-user analytics
 
@@ -89,16 +89,16 @@ graph TD
 
     ProjectA --> SI_A1["GitHub Server Instance"]
     ProjectA --> SI_A2["Slack Server Instance"]
-    ProjectA --> AI_A1["Support Bot Agent Instance"]
+    ProjectA --> NI_A1["Support Navigator Instance"]
 
     ProjectB --> SI_B1["GitHub Server Instance"]
     ProjectB --> SI_B2["Linear Server Instance"]
-    ProjectB --> AI_B1["Support Bot Agent Instance"]
-    ProjectB --> AI_B2["Analyst Agent Instance"]
+    ProjectB --> NI_B1["Support Navigator Instance"]
+    ProjectB --> NI_B2["Analyst Navigator Instance"]
 ```
 
 <Tip>
-This architecture gives you enterprise-grade multi-tenancy with fine-grained access control. Each project is fully isolated, so you can safely deploy the same agents and servers across different customers or teams.
+This architecture gives you enterprise-grade multi-tenancy with fine-grained access control. Each project is fully isolated, so you can safely deploy the same navigators and servers across different customers or teams.
 </Tip>
 
 ## What's next
@@ -110,8 +110,8 @@ This architecture gives you enterprise-grade multi-tenancy with fine-grained acc
   <Card title="Add Servers" icon="server" href="/platform/servers">
     Connect servers from the catalog or add your own.
   </Card>
-  <Card title="Configure Agents" icon="robot" href="/platform/agents">
-    Create agents and set up tool permissions.
+  <Card title="Configure Navigators" icon="compass" href="/platform/navigators">
+    Create navigators and set up tool permissions.
   </Card>
   <Card title="Connect Your Agent" icon="plug" href="/integration/connecting">
     Integrate Caylex with your agent framework.

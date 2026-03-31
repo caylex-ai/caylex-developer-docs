@@ -9,7 +9,7 @@ This guide shows you how to connect your OpenAI Agents SDK agent to Caylex using
 ## Prerequisites
 
 - Python 3.10+
-- A Caylex Agent Instance with an API key ([create one here](/platform/agents))
+- A Caylex Navigator Instance with an API key ([create one here](/platform/navigators))
 - Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
 
 ## Installation
@@ -73,7 +73,7 @@ asyncio.run(main())
     ```
   </Step>
   <Step title="Create the MCP server connection">
-    Use `MCPServerStreamableHttp` to connect to the Caylex proxy. The `params` dict must include the `url` and `headers` with your API key and user email.
+    Use `MCPServerStreamableHttp` to connect to the Caylex Navigator. The `params` dict must include the `url` and `headers` with your API key and user email.
 
     ```python
     async with MCPServerStreamableHttp(
@@ -140,11 +140,11 @@ async def handle_user_request(user_email: str, query: str) -> str:
 ```
 
 <Tip>
-The `x-api-key` stays the same for all users (it identifies your agent), but the `x-user-email` changes per user (it determines which credentials the proxy uses).
+The `x-api-key` stays the same for all users (it identifies your navigator instance), but the `x-user-email` changes per user (it determines which credentials the Navigator uses).
 </Tip>
 
 ## Further reading
 
 - [OpenAI Agents SDK MCP documentation](https://openai.github.io/openai-agents-python/mcp/)
-- [Connecting Your Agent](/integration/connecting) — details on how the proxy works
+- [Connecting Your Agent](/integration/connecting) — details on how the Navigator works
 - [Authentication Model](/auth/overview) — understand user-level vs project-level auth
