@@ -1,0 +1,123 @@
+---
+title: "Navigators & Permissions"
+description: "Create navigators, generate API keys, and configure fine-grained tool permissions."
+icon: "compass"
+---
+
+Navigators in Caylex represent the intelligent MCP layer that your AI agents connect to. You define a Navigator Identity once and deploy it across multiple projects with different configurations.
+
+## Create a navigator
+
+<Steps>
+  <Step title="Navigate to Navigators">
+    In the Caylex dashboard, go to the **Navigators** page from the sidebar.
+  </Step>
+  <Step title="Create a Navigator Identity">
+    Click **Create Navigator** and provide:
+
+    - **Name** (required) — a descriptive name (e.g., "Customer Support Navigator", "Data Analyst Navigator")
+    - **Description** (optional) — what this navigator does
+
+    This creates a **Navigator Identity** — a reusable template that can be deployed in multiple projects.
+  </Step>
+  <Step title="Connect to a project">
+    On the navigator's detail page, click **Add Connection** and select the project where you want to deploy this navigator.
+
+    This creates a **Navigator Instance** — a project-scoped deployment of the navigator with its own API key and permissions.
+  </Step>
+</Steps>
+
+## Generate an API key
+
+Each Navigator Instance needs an API key to authenticate with the Caylex Navigator.
+
+<Steps>
+  <Step title="Go to the Navigator Instance">
+    Navigate to the Navigator Instance (from the Navigators page or from within a project).
+  </Step>
+  <Step title="Create an API key">
+    Click **Create API Key** and provide:
+
+    - **Name** (required) — a label for this key (e.g., "Production Key", "Dev Key")
+    - **Description** (optional) — what this key is used for
+    - **Expiration** (optional) — when the key should expire
+  </Step>
+  <Step title="Copy and store the key">
+    Copy the generated API key immediately. It is in the format `ck_{id}.{secret}`.
+
+    <Warning>
+    The API key secret is only shown once at creation time. Store it securely — you cannot retrieve it later.
+    </Warning>
+  </Step>
+</Steps>
+
+You can create multiple API keys per Navigator Instance for key rotation or different environments.
+
+## Configure tool permissions
+
+By default, a Navigator Instance has access to **all tools** from all Server Instances in its project. You can restrict access at two levels:
+
+### Server-level restrictions
+
+Block a Navigator Instance from accessing an entire server's tools.
+
+Navigate to the Navigator Instance's **Permissions** tab and toggle off any servers you want to restrict. When a server is restricted:
+
+- None of that server's tools are exposed to the agent
+- The restriction applies to all tools on that server
+
+### Tool-level restrictions
+
+Block a Navigator Instance from accessing specific individual tools while keeping access to the rest of a server's tools.
+
+On the Navigator Instance's **Permissions** tab, expand a server to see its individual tools. Toggle off specific tools you want to restrict.
+
+<Tip>
+Follow the **principle of least privilege** — restrict your navigators to only the tools they need. This reduces the risk of unintended actions and improves tool selection accuracy by narrowing the focus.
+</Tip>
+
+<Info>
+Restrictions work as a deny list. All tools are enabled by default, and you selectively disable the ones you want to restrict.
+</Info>
+
+## Configure Navigator capabilities
+
+Each Navigator Instance can be configured with additional capabilities that enhance your agent's effectiveness:
+
+### Dynamic tool suggestions
+
+When enabled, the Navigator exposes the `suggest_tools` MCP tool to your agent. This provides **intelligent, RAG-based tool discovery** — your agent describes what it wants to do, and the Navigator returns ranked tool recommendations based on semantic similarity and historical usage.
+
+Toggle **Dynamic Suggestions** on the Navigator Instance settings page.
+
+<Card title="Learn more about Tool Suggestions" icon="wand-magic-sparkles" href="/navigator/tool-suggestions">
+  Understand how personalized tool suggestions work and when to enable them.
+</Card>
+
+### Context Maps
+
+When enabled, the Navigator exposes the `get_context_map` MCP tool. This gives your agent a **semantic overview of what information exists** across all connected servers — helping it understand where to look before making queries.
+
+Toggle **Context Maps** on the Navigator Instance settings page.
+
+<Note>
+Context Maps require at least 2 server instances with extraction enabled in the project.
+</Note>
+
+<Card title="Learn more about Context Maps" icon="map" href="/navigator/context-maps">
+  Understand how Context Maps work and how to configure them.
+</Card>
+
+### In-Chat Authentication
+
+When enabled, the Navigator exposes the `get_authentication_link` MCP tool. This lets your agent check a user's authentication status and provide an auth link directly within the conversation — so users can connect to servers they haven't authenticated with yet without leaving the chat.
+
+Toggle **In-Chat Authentication** on the Navigator Instance settings page.
+
+<Note>
+In-Chat Authentication requires at least one user-level auth server connected to the project.
+</Note>
+
+<Card title="Learn more about In-Chat Authentication" icon="key" href="/navigator/in-chat-authentication">
+  Understand how in-chat authentication works and when to enable it.
+</Card>

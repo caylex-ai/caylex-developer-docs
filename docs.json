@@ -26,15 +26,16 @@
             "pages": [
               "platform/projects",
               "platform/servers",
-              "platform/agents"
+              "platform/navigators"
             ]
           },
           {
-            "group": "Proxy Configuration",
+            "group": "Navigator Capabilities",
             "pages": [
-              "proxy/overview",
-              "proxy/tool-suggestions",
-              "proxy/context-maps"
+              "navigator/overview",
+              "navigator/tool-suggestions",
+              "navigator/context-maps",
+              "navigator/in-chat-authentication"
             ]
           },
           {
@@ -46,7 +47,7 @@
             ]
           },
           {
-            "group": "Agent Integration",
+            "group": "Integration",
             "pages": [
               "integration/connecting",
               "integration/openai-agents",

@@ -4,21 +4,25 @@ description: "Step-by-step guide to building an MCP server with the Designer Age
 icon: "list-check"
 ---
 
-This guide walks you through the complete Server Foundry workflow — from uploading your API spec to deploying a production-ready MCP server.
+This guide walks you through the complete Server Foundry workflow — from providing your API source to deploying a production-ready MCP server.
 
 ## Prerequisites
 
-- An OpenAPI specification (JSON or YAML) for the API you want to expose
+- An API source: OpenAPI spec (JSON or YAML), Postman Collection, or API documentation URL
 - A Caylex account with access to the Server Foundry
 
-## Phase 1: Upload your API spec
+## Phase 1: Provide your API source
 
 <Steps>
   <Step title="Open Server Foundry">
     Navigate to **Server Foundry** in the Caylex dashboard. You are presented with the Designer Agent workspace.
   </Step>
-  <Step title="Upload your spec">
-    Drag and drop your OpenAPI spec file (JSON or YAML) into the upload area, or click to browse. Caylex analyzes the spec and extracts metadata including endpoints, schemas, and server URLs.
+  <Step title="Choose your input method">
+    Select how you want to provide your API:
+
+    - **Upload an OpenAPI spec** — drag and drop a JSON or YAML file. Caylex extracts endpoints, schemas, and server URLs.
+    - **Upload a Postman Collection** — drag and drop your collection file. Caylex converts requests into tool definitions.
+    - **Provide an API documentation URL** — enter the URL of the API's documentation site. Caylex crawls the pages and extracts endpoints. You review and approve all discovered pages before proceeding.
   </Step>
   <Step title="Configure server URL (if needed)">
     If your spec defines multiple server URLs or uses URL variables, you are prompted to select and configure them:
@@ -27,7 +31,7 @@ This guide walks you through the complete Server Foundry workflow — from uploa
     - **Set variables** — provide values for any URL template variables (e.g., `{region}`, `{version}`)
   </Step>
   <Step title="Start the conversation">
-    The Designer Agent greets you and begins analyzing your API. It has full context on your spec's endpoints, schemas, and structure.
+    The Designer Agent greets you and begins analyzing your API. It has full context on the extracted endpoints, schemas, and structure.
   </Step>
 </Steps>
 
@@ -90,18 +94,24 @@ Choose which tools to include in your generated server.
     Start with a focused set of tools for your primary use case. You can always generate additional servers for other use cases later.
     </Tip>
   </Step>
-  <Step title="Save and validate">
-    Click **Save & Validate**. Caylex runs automatic validation that checks for:
-
-    - Parameter usability issues (e.g., endpoints that require IDs but no way to discover them)
-    - Missing dependencies between endpoints
-    - Other potential agent usability problems
-
-    Review any validation warnings and adjust your selection if needed.
+  <Step title="Save your selection">
+    Click **Save** when you are satisfied with your tool selection. The right panel shows a summary of your selected tools.
   </Step>
 </Steps>
 
-## Phase 5: Tool optimization
+## Phase 5: Toolset validation
+
+After you finalize your tool selection, Caylex validates that the selected tools can be sequenced into usable workflows. This step maps the input/output dependencies across all endpoints to ensure your agent can actually use the tools together.
+
+The validation checks for:
+
+- **Parameter usability issues** — endpoints that require IDs or references but no corresponding endpoint to discover them
+- **Missing dependencies** — tools that depend on output from tools not included in your selection
+- **Workflow completeness** — whether the selected tools form coherent end-to-end workflows
+
+Review any validation warnings and adjust your selection if needed. This ensures your generated server produces a toolset that agents can reliably work with.
+
+## Phase 6: Tool optimization
 
 The Designer Agent optimizes your tool names and descriptions for AI agent consumption.
 
@@ -136,7 +146,7 @@ The Designer Agent optimizes your tool names and descriptions for AI agent consu
   </Step>
 </Steps>
 
-## Phase 6: Server preview and generation
+## Phase 7: Server preview and generation
 
 Configure your server and deploy it.
 
@@ -173,7 +183,7 @@ Once your server is generated:
 
 1. **Add to a project** — go to your project and add the new server as a Server Instance
 2. **Set up authentication** — create an [Auth Link](/auth/auth-links) for users to provide their credentials (if the server requires authentication)
-3. **Configure agent access** — ensure your Agent Instance has access to the new server's tools
+3. **Configure navigator access** — ensure your Navigator Instance has access to the new server's tools
 4. **Test in the playground** — use the Caylex Playground to verify the tools work as expected
 
 ## Workspace management

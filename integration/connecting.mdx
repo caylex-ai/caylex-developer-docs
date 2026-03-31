@@ -1,6 +1,6 @@
 ---
 title: "Connecting Your Agent"
-description: "Understand how to connect your AI agent to the Caylex Proxy using MCP."
+description: "Understand how to connect your AI agent to the Caylex Navigator using MCP."
 icon: "plug"
 ---
 
@@ -18,22 +18,22 @@ Any MCP-compatible agent framework can connect to Caylex — no custom SDKs or a
 
 ## Required headers
 
-Every request to the Caylex Proxy must include two authentication headers:
+Every request to the Caylex Navigator must include two authentication headers:
 
 ### `x-api-key`
 
-Your Agent Instance's API key. This tells Caylex which agent and project the request belongs to.
+Your Navigator Instance's API key. This tells Caylex which navigator and project the request belongs to.
 
 - Format: `ck_{id}.{secret}`
-- Generated on the Agent Instance page in the Caylex dashboard
-- See [Agents & Permissions](/platform/agents) for how to create API keys
+- Generated on the Navigator Instance page in the Caylex dashboard
+- See [Navigators & Permissions](/platform/navigators) for how to create API keys
 
 ### `x-user-email`
 
 The email address of the end user currently interacting with your agent. This tells Caylex which user's credentials to use when executing tools.
 
 - Must match the email the user used when authenticating via an [Auth Link](/auth/auth-links)
-- Determines which credentials the proxy injects when calling external MCP servers
+- Determines which credentials the Navigator injects when calling external MCP servers
 - Used for per-user analytics and access control
 
 <Warning>
@@ -45,25 +45,26 @@ The `x-user-email` must exactly match the email the user authenticated with. If 
 When your agent connects and makes tool calls, here is what happens:
 
 <Steps>
-  <Step title="Agent connects to the proxy">
+  <Step title="Agent connects to the Navigator">
     Your agent opens an MCP connection to `https://proxy.caylex.ai/mcp` with the `x-api-key` and `x-user-email` headers.
   </Step>
-  <Step title="Proxy identifies context">
-    The proxy validates the API key and resolves:
-    - Which **Agent Instance** the key belongs to
-    - Which **Project** the agent is deployed in
+  <Step title="Navigator identifies context">
+    The Navigator validates the API key and resolves:
+    - Which **Navigator Instance** the key belongs to
+    - Which **Project** the navigator is deployed in
     - Which **user** the email corresponds to
-    - Which **tool restrictions** and **proxy capabilities** are configured
+    - Which **tool restrictions** and **Navigator capabilities** are configured
   </Step>
   <Step title="Agent discovers tools">
-    The proxy returns the available MCP tools based on the agent's configuration:
+    The Navigator returns the available MCP tools based on the navigator's configuration:
     - `suggest_tools` (if Dynamic Suggestions is enabled)
     - `get_tool_schemas`
     - `invoke_tools`
     - `get_context_map` (if Context Maps is enabled)
+    - `get_authentication_link` (if In-Chat Authentication is enabled)
   </Step>
   <Step title="Agent invokes tools">
-    When the agent calls `invoke_tools`, the proxy:
+    When the agent calls `invoke_tools`, the Navigator:
     1. Looks up the target server and tool
     2. Retrieves the user's credentials for that server
     3. Injects the credentials into the request
