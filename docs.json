@@ -57,6 +57,12 @@
             ]
           },
           {
+            "group": "Agent Widget",
+            "pages": [
+              "widget/overview"
+            ]
+          },
+          {
             "group": "Analytics",
             "pages": [
               "analytics/overview"
