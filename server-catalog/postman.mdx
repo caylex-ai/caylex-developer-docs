@@ -26,7 +26,8 @@ The Postman MCP Server connects AI agents to the full breadth of Postman's API m
 | Property | Value |
 |----------|-------|
 | **Transport** | Streamable HTTP |
-| **Hosting** | Remote (externally hosted) |
+| **Server Type** | External |
+| **Endpoint** | https://mcp.postman.com/mcp |
 | **Categories** | API Tools & Services, Development & DevOps |
 
 ## Authentication
@@ -35,7 +36,8 @@ This server supports the following authentication method:
 
 ### Header Authentication
 
-This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to confirm the required headers. Note that you do not provide the values for the headers during the server on-boarding.
+Header values are provided by the users during the [Auth Link](/auth/auth-links) flow.
 
 ## Server Configuration
 

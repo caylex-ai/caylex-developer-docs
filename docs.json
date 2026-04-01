@@ -82,6 +82,7 @@
               "server-catalog/braintrust",
               "server-catalog/bright-data",
               "server-catalog/calendly",
+              "server-catalog/calendly-oauth",
               "server-catalog/close",
               "server-catalog/context7",
               "server-catalog/coresignal",
