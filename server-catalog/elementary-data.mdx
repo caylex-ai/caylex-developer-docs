@@ -4,14 +4,29 @@ description: "Live data context for AI and BI workflows"
 icon: "https://d338mlbnszozgc.cloudfront.net/logos/elementary-data.svg"
 ---
 
-The Elementary MCP Server connects your data environment to AI agents, enabling real-time querying of lineage and incident data. Key use cases include exploring data lineage, monitoring incidents, and enhancing data reliability workflows.
+The Elementary Data MCP Server brings your Elementary Cloud environment into Caylex, enabling AI agents to query live data stack context including dbt models, data quality tests, column-level lineage, open incidents, and execution history. Agents can explore upstream and downstream dependencies across dbt and BI tools, inspect test coverage gaps, investigate specific failures with detailed execution logs, and surface the root causes of data issues — all through natural language interactions. This server is purpose-built for data reliability workflows, making it straightforward to ask questions like 'What models feed the revenue dashboard?' or 'Which assets have the lowest test coverage?' directly through a Caylex Navigator. Additional capabilities such as data health summaries, volume and freshness metrics, and sync triggers are on the Elementary roadmap and will expand what agents can do once released.
+
+<Warning>
+**Prerequisites:**
+- An active Elementary Cloud account with your data environment (dbt project and/or BI tools) already connected and configured.
+- A valid Elementary API key or authenticated session to authorize the MCP server connection from Caylex.
+</Warning>
+
+<Note>
+**Important API details:**
+- All operations are read-only at this time; write operations such as sync triggers and cloud test config updates are listed as coming soon.
+- The server requires a live Elementary Cloud environment — it queries real-time data from your connected data stack, so stale or disconnected environments may return incomplete results.
+- Column-level lineage is supported across both dbt models and BI tools, but coverage depends on what is configured and connected within your Elementary Cloud account.
+- Tools are invoked automatically by AI agents behind the scenes; users do not need to call individual tools directly.
+</Note>
 
 ## Server Details
 
 | Property | Value |
 |----------|-------|
 | **Transport** | Streamable HTTP |
-| **Hosting** | Remote (externally hosted) |
+| **Server Type** | External |
+| **Endpoint** | https://prod.api.elementary-data.com/mcp |
 | **Categories** | Business Intelligence, Analytics & Data |
 
 ## Authentication
@@ -20,7 +35,8 @@ This server supports the following authentication method:
 
 ### Header Authentication
 
-This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to confirm the required headers. Note that you do not provide the values for the headers during the server on-boarding.
+Header values are provided by the users during the [Auth Link](/auth/auth-links) flow.
 
 ## Getting Started
 
