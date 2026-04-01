@@ -9,7 +9,7 @@ The Bright Data MCP Server gives Caylex AI agents seamless, unblockable access t
 <Warning>
 **Prerequisites:**
 - A Bright Data account is required; a free tier is available with 5,000 requests/month.
-- Pro mode features (structured platform data, browser automation) require a paid Bright Data plan and must be enabled via the &pro=1 parameter.
+- Pro mode features (structured platform data, browser automation) require a paid Bright Data plan and must be enabled via the `pro=1` query parameter.
 - Team account users should be aware that free-tier credits are shared across the entire account; additional credits require contacting a Bright Data account manager.
 </Warning>
 
@@ -18,7 +18,7 @@ The Bright Data MCP Server gives Caylex AI agents seamless, unblockable access t
 - The free tier includes 5,000 requests per month; for team accounts, this quota is shared across all users in the account.
 - Batch tools (search_engine_batch, scrape_batch) support up to 10 URLs or queries per request, enabling parallel processing.
 - Selecting specific tool groups (e.g., groups=ecommerce,social) or individual tools reduces context/token size and is strongly recommended to maximize usage efficiency.
-- Pro mode must be explicitly enabled via the &pro=1 query parameter; without it, only Rapid (Free) tools are available.
+- Pro mode must be explicitly enabled via the `pro=1` query parameter; without it, only Rapid (Free) tools are available.
 </Note>
 
 ## Server Details
@@ -43,6 +43,7 @@ The following parameters can be set in the server URL when adding this server to
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
+| `token` | query | Your Bright Data API token for the hosted MCP URL. Use a real token from your Bright Data account—do not wrap it in angle brackets in the URL. | `token=YOUR_API_TOKEN_HERE` |
 | `pro` | query | Enables Pro mode, unlocking advanced scraping, structured data from top platforms (Amazon, LinkedIn, X, Instagram, etc.), and full browser automation tools. | `pro=1` |
 | `groups` | query | Activates one or more pre-configured tool groups, limiting the exposed toolset to the specified domains. Reduces token usage by only loading relevant tools. Available groups: ecommerce, social, browser, business, finance, research, app_stores, travel, advanced_scraping. | `groups=ecommerce,social` |
 | `tools` | query | Activates specific individual tools by name, further narrowing the toolset exposed to agents beyond what groups provide. | `tools=web_data_amazon_product` |
