@@ -20,9 +20,23 @@ This server supports the following authentication method:
 
 ### Header Authentication
 
-This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to confirm the required headers. Note that you do not provide the values for the headers during the server on-boarding. 
+Header values are provided by the users during the [Auth Link](/auth/auth-links) flow.
+## Getting Started
 
-## Available Tools
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **Acuity Scheduling** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+
+    In the Authorization configuration step (Step 3 of the server onboarding), you should see `x-user-id` and `x-api-key` header. You do not need to provide values for these header here.
+    The values will be provided by the users during the [Auth Link](/auth/auth-links) flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+ ## Available Tools
 
 This server provides **12** tools:
 
@@ -125,18 +139,7 @@ This server provides **12** tools:
   </Accordion>
 </AccordionGroup>
 
-## Getting Started
-
-<Steps>
-  <Step title="Add the server">
-    Navigate to the **Server Library** and click on the **New Server** button. Find **Acuity Scheduling** in the Caylex Catalog.
-  </Step>
-  <Step title="Server Onboarding flow">
-    Go through the server onboarding flow.
-  </Step>
-  <Step title="Use in a project">
-    Add the server to a [project](https://app.caylex.dev/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
-  </Step>
+ </Step>
 </Steps>
 
 ## Related Servers

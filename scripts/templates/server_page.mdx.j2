@@ -50,7 +50,8 @@ description: "{{ server.server_subtitle or '' }}"
 | Property | Value |
 |----------|-------|
 | **Transport** | {{ 'SSE' if server.transport == 'SSE' else 'Streamable HTTP' }} |
-| **Hosting** | {{ 'Caylex Cloud' if server.server_type in ['CAYLEX', 'FOUNDRY'] else 'Remote (externally hosted)' }} |
+| **Server Type** | {{ (server.server_type or 'unknown') | capitalize }} |
+| **Endpoint** | {{ server.endpoint }} |
 {% if categories %}| **Categories** | {{ categories | join(', ') }} |
 {% endif %}
 
@@ -71,7 +72,8 @@ During the server onboarding flow, you will be prompted to complete the OAuth fl
 
 ### Header Authentication
 
-This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to confirm the required headers. Note that you do not provide the values for the headers during the server on-boarding.
+Header values are provided by the users during the [Auth Link](/auth/auth-links) flow.
 {% if auth_details.headers %}
 
 | Header | Value Prefix | Description |
@@ -131,6 +133,20 @@ The following parameters can be set in the server URL when adding this server to
 | `{{ param.param }}` | {{ param.type }} | {{ param.description }} | `{{ param.example }}` |
 {% endfor %}
 {% endif %}
+
+## Getting Started
+
+<Steps>
+  <Step title="Add the server">
+    Navigate to the **Server Library** and click on the **New Server** button. Find **{{ server.name }}** in the Caylex Catalog.
+  </Step>
+  <Step title="Server Onboarding flow">
+    Go through the server onboarding flow.
+  </Step>
+  <Step title="Use in a project">
+    Add the server to a [project](https://{{ app_domain }}/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
+  </Step>
+</Steps>
 {% if tools %}
 
 ## Available Tools
@@ -165,20 +181,6 @@ This server provides **{{ tools | length }}** tool{{ 's' if tools | length > 1 e
 </AccordionGroup>
 {% endif %}
 {% endif %}
-
-## Getting Started
-
-<Steps>
-  <Step title="Add the server">
-    Navigate to the **Server Library** and click on the **New Server** button. Find **{{ server.name }}** in the Caylex Catalog.
-  </Step>
-  <Step title="Server Onboarding flow">
-    Go through the server onboarding flow.
-  </Step>
-  <Step title="Use in a project">
-    Add the server to a [project](https://{{ app_domain }}/projects) by configuring project connections. Its tools are now available to any agents connected to that project.
-  </Step>
-</Steps>
 {% if related_servers %}
 
 ## Related Servers

@@ -25,7 +25,8 @@ The Neon MCP Server enables AI agents within Caylex to manage Neon Postgres data
 | Property | Value |
 |----------|-------|
 | **Transport** | Streamable HTTP |
-| **Hosting** | Remote (externally hosted) |
+| **Server Type** | External |
+| **Endpoint** | https://mcp.neon.tech/mcp |
 | **Categories** | Database, Development & DevOps |
 
 ## Authentication
@@ -38,7 +39,8 @@ During the server onboarding flow, you will be prompted to complete the OAuth fl
 
 ### Header Authentication
 
-This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to provide the required header values.
+This server authenticates via HTTP headers. During the server onboarding flow, you will be prompted to confirm the required headers. Note that you do not provide the values for the headers during the server on-boarding.
+Header values are provided by the users during the [Auth Link](/auth/auth-links) flow.
 
 ## Getting Started
 
