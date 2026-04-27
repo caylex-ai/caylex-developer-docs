@@ -342,14 +342,18 @@ Each page has:
 ```tsx
 import { useNavigate } from 'react-router-dom';
 
-const navigate = useNavigate();
+export function AIAgentPage({ token }) {
+  const navigate = useNavigate();
 
-<CaylexChatWidget
-  apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
-  widgetToken={token}
-  navigablePages={NAVIGABLE_PAGES}
-  onNavigate={(url) => navigate(url)}
-/>
+  return (
+    <CaylexChatWidget
+      apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+      widgetToken={token}
+      navigablePages={NAVIGABLE_PAGES}
+      onNavigate={(url) => navigate(url)}
+    />
+  );
+}
 ```
 
 The assistant gains two local tools:
