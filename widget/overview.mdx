@@ -69,10 +69,18 @@ npm install @caylex/chat-widget @caylex/permissions-widget
 Install peer dependencies for the chat widget:
 
 ```bash
-npm install antd @ant-design/icons @emotion/react @emotion/styled lodash.merge react-markdown remark-gfm
+npm install antd @ant-design/cssinjs @ant-design/icons @emotion/cache @emotion/react @emotion/styled lodash.merge react-markdown remark-gfm
 ```
 
 The permissions widget uses the same peer dependencies except `react-markdown` and `remark-gfm`.
+
+The Caylex widget packages install the `@caylex/shared` package automatically.
+
+<Warning>
+The widgets isolate their Ant Design and Emotion styles from the host app by using a widget-specific Ant Design class prefix, injecting Ant Design css-in-js and Emotion styles into the widget root, and mounting widget popovers/drawers inside the widget container.
+
+This prevents normal Ant Design theme/style collisions between your app and the widgets. It is not a full Shadow DOM or iframe boundary: extremely broad global CSS in the host app, such as `* { ... !important }`, `button { all: unset }`, or global `textarea` rules, can still affect embedded widget DOM. Avoid broad global selectors if you want the widget to render exactly as designed.
+</Warning>
 
 ## Step 1: Mint A Widget Token
 
