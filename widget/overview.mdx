@@ -295,10 +295,21 @@ Because the widget is in the root layout, it stays mounted across page navigatio
 
 If you want the assistant to navigate users to different pages in your app, pass a `navigablePages` site map and an `onNavigate` callback.
 
-### Define Your Site Map
+For simple apps, this site map can be static frontend data. For production SaaS apps, we recommend exposing it from your backend so you can return only the pages available to the current tenant and user.
 
-```tsx pages.ts
-const NAVIGABLE_PAGES = [
+### Expose The Effective Site Map From Your Backend
+
+Your backend should return a `NavigablePage[]` array. This endpoint can apply your existing tenant, feature flag, and user permission logic before sending pages to the browser.
+
+```typescript navigation.ts
+type NavigablePage = {
+  name: string;
+  description?: string;
+  urlTemplate: string;
+  params?: Record<string, { description: string; required?: boolean }>;
+};
+
+const ALL_NAVIGABLE_PAGES: NavigablePage[] = [
   {
     name: 'Dashboard',
     description: 'Main dashboard with summary metrics',
@@ -336,6 +347,45 @@ const NAVIGABLE_PAGES = [
     urlTemplate: '/settings',
   },
 ];
+
+export async function getNavigablePagesForUser(user: {
+  tenantId: string;
+  userId: string;
+  role: string;
+}): Promise<NavigablePage[]> {
+  // Apply your custom logic here. For example:
+  // - omit pages for tenant features that are not enabled
+  // - omit admin-only pages for non-admin users
+  // - omit pages that do not apply to the user's store, team, or region
+  const tenantFeatures = await loadTenantFeatureFlags(user.tenantId);
+  const permissions = await loadUserPermissions(user.userId);
+
+  return ALL_NAVIGABLE_PAGES.filter((page) => {
+    if (page.name === 'Inventory Filtered' && !tenantFeatures.inventory) {
+      return false;
+    }
+
+    if (page.name === 'Settings' && !permissions.canManageSettings) {
+      return false;
+    }
+
+    return true;
+  });
+}
+```
+
+Then expose an authenticated endpoint from your SaaS app:
+
+```typescript routes.ts
+app.get('/api/caylex/navigable-pages', requireAuth, async (req, res) => {
+  const pages = await getNavigablePagesForUser({
+    tenantId: req.user.tenantId,
+    userId: req.user.id,
+    role: req.user.role,
+  });
+
+  res.json(pages);
+});
 ```
 
 Each page has:
@@ -345,19 +395,36 @@ Each page has:
 - `urlTemplate` — a path with `{param}` placeholders. Supports path params and query params.
 - `params` — optional metadata for each placeholder
 
-### Pass Navigation To The Widget
+<Note>
+The site map controls what the assistant can discover for navigation, but it is not a security boundary. Your app should still enforce normal authorization when a user visits a page.
+</Note>
+
+### Fetch And Pass Navigation To The Widget
 
 ```tsx
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CaylexChatWidget, type NavigablePage } from '@caylex/chat-widget';
+
+async function fetchNavigablePages(): Promise<NavigablePage[]> {
+  const res = await fetch('/api/caylex/navigable-pages');
+  if (!res.ok) throw new Error('Failed to fetch navigable pages');
+  return res.json();
+}
 
 export function AIAgentPage({ token }) {
   const navigate = useNavigate();
+  const [navigablePages, setNavigablePages] = useState<NavigablePage[]>([]);
+
+  useEffect(() => {
+    fetchNavigablePages().then(setNavigablePages).catch(console.error);
+  }, []);
 
   return (
     <CaylexChatWidget
       apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
       widgetToken={token}
-      navigablePages={NAVIGABLE_PAGES}
+      navigablePages={navigablePages}
       onNavigate={(url) => navigate(url)}
     />
   );
@@ -369,7 +436,7 @@ The assistant gains two local tools:
 - `get_page_info` — looks up URL templates and parameter requirements
 - `navigate_page_ui` — triggers your `onNavigate` callback with the resolved URL
 
-When the assistant calls `navigate_page_ui`, the widget constructs the full URL, calls your callback, and the assistant confirms the navigation in chat.
+When the assistant calls `navigate_page_ui`, Caylex resolves the URL template, the widget calls your callback with the resolved URL, and the assistant confirms the navigation in chat.
 
 ## Step 4: Embed The Permissions Widget
 
@@ -440,7 +507,7 @@ Your `/api/caylex/token` endpoint should call the Caylex mint endpoint from your
 | `borderRadius` | `12` | Border radius of the widget card, in pixels |
 | `showToolCallDetails` | `false` | Allow expanding tool call cards to show JSON details |
 | `showServersButton` | `true` | Show a Connected Services button in the header |
-| `navigablePages` | — | Site map that enables agent-driven page navigation |
+| `navigablePages` | — | Effective site map, usually fetched from your backend, that enables agent-driven page navigation |
 | `onNavigate` | — | Callback invoked when the assistant triggers page navigation |
 | `sessionName` | `Chat` | Default session name stored on the backend |
 | `embedMessages` | `true` | Whether to embed messages for RAG memory |
@@ -516,4 +583,4 @@ npm update @caylex/chat-widget @caylex/permissions-widget
 | "Failed to fetch widget token" | Backend not running or credentials invalid | Check your environment variables and ensure your backend endpoint is accessible |
 | CORS errors on permissions widget | Analytics API doesn't allow your origin | Use a backend proxy or register your domain with Caylex |
 | Connected Services shows 0 | No MCP servers authenticated for the user | Ensure `user_email` matches a user who has connected servers in the Caylex project |
-| Agent can't navigate pages | `navigablePages` not passed or `onNavigate` missing | Ensure both props are set on `CaylexChatWidget` |
+| Agent can't navigate pages | `navigablePages` is empty, the site map fetch failed, or `onNavigate` is missing | Ensure your backend site map endpoint returns pages and both props are set on `CaylexChatWidget` |
