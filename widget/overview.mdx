@@ -56,11 +56,13 @@ The mint endpoint must be called from your backend. Never expose your platform a
 - A **Navigator API Key** from your project's navigator drawer → **API Keys**
 - A **User Email** for the end user who will chat with the assistant
 - Node.js 18+ for your backend token endpoint
-- React 18+ for the frontend component
+- React 18+ if you use the React component package
+
+If your frontend does not use React, use the script-tag bundles instead. They include the widget's frontend dependencies and expose browser globals you can call from plain JavaScript.
 
 ## Install Packages
 
-Install the widget packages:
+If your app uses React, install the widget packages:
 
 ```bash
 npm install @caylex/chat-widget @caylex/permissions-widget
@@ -75,6 +77,20 @@ npm install antd @ant-design/cssinjs @ant-design/icons @emotion/cache @emotion/r
 The permissions widget uses the same peer dependencies except `react-markdown` and `remark-gfm`.
 
 The Caylex widget packages install the `@caylex/shared` package automatically.
+
+For script-tag usage, you do not need to install NPM packages in your frontend. Load the hosted bundle from Caylex's asset CDN:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget.js"></script>
+<script src="https://assets.caylex.ai/widgets/permissions-widget.js"></script>
+```
+
+The unversioned URLs always serve the latest widgets. For production stability, you can pin a specific version:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+<script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
+```
 
 <Warning>
 The widgets isolate their Ant Design and Emotion styles from the host app by using a widget-specific Ant Design class prefix, injecting Ant Design css-in-js and Emotion styles into the widget root, and mounting widget popovers/drawers inside the widget container.
@@ -148,6 +164,9 @@ The response includes:
 ## Step 2: Embed The Chat Widget
 
 Render the widget after your frontend receives a widget token.
+
+<Tabs>
+  <Tab title="React">
 
 ### Full-Page Widget
 
@@ -291,6 +310,64 @@ export function Layout({ children }) {
 
 Because the widget is in the root layout, it stays mounted across page navigations. Chat state, sessions, and server connections are preserved.
 
+  </Tab>
+
+  <Tab title="Script Tag">
+
+Use this pattern when your frontend is not a React app. The script bundle exposes `window.CaylexChat.render()`.
+
+```html chat-widget.html
+<!-- Caylex Chat Widget -->
+<div id="caylex-chat" style="width: 100%; height: 600px;"></div>
+
+<script src="https://assets.caylex.ai/widgets/chat-widget.js"></script>
+<script>
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    if (!res.ok) throw new Error('Failed to fetch widget token');
+    const { token } = await res.json();
+    return token;
+  }
+
+  async function mountCaylexChat() {
+    const token = await fetchWidgetToken();
+
+    CaylexChat.render(document.getElementById('caylex-chat'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/assistants/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      userName: 'Jane',
+      sampleQueries: [
+        'Show me recent orders',
+        "Summarize this week's activity",
+      ],
+      primaryColor: '#3F58CF',
+      backgroundColor: '#FFFFFF',
+      height: '100%',
+      width: '100%',
+      borderRadius: 12,
+      showToolCallDetails: true,
+      showServersButton: true,
+    });
+  }
+
+  mountCaylexChat().catch(console.error);
+</script>
+```
+
+To pin a specific widget version, use a versioned script URL:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+```
+
+<Note>
+The script-tag bundle includes React and the widget UI dependencies internally. Your app does not need to install or provide those packages.
+</Note>
+
+  </Tab>
+</Tabs>
+
 ## Step 3: Enable Agent-Driven Page Navigation
 
 If you want the assistant to navigate users to different pages in your app, pass a `navigablePages` site map and an `onNavigate` callback.
@@ -401,6 +478,9 @@ The site map controls what the assistant can discover for navigation, but it is 
 
 ### Fetch And Pass Navigation To The Widget
 
+<Tabs>
+  <Tab title="React">
+
 ```tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -431,6 +511,40 @@ export function AIAgentPage({ token }) {
 }
 ```
 
+  </Tab>
+
+  <Tab title="Script Tag">
+
+```html
+<script>
+  async function fetchNavigablePages() {
+    const res = await fetch('/api/caylex/navigable-pages');
+    if (!res.ok) throw new Error('Failed to fetch navigable pages');
+    return res.json();
+  }
+
+  async function mountCaylexChat() {
+    const [token, navigablePages] = await Promise.all([
+      fetchWidgetToken(),
+      fetchNavigablePages(),
+    ]);
+
+    CaylexChat.render(document.getElementById('caylex-chat'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/assistants/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      navigablePages,
+      onNavigate: (url) => {
+        window.location.href = url;
+      },
+    });
+  }
+</script>
+```
+
+  </Tab>
+</Tabs>
+
 The assistant gains two local tools:
 
 - `get_page_info` — looks up URL templates and parameter requirements
@@ -448,6 +562,9 @@ The permissions widget lets users control which tools the assistant can access t
 
 This widget mirrors the **Tool Permissions** tab in the navigator drawer on the Caylex platform. Changes made in either place are reflected in both.
 
+<Tabs>
+  <Tab title="React">
+
 ```tsx
 import { CaylexToolPermissionsWidget } from '@caylex/permissions-widget';
 
@@ -464,6 +581,52 @@ import { CaylexToolPermissionsWidget } from '@caylex/permissions-widget';
 />
 ```
 
+  </Tab>
+
+  <Tab title="Script Tag">
+
+```html permissions-widget.html
+<!-- Caylex Permissions Widget -->
+<div id="caylex-permissions" style="width: 100%; height: 600px;"></div>
+
+<script src="https://assets.caylex.ai/widgets/permissions-widget.js"></script>
+<script>
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    if (!res.ok) throw new Error('Failed to fetch widget token');
+    const { token } = await res.json();
+    return token;
+  }
+
+  async function mountCaylexPermissions() {
+    const token = await fetchWidgetToken();
+
+    CaylexPermissions.render(document.getElementById('caylex-permissions'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      primaryColor: '#3F58CF',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+      height: '100%',
+      width: '100%',
+      persistPermissions: true,
+    });
+  }
+
+  mountCaylexPermissions().catch(console.error);
+</script>
+```
+
+To pin a specific permissions widget version, use a versioned script URL:
+
+```html
+<script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
+```
+
+  </Tab>
+</Tabs>
+
 <Warning>
 Set `persistPermissions` to `true` for production. When `false` or omitted, changes are local-only and are not saved.
 </Warning>
@@ -473,6 +636,9 @@ The permissions widget uses the same token pattern as the chat widget, but the t
 ## Token Refresh
 
 Widget tokens are short-lived. To keep sessions alive without interruption, provide a `refreshToken` callback. The widget automatically calls this function when it receives a `401` response, obtains a fresh token, and retries the request.
+
+<Tabs>
+  <Tab title="React">
 
 ```tsx
 <CaylexChatWidget
@@ -484,6 +650,33 @@ Widget tokens are short-lived. To keep sessions alive without interruption, prov
   }}
 />
 ```
+
+  </Tab>
+
+  <Tab title="Script Tag">
+
+```html
+<script>
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    const data = await res.json();
+    return data.token;
+  }
+
+  async function mountCaylexChat() {
+    const initialToken = await fetchWidgetToken();
+
+    CaylexChat.render(document.getElementById('caylex-chat'), {
+      // ...
+      widgetToken: initialToken,
+      refreshToken: fetchWidgetToken,
+    });
+  }
+</script>
+```
+
+  </Tab>
+</Tabs>
 
 Your `/api/caylex/token` endpoint should call the Caylex mint endpoint from your backend and return the new token.
 
@@ -563,10 +756,24 @@ The chat widget and permissions widget use different Caylex services:
 
 ## Updating Widgets
 
-To pull the latest widget versions:
+For React package usage, pull the latest widget versions with NPM:
 
 ```bash
 npm update @caylex/chat-widget @caylex/permissions-widget
+```
+
+For script-tag usage, the unversioned CDN URLs automatically serve the latest deployed widgets:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget.js"></script>
+<script src="https://assets.caylex.ai/widgets/permissions-widget.js"></script>
+```
+
+If you want release stability, pin an explicit version and update the URL when you are ready to upgrade:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+<script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
 ```
 
 ## Security Model
@@ -581,6 +788,7 @@ npm update @caylex/chat-widget @caylex/permissions-widget
 | Issue | Cause | Fix |
 | --- | --- | --- |
 | "Failed to fetch widget token" | Backend not running or credentials invalid | Check your environment variables and ensure your backend endpoint is accessible |
+| `CaylexChat is not defined` or `CaylexPermissions is not defined` | Script-tag bundle did not load | Check that the script URL is reachable, allowed by your Content Security Policy, and loaded before calling `render()` |
 | CORS errors on permissions widget | Analytics API doesn't allow your origin | Use a backend proxy or register your domain with Caylex |
 | Connected Services shows 0 | No MCP servers authenticated for the user | Ensure `user_email` matches a user who has connected servers in the Caylex project |
-| Agent can't navigate pages | `navigablePages` is empty, the site map fetch failed, or `onNavigate` is missing | Ensure your backend site map endpoint returns pages and both props are set on `CaylexChatWidget` |
+| Agent can't navigate pages | `navigablePages` is empty, the site map fetch failed, or `onNavigate` is missing | Ensure your backend site map endpoint returns pages and both navigation options are passed to the chat widget |
