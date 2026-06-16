@@ -41,7 +41,14 @@
           {
             "group": "Authentication",
             "pages": [
-              "auth/overview",
+              {
+                "group": "Authentication Model",
+                "pages": [
+                  "auth/overview",
+                  "auth/platform-authentication",
+                  "auth/server-authentication"
+                ]
+              },
               "auth/auth-links",
               "auth/managing-users"
             ]
