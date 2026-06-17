@@ -26,7 +26,7 @@ sequenceDiagram
     participant Browser as Your Frontend
     participant Assistant as Caylex Assistant
 
-    App->>Caylex: POST /widget/mint-token
+    App->>Caylex: POST /widget/agent-session-init
     Caylex-->>App: Widget session token
     App->>Browser: Pass widget token to frontend
     Browser->>Assistant: Chat via widget component
@@ -102,6 +102,10 @@ This prevents normal Ant Design theme/style collisions between your app and the 
 
 Your backend mints a token by calling the Caylex API.
 
+<Info>
+This endpoint was previously named `POST /widget/mint-token`. It is now `POST /widget/agent-session-init`. The old path still works for backward compatibility, but we recommend using `/widget/agent-session-init` going forward.
+</Info>
+
 <Tabs>
   <Tab title="Python">
     ```python token.py
@@ -114,7 +118,7 @@ Your backend mints a token by calling the Caylex API.
     async def mint_widget_token(user_email: str) -> str:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{CAYLEX_API_URL}widget/mint-token",
+                f"{CAYLEX_API_URL}widget/agent-session-init",
                 headers={"Authorization": f"Bearer {PLATFORM_TOKEN}"},
                 json={
                     "caylex_api_key": CAYLEX_API_KEY,
@@ -133,7 +137,7 @@ Your backend mints a token by calling the Caylex API.
     const CAYLEX_API_KEY = process.env.CAYLEX_NAVIGATOR_API_KEY!;
 
     export async function mintWidgetToken(userEmail: string): Promise<string> {
-      const response = await fetch(`${CAYLEX_API_URL}widget/mint-token`, {
+      const response = await fetch(`${CAYLEX_API_URL}widget/agent-session-init`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${PLATFORM_TOKEN}`,

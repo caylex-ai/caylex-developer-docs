@@ -67,7 +67,8 @@
             "group": "Embedded AI",
             "pages": [
               "widget/overview",
-              "widget/auto-authentication"
+              "widget/auto-authentication",
+              "widget/model-selection"
             ]
           },
           {

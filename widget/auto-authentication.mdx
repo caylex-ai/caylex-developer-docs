@@ -28,7 +28,7 @@ Auto-authentication only applies to **user-level**, **header-auth** servers. OAu
 
 ## How It Works
 
-Auto-authentication is an optional extension of the same `POST /widget/mint-token` call you already make to embed a widget. You do not call a separate endpoint.
+Auto-authentication is an optional extension of the same `POST /widget/agent-session-init` call you already make to embed a widget. You do not call a separate endpoint.
 
 ```mermaid
 sequenceDiagram
@@ -38,7 +38,7 @@ sequenceDiagram
     participant Browser as Your Frontend
 
     App->>App: Look up the signed-in user's platform API key
-    App->>Caylex: POST /widget/mint-token (with auto_authenticate)
+    App->>Caylex: POST /widget/agent-session-init (with auto_authenticate)
     Caylex->>Caylex: Resolve server by name, apply header prefix
     Caylex->>Vault: Store user-level header credentials
     Caylex-->>App: Widget token + per-server auth results
@@ -51,7 +51,7 @@ sequenceDiagram
     Your backend already knows which user is signed in, so it can fetch that user's API key or token for your platform.
   </Step>
   <Step title="Include an auto_authenticate payload when minting the token">
-    Add the `auto_authenticate` object to your existing mint-token request, naming the target server and supplying the raw header value(s).
+    Add the `auto_authenticate` object to your existing session-init request, naming the target server and supplying the raw header value(s).
   </Step>
   <Step title="Caylex stores the credentials before the widget loads">
     Caylex resolves the server, applies any configured header prefix, and persists the user-level credentials. The mint response includes per-server results.
@@ -75,7 +75,7 @@ Auto-authentication does **not** configure a server's auth settings — it only 
 
 ## Request Shape
 
-Add an optional `auto_authenticate` object to your `POST /widget/mint-token` body:
+Add an optional `auto_authenticate` object to your `POST /widget/agent-session-init` body:
 
 ```json
 {
@@ -120,7 +120,7 @@ Extend your existing backend mint endpoint to include the `auto_authenticate` pa
     async def mint_widget_token(user_email: str, user_platform_token: str) -> dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{CAYLEX_API_URL}widget/mint-token",
+                f"{CAYLEX_API_URL}widget/agent-session-init",
                 headers={"Authorization": f"Bearer {PLATFORM_TOKEN}"},
                 json={
                     "caylex_api_key": CAYLEX_API_KEY,
@@ -157,7 +157,7 @@ Extend your existing backend mint endpoint to include the `auto_authenticate` pa
       userEmail: string,
       userPlatformToken: string,
     ): Promise<{ token: string; expires_at: string; auto_authenticate?: unknown }> {
-      const response = await fetch(`${CAYLEX_API_URL}widget/mint-token`, {
+      const response = await fetch(`${CAYLEX_API_URL}widget/agent-session-init`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${PLATFORM_TOKEN}`,
