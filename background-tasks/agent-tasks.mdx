@@ -1,0 +1,189 @@
+---
+title: "Background Agent Tasks"
+description: "Launch the Caylex agent for a long-running task from your backend, then poll for the result."
+icon: "robot"
+---
+
+The chat widget runs the Caylex agent interactively. **Background agent tasks** let your backend hand the same agent a long-running job to complete on its own — no widget, no open connection. You submit a prompt, get a `task_id` back immediately, and poll for the result when it's done.
+
+This is ideal for work that takes longer than a request cycle: multi-step research, batch updates across connected tools, scheduled summaries, and similar autonomous jobs.
+
+## Overview
+
+A background task is launched server-to-server, authenticated exactly like [agent session init](/widget/model-selection) (a platform access token). Caylex records the task, runs it on a dedicated background worker, and persists progress as it goes so the run is durable: if a worker is interrupted, the task resumes from the last completed step rather than starting over.
+
+<Note>
+Background tasks run autonomously. The agent is instructed that there is no user to answer follow-up questions; it completes as much as it safely can and ends with a report of what it finished and what it could not.
+</Note>
+
+## How It Works
+
+```mermaid
+sequenceDiagram
+    participant Backend as Your Backend
+    participant Caylex as Caylex API
+    participant Worker as Background Worker
+
+    Backend->>Caylex: POST /agent-task {caylex_api_key, user_email, prompt, ...}
+    Caylex-->>Backend: {task_id, status: "queued"}
+    Caylex->>Worker: dispatch task
+    Worker->>Worker: run agent (durable, resumable)
+    Backend->>Caylex: GET /agent-task/{task_id}
+    Caylex-->>Backend: {status: "running" | "completed" | "failed", report, result}
+```
+
+The run executes against the same project, tools, and per-user authentication as an interactive session for that `user_email`, so the agent can use every integration the user is connected to.
+
+## Submit a Task
+
+```
+POST https://api.caylex.ai/api/v1/agent-task
+Authorization: Bearer <platform_access_token>
+```
+
+```json
+{
+  "caylex_api_key": "ck_your_navigator_api_key",
+  "user_email": "jane@example.com",
+  "prompt": "Review last week's support tickets and draft a summary of recurring issues.",
+  "skill_ref": "weekly-report",
+  "model": "anthropic/claude-opus-4.8"
+}
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `caylex_api_key` | Yes | Production navigator API key (`ck_…`). |
+| `user_email` | Yes | End-user the task runs as; determines per-user tool authentication. |
+| `prompt` | Yes | The task instructions for the agent. |
+| `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
+| `model` | No | OpenRouter model id from the [allowed list](/widget/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
+
+### Response
+
+```json
+{
+  "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "queued",
+  "model": "anthropic/claude-opus-4.8",
+  "model_warning": null
+}
+```
+
+## Poll for Status
+
+```
+GET https://api.caylex.ai/api/v1/agent-task/{task_id}
+Authorization: Bearer <platform_access_token>
+```
+
+```json
+{
+  "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "completed",
+  "report": "Reviewed 142 tickets. Drafted a summary covering the 3 most common issues...",
+  "result": { "text": "...", "tool_calls_made": 18 },
+  "error": null,
+  "created_at": "2026-06-18T15:00:00+00:00",
+  "started_at": "2026-06-18T15:00:03+00:00",
+  "completed_at": "2026-06-18T15:04:21+00:00"
+}
+```
+
+| Status | Meaning |
+| --- | --- |
+| `PENDING` | Queued, not yet picked up. |
+| `RUNNING` | A worker is actively running (or resuming) the task. |
+| `COMPLETED` | The agent finished. `report` holds its final summary. |
+| `INCOMPLETE` | The agent stopped having done partial work; see `report`. |
+| `FAILED` | The task errored after exhausting its retries; see `error`. |
+
+Poll on an interval that suits your task length (for example, every few seconds). The `report` field contains the agent's own summary of what it completed versus what it could not.
+
+## Skills
+
+To point the agent at a specific [skill](/platform/projects), pass its name or slug as `skill_ref`. The reference is validated against the project when you submit the task (you get a `404` if it doesn't exist), and the agent is given a mandatory instruction to load that skill (by its resolved id) and follow it before doing any work. Omit `skill_ref` to let the agent discover and use skills on its own.
+
+## Example
+
+<Tabs>
+  <Tab title="Python">
+    ```python agent_task.py
+    import asyncio
+    import httpx
+
+    CAYLEX_API_URL = "https://api.caylex.ai/api/v1/"
+    PLATFORM_TOKEN = "your_platform_access_token"
+    CAYLEX_API_KEY = "ck_your_navigator_api_key"
+
+
+    async def run_background_task(user_email: str, prompt: str) -> dict:
+        async with httpx.AsyncClient() as client:
+            # 1. Submit the task.
+            submit = await client.post(
+                f"{CAYLEX_API_URL}agent-task",
+                headers={"Authorization": f"Bearer {PLATFORM_TOKEN}"},
+                json={
+                    "caylex_api_key": CAYLEX_API_KEY,
+                    "user_email": user_email,
+                    "prompt": prompt,
+                },
+            )
+            submit.raise_for_status()
+            task_id = submit.json()["task_id"]
+
+            # 2. Poll until it finishes.
+            while True:
+                await asyncio.sleep(5)
+                status = await client.get(
+                    f"{CAYLEX_API_URL}agent-task/{task_id}",
+                    headers={"Authorization": f"Bearer {PLATFORM_TOKEN}"},
+                )
+                status.raise_for_status()
+                data = status.json()
+                if data["status"] in ("COMPLETED", "INCOMPLETE", "FAILED"):
+                    return data
+    ```
+  </Tab>
+
+  <Tab title="TypeScript">
+    ```typescript agentTask.ts
+    const CAYLEX_API_URL = "https://api.caylex.ai/api/v1/";
+    const PLATFORM_TOKEN = process.env.CAYLEX_PLATFORM_TOKEN!;
+    const CAYLEX_API_KEY = process.env.CAYLEX_NAVIGATOR_API_KEY!;
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    export async function runBackgroundTask(userEmail: string, prompt: string) {
+      // 1. Submit the task.
+      const submit = await fetch(`${CAYLEX_API_URL}agent-task`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PLATFORM_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          caylex_api_key: CAYLEX_API_KEY,
+          user_email: userEmail,
+          prompt,
+        }),
+      });
+      if (!submit.ok) throw new Error("Failed to submit agent task");
+      const { task_id } = await submit.json();
+
+      // 2. Poll until it finishes.
+      while (true) {
+        await sleep(5000);
+        const res = await fetch(`${CAYLEX_API_URL}agent-task/${task_id}`, {
+          headers: { Authorization: `Bearer ${PLATFORM_TOKEN}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch agent task status");
+        const data = await res.json();
+        if (["COMPLETED", "INCOMPLETE", "FAILED"].includes(data.status)) {
+          return data;
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>

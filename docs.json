@@ -72,6 +72,12 @@
             ]
           },
           {
+            "group": "Background Tasks",
+            "pages": [
+              "background-tasks/agent-tasks"
+            ]
+          },
+          {
             "group": "Analytics",
             "pages": [
               "analytics/overview"
