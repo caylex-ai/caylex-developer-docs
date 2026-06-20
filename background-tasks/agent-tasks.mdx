@@ -25,11 +25,11 @@ sequenceDiagram
     participant Worker as Background Worker
 
     Backend->>Caylex: POST /agent-task {caylex_api_key, user_email, prompt, ...}
-    Caylex-->>Backend: {task_id, status: "queued"}
+    Caylex-->>Backend: {task_id, status: "PENDING"}
     Caylex->>Worker: dispatch task
     Worker->>Worker: run agent (durable, resumable)
     Backend->>Caylex: GET /agent-task/{task_id}
-    Caylex-->>Backend: {status: "running" | "completed" | "failed", report, result}
+    Caylex-->>Backend: {status: "RUNNING" | "COMPLETED" | "FAILED", report, result}
 ```
 
 The run executes against the same project, tools, and per-user authentication as an interactive session for that `user_email`, so the agent can use every integration the user is connected to.
@@ -47,7 +47,8 @@ Authorization: Bearer <platform_access_token>
   "user_email": "jane@example.com",
   "prompt": "Review last week's support tickets and draft a summary of recurring issues.",
   "skill_ref": "weekly-report",
-  "model": "anthropic/claude-opus-4.8"
+  "model": "anthropic/claude-opus-4.8",
+  "background_agent_auto_approve_tools": false
 }
 ```
 
@@ -58,6 +59,7 @@ Authorization: Bearer <platform_access_token>
 | `prompt` | Yes | The task instructions for the agent. |
 | `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
 | `model` | No | OpenRouter model id from the [allowed list](/widget/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
+| `background_agent_auto_approve_tools` | No | Defaults to `false`. Controls whether the agent may run tools that require user approval — see [Tool Approval](#tool-approval) below. |
 
 ### Response
 
@@ -80,9 +82,9 @@ Authorization: Bearer <platform_access_token>
 ```json
 {
   "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
-  "status": "completed",
+  "status": "COMPLETED",
   "report": "Reviewed 142 tickets. Drafted a summary covering the 3 most common issues...",
-  "result": { "text": "...", "tool_calls_made": 18 },
+  "result": { "text": "...", "tool_calls_made": 18, "hit_iteration_limit": false },
   "error": null,
   "created_at": "2026-06-18T15:00:00+00:00",
   "started_at": "2026-06-18T15:00:03+00:00",
@@ -99,6 +101,19 @@ Authorization: Bearer <platform_access_token>
 | `FAILED` | The task errored after exhausting its retries; see `error`. |
 
 Poll on an interval that suits your task length (for example, every few seconds). The `report` field contains the agent's own summary of what it completed versus what it could not.
+
+## Tool Approval
+
+Some tools require explicit user approval before they run (for example, anything that sends a message, writes data, or otherwise changes external state). A background task has **no interactive user to grant that approval**, so by default Caylex handles this safely:
+
+- **`background_agent_auto_approve_tools: false` (default)** — approval-gated tools are **excluded** from the run entirely. The agent can't see or call them; it completes what it can with the remaining (read/no-approval) tools and notes in its report what it couldn't do. This prevents a background agent from taking a sensitive action no one approved.
+- **`background_agent_auto_approve_tools: true`** — the agent **may run approval-gated tools without a user decision**. Set this only when you intend for the task to perform those actions autonomously (e.g. a scheduled job that sends an email or updates records).
+
+<Warning>
+Setting `background_agent_auto_approve_tools: true` lets the background agent execute state-changing tools (sending, writing, deleting) with no human in the loop. Use it only for tasks you explicitly want to act on their own.
+</Warning>
+
+For example, a "send me a morning briefing email" task needs `background_agent_auto_approve_tools: true` — with the default, the agent will compile the briefing but the email-send tool is unavailable, so it will report the briefing instead of sending it.
 
 ## Skills
 
