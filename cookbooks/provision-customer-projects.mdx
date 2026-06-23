@@ -1,0 +1,287 @@
+---
+title: "Provision a Project per Customer"
+description: "Create one Caylex project for each of your customers and seed every new project with the servers and navigators from a model project."
+icon: "diagram-project"
+---
+
+If you run Caylex on behalf of your own customers (a multi-tenant SaaS pattern), you'll often want **one project per customer**, each pre-loaded with the same set of servers and navigators. Rather than building each one by hand in the Caylex Platform UI, you can stand up a **model project** once, get it exactly how you like it, and then clone its server/navigator setup onto a fresh project for every customer.
+
+This recipe implements that loop:
+
+```text
+seed_project   = "Model Project"
+seed_servers   = servers connected to seed_project
+seed_navigators = navigators connected to seed_project
+
+for customer in customers:
+    if customer not already a project:
+        create_project(name=customer)
+        connect seed_servers   to the new project
+        connect seed_navigators to the new project
+```
+
+## How the model fits together
+
+In Caylex, **servers** and **navigators** are defined once at the **tenant** level. Adding one to a project creates an *instance*:
+
+- A **server instance** = a server connected to a project.
+- A **navigator instance** = a navigator connected to a project.
+
+So "seeding a project" means connecting the same tenant-level servers and navigators that the model project uses to each new project.
+
+<Warning>
+The connection endpoints (`POST /servers/{id}/connections` and `POST /navigators/{id}/connections`) **replace the full set** of projects a server or navigator is connected to — they create or remove instances to match the `project_ids` you send. To *add* a project without detaching the resource from others, you must **GET the current connections, append the new project, and POST the union.** The example below does exactly this.
+</Warning>
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /projects` | List existing projects (to skip customers that already have one). |
+| `POST /projects` | Create a new project. Returns `409` if the name already exists in your tenant. |
+| `GET /server-instances?project_id={id}` | List the servers connected to the model project. |
+| `GET /navigator-instances?project_id={id}` | List the navigators connected to the model project. |
+| `GET /servers/{server_id}/connections` | Read a server's current project connections. |
+| `POST /servers/{server_id}/connections` | Set a server's project connections (full set). |
+| `GET /navigators/{navigator_id}/connections` | Read a navigator's current project connections. |
+| `POST /navigators/{navigator_id}/connections` | Set a navigator's project connections (full set). |
+
+## The procedure
+
+<Steps>
+  <Step title="Resolve the model project and its setup">
+    Find the model project's `id`, then list its server instances (`GET /server-instances?project_id=…`) and navigator instances (`GET /navigator-instances?project_id=…`). Collect the distinct `server_id` and `navigator_id` values — those are the tenant-level resources to replicate.
+  </Step>
+  <Step title="List existing projects">
+    `GET /projects` and build a set of names that already exist, so the loop is idempotent and safe to re-run.
+  </Step>
+  <Step title="Create a project for each new customer">
+    For every customer without a project, `POST /projects` with the customer's name. Keep the returned `id`.
+  </Step>
+  <Step title="Connect the seed servers and navigators">
+    For each seed `server_id`/`navigator_id`, read its current connections, add the new project's `id`, and POST the merged list. This attaches the resource to the new project without disturbing the model project (or any other).
+  </Step>
+</Steps>
+
+<Note>
+Servers with **user-level** authentication (`auth_credentials_level: user`) only need to be connected here — each end user still authenticates individually at runtime via [auth links](/auth/auth-links) or [in-chat authentication](/navigator/in-chat-authentication). Connecting the server does not grant access to anyone's data.
+</Note>
+
+## Full provisioning script
+
+The Python and TypeScript tabs run the whole loop; the cURL tab shows the individual building-block calls.
+
+<Tabs>
+  <Tab title="Python">
+    ```python provision_projects.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+    SEED_PROJECT = "Model Project"
+    CUSTOMERS = ["Acme Corp", "Globex", "Initech"]
+
+
+    def get_items(path: str, params: dict | None = None) -> list[dict]:
+        """Fetch a list endpoint (returns up to 100 items per call)."""
+        params = {**(params or {}), "size": 100}
+        resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=params)
+        resp.raise_for_status()
+        return resp.json()["items"]
+
+
+    def project_id_by_name(name: str) -> str | None:
+        return next((p["id"] for p in get_items("/projects") if p["name"] == name), None)
+
+
+    def connect_resource(resource: str, resource_id: str, project_id: str) -> None:
+        """Add `project_id` to a server/navigator's connections without dropping the rest.
+
+        `resource` is "servers" or "navigators".
+        """
+        current = requests.get(
+            f"{BASE_URL}/{resource}/{resource_id}/connections", headers=HEADERS
+        )
+        current.raise_for_status()
+        project_ids = {c["project_id"] for c in current.json()["connections"]}
+        project_ids.add(project_id)
+
+        resp = requests.post(
+            f"{BASE_URL}/{resource}/{resource_id}/connections",
+            headers=HEADERS,
+            json={"project_ids": sorted(project_ids)},
+        )
+        resp.raise_for_status()
+
+
+    def main() -> None:
+        seed_id = project_id_by_name(SEED_PROJECT)
+        if not seed_id:
+            raise SystemExit(f"Model project {SEED_PROJECT!r} not found")
+
+        # Distinct tenant-level resources used by the model project.
+        seed_servers = {
+            si["server_id"]
+            for si in get_items("/server-instances", {"project_id": seed_id})
+        }
+        seed_navigators = {
+            ni["navigator_id"]
+            for ni in get_items("/navigator-instances", {"project_id": seed_id})
+        }
+
+        existing = {p["name"] for p in get_items("/projects")}
+
+        for customer in CUSTOMERS:
+            if customer in existing:
+                print(f"skip (already exists): {customer}")
+                continue
+
+            created = requests.post(
+                f"{BASE_URL}/projects",
+                headers=HEADERS,
+                json={"name": customer, "description": f"Provisioned for {customer}"},
+            )
+            created.raise_for_status()
+            project_id = created.json()["id"]
+            print(f"created project: {customer} ({project_id})")
+
+            for server_id in seed_servers:
+                connect_resource("servers", server_id, project_id)
+            for navigator_id in seed_navigators:
+                connect_resource("navigators", navigator_id, project_id)
+
+            print(
+                f"  seeded {len(seed_servers)} server(s) "
+                f"and {len(seed_navigators)} navigator(s)"
+            )
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript provisionProjects.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = {
+      Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
+      "Content-Type": "application/json",
+    };
+
+    const SEED_PROJECT = "Model Project";
+    const CUSTOMERS = ["Acme Corp", "Globex", "Initech"];
+
+    // Fetch a list endpoint (returns up to 100 items per call).
+    async function getItems(path: string, params: Record<string, string> = {}) {
+      const qs = new URLSearchParams({ ...params, size: "100" });
+      const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers });
+      if (!res.ok) throw new Error(`GET ${path} failed: HTTP ${res.status}`);
+      return (await res.json()).items as any[];
+    }
+
+    async function projectIdByName(name: string): Promise<string | undefined> {
+      return (await getItems("/projects")).find((p) => p.name === name)?.id;
+    }
+
+    // Add `projectId` to a server/navigator's connections without dropping the rest.
+    async function connectResource(resource: "servers" | "navigators", id: string, projectId: string) {
+      const res = await fetch(`${BASE_URL}/${resource}/${id}/connections`, { headers });
+      if (!res.ok) throw new Error(`Read connections failed: HTTP ${res.status}`);
+      const ids = new Set<string>(((await res.json()).connections as any[]).map((c) => c.project_id));
+      ids.add(projectId);
+
+      const post = await fetch(`${BASE_URL}/${resource}/${id}/connections`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ project_ids: [...ids] }),
+      });
+      if (!post.ok) throw new Error(`Set connections failed: HTTP ${post.status}`);
+    }
+
+    async function main() {
+      const seedId = await projectIdByName(SEED_PROJECT);
+      if (!seedId) throw new Error(`Model project "${SEED_PROJECT}" not found`);
+
+      const seedServers = new Set<string>(
+        (await getItems("/server-instances", { project_id: seedId })).map((si) => si.server_id),
+      );
+      const seedNavigators = new Set<string>(
+        (await getItems("/navigator-instances", { project_id: seedId })).map((ni) => ni.navigator_id),
+      );
+
+      const existing = new Set<string>((await getItems("/projects")).map((p) => p.name));
+
+      for (const customer of CUSTOMERS) {
+        if (existing.has(customer)) {
+          console.log(`skip (already exists): ${customer}`);
+          continue;
+        }
+
+        const created = await fetch(`${BASE_URL}/projects`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ name: customer, description: `Provisioned for ${customer}` }),
+        });
+        if (!created.ok) throw new Error(`Create ${customer} failed: HTTP ${created.status}`);
+        const projectId = (await created.json()).id;
+        console.log(`created project: ${customer} (${projectId})`);
+
+        for (const serverId of seedServers) await connectResource("servers", serverId, projectId);
+        for (const navId of seedNavigators) await connectResource("navigators", navId, projectId);
+        console.log(`  seeded ${seedServers.size} server(s) and ${seedNavigators.size} navigator(s)`);
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # Servers connected to the model project
+    curl "$BASE/server-instances?project_id=$SEED_PROJECT_ID" -H "$AUTH"
+
+    # Create a project for a customer
+    curl -X POST "$BASE/projects" -H "$AUTH" -H "Content-Type: application/json" \
+      -d '{"name": "Acme Corp", "description": "Provisioned for Acme Corp"}'
+
+    # Read a server's current project connections
+    curl "$BASE/servers/$SERVER_ID/connections" -H "$AUTH"
+
+    # Connect that server to projects (this is the FULL set — include existing ones)
+    curl -X POST "$BASE/servers/$SERVER_ID/connections" -H "$AUTH" \
+      -H "Content-Type: application/json" \
+      -d '{"project_ids": ["<existing-project-id>", "<new-project-id>"]}'
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+List endpoints return up to 100 items per call. If your workspace has more than 100 projects, servers, or navigators, follow `meta.next_cursor` from the response (passing it back as the `cursor` query parameter) until `meta.has_next` is `false`.
+</Note>
+
+<Tip>
+The `POST /projects` call returns `409` if a project with that name already exists. The script avoids this by checking the existing-names set first, but you can also catch the `409` and treat it as "already provisioned" to make the job fully self-healing.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Copy tool permissions" icon="shield-halved" href="/cookbooks/copy-tool-permissions">
+    Now make each new navigator enforce the same tool-permission policy as the model project.
+  </Card>
+  <Card title="Managing users" icon="users" href="/auth/managing-users">
+    Add end users to each customer project and generate their auth links.
+  </Card>
+  <Card title="Projects" icon="folder" href="/platform/projects">
+    Learn how projects, servers, and navigators relate.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Full request/response schemas for every endpoint used here.
+  </Card>
+</CardGroup>

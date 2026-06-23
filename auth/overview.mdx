@@ -8,8 +8,8 @@ Caylex has two distinct layers of authentication. Knowing which is which tells y
 
 | Layer | Who it is for | What it controls |
 | --- | --- | --- |
-| **[Platform authentication](/auth/platform-authentication)** | You and your tools (developers, scripts, CI) | Access to the Caylex platform itself: managing projects, servers, navigators, skills, and analytics, through the dashboard (SSO) or the REST API (platform access token) |
 | **[Server authentication](/auth/server-authentication)** | Your end users | How users authenticate with external MCP servers like GitHub, Slack, or Linear so your agents can act on their behalf |
+| **[Platform authentication](/auth/platform-authentication)** | You and your tools (developers, scripts, CI) | Access to the Caylex platform itself: managing projects, servers, navigators, skills, and analytics, through the Caylex Platform UI (SSO) or the REST API (platform access token) |
 
 These layers are independent. Logging into Caylex (platform authentication) does not grant access to any external MCP server; that is governed separately by server authentication.
 
@@ -27,10 +27,10 @@ These layers are independent. Logging into Caylex (platform authentication) does
 ## Choose your path
 
 <CardGroup cols={2}>
-  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
-    Access the platform through the dashboard (SSO) or programmatically with a platform access token.
-  </Card>
   <Card title="Server Authentication" icon="lock" href="/auth/server-authentication">
     Set up how your end users authenticate with external MCP servers, at the user or project level.
+  </Card>
+  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
+    Access the platform through the Caylex Platform UI (SSO) or programmatically with a platform access token.
   </Card>
 </CardGroup>

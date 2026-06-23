@@ -1,0 +1,253 @@
+---
+title: "Copy Tool Permissions Across Projects"
+description: "Replicate a navigator's tool-permission policy from a model project onto other projects so every customer enforces the same rules."
+icon: "shield-halved"
+---
+
+[Tool permissions](/navigator/tool-suggestions) control, per navigator instance, which tools the navigator may use and how — `always_execute`, `require_approval`, or `disabled`. After you [provision a project per customer](/cookbooks/provision-customer-projects), each navigator instance starts with default permissions. This recipe copies the **exact policy** you've configured on a model project onto the matching navigators in your other projects.
+
+The recipe reads the model instance's policy as a `tool_id → mode` map and applies the same `mode` to the matching tools on each target instance. This assumes both projects have the **same servers connected** (which the [provisioning recipe](/cookbooks/provision-customer-projects) guarantees); any tool that doesn't exist on the target is simply skipped.
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /navigator-instances?project_id={id}` | Find the navigator instance in each project (match by `navigator_id`). |
+| `GET /navigator-instances/{id}/tool-permissions` | Read the current tool-permission policy. |
+| `PUT /navigator-instances/{id}/tool-permissions` | Apply a new tool-permission policy. |
+
+The permission `mode` is one of:
+
+| Mode | Behavior |
+| --- | --- |
+| `always_execute` | The navigator may run the tool without asking. |
+| `require_approval` | The tool runs only after the end user approves it. |
+| `disabled` | The tool is unavailable to the navigator. |
+
+<Tip>
+Prefer the `mode` field over the deprecated `enabled` boolean. `enabled` still works (`true → always_execute`, `false → disabled`) but it can't express `require_approval`.
+</Tip>
+
+## The procedure
+
+<Steps>
+  <Step title="Locate the model navigator instance">
+    `GET /navigator-instances?project_id={model_project_id}` and pick the instance for the navigator you want to copy (match on `navigator_id` or `navigator_name`).
+  </Step>
+  <Step title="Read the model policy">
+    `GET /navigator-instances/{model_instance_id}/tool-permissions` and build a `tool_id → mode` map.
+  </Step>
+  <Step title="For each target project, find the matching instance">
+    `GET /navigator-instances?project_id={target_project_id}` and locate the instance with the same `navigator_id`.
+  </Step>
+  <Step title="Apply the policy">
+    Read the target instance's permissions to know which `tool_id`s it actually has, then `PUT` those tool ids with the mode from the model map. Tools absent on the target are skipped.
+  </Step>
+</Steps>
+
+## Full copy script
+
+This copies one navigator's policy from a model project to a list of target projects. Run it after provisioning, or whenever you change the model policy and want to roll it out. The Python and TypeScript tabs run the whole loop; the cURL tab shows the individual calls.
+
+<Tabs>
+  <Tab title="Python">
+    ```python copy_tool_permissions.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+    MODEL_PROJECT = "Model Project"
+    TARGET_PROJECTS = ["Acme Corp", "Globex", "Initech"]
+    NAVIGATOR_NAME = "Support Navigator"  # the navigator whose policy to copy
+
+
+    def get_items(path: str, params: dict | None = None) -> list[dict]:
+        """Fetch a list endpoint (returns up to 100 items per call)."""
+        params = {**(params or {}), "size": 100}
+        resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=params)
+        resp.raise_for_status()
+        return resp.json()["items"]
+
+
+    def project_id_by_name(name: str) -> str | None:
+        return next((p["id"] for p in get_items("/projects") if p["name"] == name), None)
+
+
+    def find_instance(project_id: str, navigator_name: str) -> dict | None:
+        return next(
+            (
+                ni
+                for ni in get_items("/navigator-instances", {"project_id": project_id})
+                if ni["navigator_name"] == navigator_name
+            ),
+            None,
+        )
+
+
+    def get_permissions(instance_id: str) -> list[dict]:
+        resp = requests.get(
+            f"{BASE_URL}/navigator-instances/{instance_id}/tool-permissions",
+            headers=HEADERS,
+        )
+        resp.raise_for_status()
+        return resp.json()["permissions"]
+
+
+    def main() -> None:
+        model_project_id = project_id_by_name(MODEL_PROJECT)
+        model_instance = find_instance(model_project_id, NAVIGATOR_NAME)
+        if not model_instance:
+            raise SystemExit(f"{NAVIGATOR_NAME!r} not found in {MODEL_PROJECT!r}")
+
+        # tool_id -> mode, the policy to replicate.
+        model_policy = {
+            p["tool_id"]: p["mode"] for p in get_permissions(model_instance["id"])
+        }
+
+        for target_name in TARGET_PROJECTS:
+            target_project_id = project_id_by_name(target_name)
+            target_instance = find_instance(target_project_id, NAVIGATOR_NAME)
+            if not target_instance:
+                print(f"skip (no {NAVIGATOR_NAME!r}): {target_name}")
+                continue
+
+            # Only set tools that actually exist on the target instance.
+            target_tool_ids = {p["tool_id"] for p in get_permissions(target_instance["id"])}
+            updates = [
+                {"tool_id": tool_id, "mode": mode}
+                for tool_id, mode in model_policy.items()
+                if tool_id in target_tool_ids
+            ]
+
+            resp = requests.put(
+                f"{BASE_URL}/navigator-instances/{target_instance['id']}/tool-permissions",
+                headers=HEADERS,
+                json={"permissions": updates},
+            )
+            resp.raise_for_status()
+            print(f"applied {len(updates)} permission(s) to {target_name}")
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript copyToolPermissions.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = {
+      Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
+      "Content-Type": "application/json",
+    };
+
+    const MODEL_PROJECT = "Model Project";
+    const TARGET_PROJECTS = ["Acme Corp", "Globex", "Initech"];
+    const NAVIGATOR_NAME = "Support Navigator";
+
+    // Fetch a list endpoint (returns up to 100 items per call).
+    async function getItems(path: string, params: Record<string, string> = {}) {
+      const qs = new URLSearchParams({ ...params, size: "100" });
+      const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers });
+      if (!res.ok) throw new Error(`GET ${path} failed: HTTP ${res.status}`);
+      return (await res.json()).items as any[];
+    }
+
+    async function projectIdByName(name: string): Promise<string | undefined> {
+      return (await getItems("/projects")).find((p) => p.name === name)?.id;
+    }
+
+    async function findInstance(projectId: string, navigatorName: string) {
+      return (await getItems("/navigator-instances", { project_id: projectId })).find(
+        (ni) => ni.navigator_name === navigatorName,
+      );
+    }
+
+    async function getPermissions(instanceId: string): Promise<any[]> {
+      const res = await fetch(`${BASE_URL}/navigator-instances/${instanceId}/tool-permissions`, { headers });
+      if (!res.ok) throw new Error(`Read permissions failed: HTTP ${res.status}`);
+      return (await res.json()).permissions;
+    }
+
+    async function main() {
+      const modelProjectId = await projectIdByName(MODEL_PROJECT);
+      const modelInstance = await findInstance(modelProjectId!, NAVIGATOR_NAME);
+      if (!modelInstance) throw new Error(`"${NAVIGATOR_NAME}" not found in "${MODEL_PROJECT}"`);
+
+      const modelPolicy = new Map<string, string>(
+        (await getPermissions(modelInstance.id)).map((p) => [p.tool_id, p.mode]),
+      );
+
+      for (const targetName of TARGET_PROJECTS) {
+        const targetProjectId = await projectIdByName(targetName);
+        const targetInstance = await findInstance(targetProjectId!, NAVIGATOR_NAME);
+        if (!targetInstance) {
+          console.log(`skip (no "${NAVIGATOR_NAME}"): ${targetName}`);
+          continue;
+        }
+
+        const targetToolIds = new Set((await getPermissions(targetInstance.id)).map((p) => p.tool_id));
+        const permissions = [...modelPolicy]
+          .filter(([toolId]) => targetToolIds.has(toolId))
+          .map(([toolId, mode]) => ({ tool_id: toolId, mode }));
+
+        const res = await fetch(`${BASE_URL}/navigator-instances/${targetInstance.id}/tool-permissions`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ permissions }),
+        });
+        if (!res.ok) throw new Error(`PUT ${targetName} failed: HTTP ${res.status}`);
+        console.log(`applied ${permissions.length} permission(s) to ${targetName}`);
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # Read the model navigator instance's policy
+    curl "$BASE/navigator-instances/$MODEL_INSTANCE_ID/tool-permissions" -H "$AUTH"
+
+    # Apply a policy to a target navigator instance
+    curl -X PUT "$BASE/navigator-instances/$TARGET_INSTANCE_ID/tool-permissions" \
+      -H "$AUTH" -H "Content-Type: application/json" \
+      -d '{
+            "permissions": [
+              {"tool_id": "123e4567-e89b-12d3-a456-426614174005", "mode": "always_execute"},
+              {"tool_id": "456e7890-e89b-12d3-a456-426614174018", "mode": "require_approval"}
+            ]
+          }'
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+List endpoints return up to 100 items per call. If a project has more than 100 navigators, follow `meta.next_cursor` from the response (passing it back as the `cursor` query parameter) until `meta.has_next` is `false`.
+</Note>
+
+<Note>
+If a navigator's projects might have **different servers** connected, match on `(server_name, tool_name)` instead of `tool_id` to be safe — read both instances' permission lists (which include `server_name` and `tool_name`) and build the target update from tools that match by name. With identical server sets, matching on `tool_id` as shown above is simplest and exact.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Provision customer projects" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Create the projects and connect the servers/navigators this recipe configures.
+  </Card>
+  <Card title="Tool suggestions" icon="wand-magic-sparkles" href="/navigator/tool-suggestions">
+    How the navigator discovers and selects tools at runtime.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Full request/response schemas for the tool-permission endpoints.
+  </Card>
+  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
+    Create and manage the platform access token these recipes use.
+  </Card>
+</CardGroup>

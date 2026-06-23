@@ -45,8 +45,8 @@
                 "group": "Authentication Model",
                 "pages": [
                   "auth/overview",
-                  "auth/platform-authentication",
-                  "auth/server-authentication"
+                  "auth/server-authentication",
+                  "auth/platform-authentication"
                 ]
               },
               "auth/auth-links",
@@ -75,6 +75,15 @@
             "group": "Background Tasks",
             "pages": [
               "background-tasks/agent-tasks"
+            ]
+          },
+          {
+            "group": "Cookbooks",
+            "pages": [
+              "cookbooks/overview",
+              "cookbooks/sync-skills",
+              "cookbooks/provision-customer-projects",
+              "cookbooks/copy-tool-permissions"
             ]
           },
           {
@@ -222,7 +231,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
+      "label": "Caylex Platform",
       "href": "https://app.caylex.ai"
     }
   },

@@ -1,0 +1,51 @@
+---
+title: "Cookbooks"
+description: "End-to-end recipes for automating common Caylex workflows with the Platform API instead of clicking through the Caylex Platform UI."
+icon: "utensils"
+---
+
+Anything you can do in the Caylex Platform UI, you can also do programmatically through the [Platform API](/auth/platform-authentication). These **cookbooks** are complete, copy-pasteable recipes for the workflows teams automate most often — provisioning projects for new customers, keeping skills in sync from CI, and replicating configuration across environments.
+
+Each recipe is self-contained: it lists the endpoints it uses, walks through the procedure, and gives a full worked example you can adapt.
+
+## Before you start
+
+Every recipe authenticates the same way: a **platform access token** sent as a Bearer token against the Platform API base URL.
+
+```
+Base URL:  https://api.caylex.ai/api/v1
+Header:    Authorization: Bearer <platform_access_token>
+```
+
+If you haven't created a token yet, follow [Platform Authentication](/auth/platform-authentication#create-a-platform-access-token) first.
+
+<Warning>
+A platform access token has **admin scope** over your entire workspace. Keep it server-side (backend or CI only), store it in a secret manager, and never expose it to a browser.
+</Warning>
+
+## Conventions used in these recipes
+
+- **Base URL & auth** are factored into a small client/helper at the top of each example so the recipe body stays focused on the workflow.
+- **List endpoints return a page of items.** Responses are shaped `{ "items": [...], "meta": { "next_cursor": "...", "has_next": true } }`, with up to 100 items per call (`size` query parameter, max 100). The recipes request `size=100`, which is enough for most workspaces; if you have more, pass `meta.next_cursor` back as the `cursor` parameter to fetch the next page until `has_next` is `false`.
+- **Idempotency matters.** Recipes check whether a resource already exists before creating it, so they're safe to re-run (for example, in a nightly CI job).
+
+## The recipes
+
+<CardGroup cols={2}>
+  <Card title="Sync skills from your repo" icon="rotate" href="/cookbooks/sync-skills">
+    Keep a folder of `SKILL.md` files in version control and push changes to a Caylex project from CI.
+  </Card>
+  <Card title="Provision customer projects" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Create one project per customer and seed each with the servers and navigators from a model project.
+  </Card>
+  <Card title="Copy tool permissions" icon="shield-halved" href="/cookbooks/copy-tool-permissions">
+    Replicate a navigator's tool-permission policy from a model project onto other projects.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Every endpoint with its parameters, request bodies, and response schemas.
+  </Card>
+</CardGroup>
+
+<Tip>
+The machine-readable OpenAPI spec is available at [`https://api.caylex.ai/api/v1/docs/openapi.yaml`](https://api.caylex.ai/api/v1/docs/openapi.yaml) — handy for generating a typed client or feeding to an agent.
+</Tip>

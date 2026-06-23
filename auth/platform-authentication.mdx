@@ -1,20 +1,20 @@
 ---
 title: "Platform Authentication"
-description: "How you and your tools access the Caylex platform: through the dashboard with SSO, or programmatically with a platform access token."
+description: "How you and your tools access the Caylex platform: through the Caylex Platform UI with SSO, or programmatically with a platform access token."
 icon: "key"
 ---
 
 Caylex has two layers of authentication. **Platform authentication** (covered here) controls how you and your tools access the Caylex platform itself. **Server authentication** controls how your end users authenticate with external MCP servers; see [Server Authentication](/auth/server-authentication) for that.
 
-You can access the platform two ways: interactively through the dashboard, or programmatically through the REST API.
+You can access the platform two ways: interactively through the Caylex Platform UI, or programmatically through the REST API.
 
-## Dashboard access (SSO)
+## Platform UI access (SSO)
 
-Caylex uses SSO for platform access. When you sign up or log in to the Caylex dashboard, you authenticate through the platform's identity provider. This gives you access to manage your organization's projects, servers, navigators, and analytics.
+Caylex uses SSO for platform access. When you sign up or log in to the Caylex Platform UI, you authenticate through the platform's identity provider. This gives you access to manage your organization's projects, servers, navigators, and analytics.
 
 ## Programmatic access with a platform access token
 
-The Caylex platform exposes a REST API for managing your workspace without clicking through the dashboard. It covers projects, skills, usage, analytics, tool security, and more. Authenticate with a **platform access token** and call the API from a script, a CI pipeline, or your own backend.
+The Caylex platform exposes a REST API for managing your workspace without clicking through the Caylex Platform UI. It covers projects, skills, usage, analytics, tool security, and more. Authenticate with a **platform access token** and call the API from a script, a CI pipeline, or your own backend.
 
 This is the control plane for your workspace. It is separate from the runtime connection your agents use to call tools, which uses a Navigator API key instead (see [Connecting your agent](/integration/connecting)).
 
@@ -22,7 +22,7 @@ This is the control plane for your workspace. It is separate from the runtime co
 
 <Steps>
   <Step title="Open the Administration page">
-    In the [Caylex dashboard](https://app.caylex.ai), go to the **Administration** page.
+    In the [Caylex Platform UI](https://app.caylex.ai), go to the **Administration** page.
   </Step>
   <Step title="Create a token">
     Create a new platform access token and give it a descriptive name (for example, `ci-skill-sync`). Optionally set an expiry date.
@@ -90,7 +90,7 @@ A platform access token works across the workspace management endpoints. Some of
 | Area | Example endpoints |
 | --- | --- |
 | **Projects** | `GET /projects`, `POST /projects`, `PATCH /projects/{project_id}` |
-| **Skills** | `GET /projects/by-name/{project_name}/skills` and the [skill sync](#example-sync-skills-from-your-repository) endpoints below |
+| **Skills** | `GET /projects/by-name/{project_name}/skills` and the [skill sync](/cookbooks/sync-skills) endpoints |
 | **Usage & billing** | `GET /usage/summary`, `GET /usage/timeseries`, `GET /usage/credits` |
 | **Analytics** | `GET /analytics/queries-processed`, `GET /analytics/top-tools` |
 | **Tool security** | `GET /projects/{project_id}/tool-security/findings`, `GET /projects/{project_id}/tool-security/summary` |
@@ -101,110 +101,9 @@ A platform access token works across the workspace management endpoints. Some of
 For the full REST API reference (every endpoint with its parameters, request bodies, and response schemas), see the [Caylex REST API documentation](https://developers.caylex.ai/). The machine-readable OpenAPI spec is also available at [`https://api.caylex.ai/api/v1/docs/openapi.yaml`](https://api.caylex.ai/api/v1/docs/openapi.yaml).
 </Tip>
 
-### Example: sync skills from your repository
+### Worked examples
 
-A common use case is keeping a local repository of skills in sync with a Caylex project from CI. The skill sync endpoints address your project **by name** and each skill by its `SKILL.md` frontmatter `name`, so your tooling never has to track Caylex UUIDs.
-
-<Note>
-Project names are matched exactly and are case-sensitive. URL-encode names that contain spaces. For example, `Production Project` becomes `Production%20Project`.
-</Note>
-
-<Tabs>
-  <Tab title="cURL">
-    ```bash
-    BASE="https://api.caylex.ai/api/v1"
-    PROJECT="Production%20Project"
-    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
-
-    # List every skill in the project
-    curl "$BASE/projects/by-name/$PROJECT/skills" -H "$AUTH"
-
-    # Fetch one skill, including its SKILL.md body
-    curl "$BASE/projects/by-name/$PROJECT/skills/code-review" -H "$AUTH"
-
-    # Add a new skill (409 if it already exists)
-    curl -X POST "$BASE/projects/by-name/$PROJECT/skills" -H "$AUTH" \
-      -F "file=@./skills/code-review/SKILL.md"
-
-    # Replace an existing skill (404 if it doesn't exist yet)
-    curl -X PUT "$BASE/projects/by-name/$PROJECT/skills/code-review" -H "$AUTH" \
-      -F "file=@./skills/code-review/SKILL.md"
-
-    # Remove a skill
-    curl -X DELETE "$BASE/projects/by-name/$PROJECT/skills/code-review" -H "$AUTH"
-    ```
-  </Tab>
-  <Tab title="Python">
-    ```python
-    import os
-    from urllib.parse import quote
-
-    import requests
-
-    BASE_URL = "https://api.caylex.ai/api/v1"
-    PROJECT = quote("Production Project")  # URL-encode names with spaces
-    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
-    base = f"{BASE_URL}/projects/by-name/{PROJECT}/skills"
-
-    # List every skill in the project
-    skills = requests.get(base, headers=HEADERS).json()
-
-    # Fetch one skill, including its SKILL.md body
-    skill = requests.get(f"{base}/code-review", headers=HEADERS).json()
-
-    # Add a new skill (409 if it already exists)
-    with open("./skills/code-review/SKILL.md", "rb") as f:
-        requests.post(base, headers=HEADERS, files={"file": f})
-
-    # Replace an existing skill (404 if it doesn't exist yet)
-    with open("./skills/code-review/SKILL.md", "rb") as f:
-        requests.put(f"{base}/code-review", headers=HEADERS, files={"file": f})
-
-    # Remove a skill
-    requests.delete(f"{base}/code-review", headers=HEADERS)
-    ```
-  </Tab>
-  <Tab title="TypeScript">
-    ```typescript
-    import { readFile } from "node:fs/promises";
-
-    const BASE_URL = "https://api.caylex.ai/api/v1";
-    const PROJECT = encodeURIComponent("Production Project"); // URL-encode names with spaces
-    const headers = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
-    const base = `${BASE_URL}/projects/by-name/${PROJECT}/skills`;
-
-    async function main() {
-      // List every skill in the project
-      const skills = await (await fetch(base, { headers })).json();
-
-      // Fetch one skill, including its SKILL.md body
-      const skill = await (await fetch(`${base}/code-review`, { headers })).json();
-
-      // Add a new skill (409 if it already exists)
-      const md = await readFile("./skills/code-review/SKILL.md");
-      const addForm = new FormData();
-      addForm.append("file", new File([md], "SKILL.md"));
-      await fetch(base, { method: "POST", headers, body: addForm });
-
-      // Replace an existing skill (404 if it doesn't exist yet)
-      const putForm = new FormData();
-      putForm.append("file", new File([md], "SKILL.md"));
-      await fetch(`${base}/code-review`, { method: "PUT", headers, body: putForm });
-
-      // Remove a skill
-      await fetch(`${base}/code-review`, { method: "DELETE", headers });
-    }
-
-    main();
-    ```
-  </Tab>
-</Tabs>
-
-For a skill bundled with extra files (scripts, references), upload a ZIP of the skill directory in place of the `SKILL.md`. The `file` part accepts either.
-
-<Tip>
-Use `POST` to add a new skill and `PUT` to replace one. `POST` returns `409` if the skill already exists, and `PUT` returns `404` if it doesn't, so CI can distinguish a first-time upload from an update instead of silently overwriting.
-</Tip>
+For complete, copy-pasteable workflows built on the Platform API — syncing skills from CI, provisioning a project per customer, and replicating tool permissions across projects — see the [Cookbooks](/cookbooks/overview).
 
 ### Security best practices
 
@@ -216,6 +115,9 @@ Use `POST` to add a new skill and `PUT` to replace one. `POST` returns `409` if 
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Cookbooks" icon="utensils" href="/cookbooks/overview">
+    End-to-end recipes for automating common workflows with the Platform API.
+  </Card>
   <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
     Browse the full REST API: every endpoint, parameter, and response schema.
   </Card>

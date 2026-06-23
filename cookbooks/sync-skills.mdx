@@ -1,0 +1,227 @@
+---
+title: "Sync Skills from Your Repository"
+description: "Keep a folder of SKILL.md files in version control and push changes to a Caylex project automatically from CI."
+icon: "rotate"
+---
+
+[Skills](/platform/projects) are versioned instructions you author as `SKILL.md` files. A common pattern is to keep them in a git repository and sync them to a Caylex project from CI on every merge, so the project's skills always match `main`.
+
+The skill endpoints address your project **by name** and each skill by its `SKILL.md` frontmatter `name`, so your tooling never has to track Caylex UUIDs.
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /projects/by-name/{project_name}/skills` | List the skills currently in the project. |
+| `POST /projects/by-name/{project_name}/skills` | Add a new skill. Returns `409` if it already exists. |
+| `PUT /projects/by-name/{project_name}/skills/{skill_name}` | Replace an existing skill. Returns `404` if it doesn't exist yet. |
+| `DELETE /projects/by-name/{project_name}/skills/{skill_name}` | Remove a skill. |
+
+<Note>
+Project names are matched exactly and are case-sensitive. URL-encode names that contain spaces — `Production Project` becomes `Production%20Project`. The skill's `name` is taken from its `SKILL.md` frontmatter, not the folder name.
+</Note>
+
+## The procedure
+
+<Steps>
+  <Step title="Enumerate local skills">
+    Walk your repository's `skills/` directory. Each skill is a folder containing a `SKILL.md`; read the `name` from its frontmatter to use as the skill identifier.
+  </Step>
+  <Step title="List remote skills">
+    `GET …/skills` to see what's already in the project.
+  </Step>
+  <Step title="Add or replace each local skill">
+    Use `POST` for skills that don't exist remotely and `PUT` for ones that do. Because `POST` returns `409` and `PUT` returns `404`, CI can distinguish a first-time upload from an update instead of silently overwriting.
+  </Step>
+  <Step title="(Optional) Prune deleted skills">
+    `DELETE` any remote skill that no longer exists locally so the project mirrors your repo exactly.
+  </Step>
+</Steps>
+
+<Tip>
+For a skill bundled with extra files (scripts, references), upload a **ZIP of the skill directory** in place of the `SKILL.md`. The `file` part accepts either.
+</Tip>
+
+## Full sync script
+
+This walks a local `skills/` directory and reconciles it with the project: new skills are added, changed skills are replaced, and (optionally) skills deleted from the repo are removed from the project. Drop it into CI and run it on every merge to `main`.
+
+The Python and TypeScript tabs reconcile the whole directory; the cURL tab shows the individual building-block calls.
+
+<Tabs>
+  <Tab title="Python">
+    ```python sync_skills.py
+    import os
+    import re
+    from pathlib import Path
+    from urllib.parse import quote
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    PROJECT = quote(os.environ["CAYLEX_PROJECT"])  # URL-encode names with spaces
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+    SKILLS_DIR = Path("skills")
+    PRUNE = True  # delete remote skills that no longer exist locally
+
+    base = f"{BASE_URL}/projects/by-name/{PROJECT}/skills"
+
+
+    def skill_name(skill_md: Path) -> str:
+        """Read the `name` from a SKILL.md YAML frontmatter block."""
+        text = skill_md.read_text()
+        match = re.search(r"^name:\s*(.+)$", text, re.MULTILINE)
+        if not match:
+            raise ValueError(f"{skill_md} is missing a 'name' in its frontmatter")
+        return match.group(1).strip().strip("\"'")
+
+
+    def list_remote() -> set[str]:
+        resp = requests.get(base, headers=HEADERS)
+        resp.raise_for_status()
+        return {s["name"] for s in resp.json()}
+
+
+    def upsert(skill_md: Path, name: str, exists: bool) -> None:
+        with open(skill_md, "rb") as f:
+            files = {"file": f}
+            if exists:
+                resp = requests.put(f"{base}/{quote(name)}", headers=HEADERS, files=files)
+            else:
+                resp = requests.post(base, headers=HEADERS, files=files)
+        resp.raise_for_status()
+        print(f"{'updated' if exists else 'added'}: {name}")
+
+
+    def main() -> None:
+        local = {skill_name(p): p for p in SKILLS_DIR.glob("*/SKILL.md")}
+        remote = list_remote()
+
+        for name, skill_md in local.items():
+            upsert(skill_md, name, exists=name in remote)
+
+        if PRUNE:
+            for name in remote - local.keys():
+                requests.delete(f"{base}/{quote(name)}", headers=HEADERS).raise_for_status()
+                print(f"removed: {name}")
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript syncSkills.ts
+    import { readFile } from "node:fs/promises";
+    import { glob } from "node:fs/promises";
+
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const PROJECT = encodeURIComponent(process.env.CAYLEX_PROJECT!); // URL-encode spaces
+    const headers = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+    const base = `${BASE_URL}/projects/by-name/${PROJECT}/skills`;
+    const PRUNE = true; // delete remote skills that no longer exist locally
+
+    function skillName(md: string): string {
+      const match = md.match(/^name:\s*(.+)$/m);
+      if (!match) throw new Error("SKILL.md is missing a 'name' in its frontmatter");
+      return match[1].trim().replace(/^["']|["']$/g, "");
+    }
+
+    async function listRemote(): Promise<Set<string>> {
+      const res = await fetch(base, { headers });
+      if (!res.ok) throw new Error(`List failed: HTTP ${res.status}`);
+      return new Set((await res.json()).map((s: { name: string }) => s.name));
+    }
+
+    async function upsert(path: string, name: string, exists: boolean) {
+      const md = await readFile(path);
+      const form = new FormData();
+      form.append("file", new File([md], "SKILL.md"));
+      const url = exists ? `${base}/${encodeURIComponent(name)}` : base;
+      const res = await fetch(url, { method: exists ? "PUT" : "POST", headers, body: form });
+      if (!res.ok) throw new Error(`Upsert ${name} failed: HTTP ${res.status}`);
+      console.log(`${exists ? "updated" : "added"}: ${name}`);
+    }
+
+    async function main() {
+      const local = new Map<string, string>();
+      for await (const path of glob("skills/*/SKILL.md")) {
+        local.set(skillName(await readFile(path, "utf8")), path);
+      }
+      const remote = await listRemote();
+
+      for (const [name, path] of local) {
+        await upsert(path, name, remote.has(name));
+      }
+
+      if (PRUNE) {
+        for (const name of remote) {
+          if (local.has(name)) continue;
+          const res = await fetch(`${base}/${encodeURIComponent(name)}`, { method: "DELETE", headers });
+          if (!res.ok) throw new Error(`Delete ${name} failed: HTTP ${res.status}`);
+          console.log(`removed: ${name}`);
+        }
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    PROJECT="Production%20Project"  # URL-encode names with spaces
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # List every skill in the project
+    curl "$BASE/projects/by-name/$PROJECT/skills" -H "$AUTH"
+
+    # Add a new skill (409 if it already exists)
+    curl -X POST "$BASE/projects/by-name/$PROJECT/skills" -H "$AUTH" \
+      -F "file=@./skills/code-review/SKILL.md"
+
+    # Replace an existing skill (404 if it doesn't exist yet)
+    curl -X PUT "$BASE/projects/by-name/$PROJECT/skills/code-review" -H "$AUTH" \
+      -F "file=@./skills/code-review/SKILL.md"
+
+    # Remove a skill
+    curl -X DELETE "$BASE/projects/by-name/$PROJECT/skills/code-review" -H "$AUTH"
+    ```
+  </Tab>
+</Tabs>
+
+## Run it in CI
+
+Store your token as a CI secret and run the script on merges to `main`. A GitHub Actions step looks like:
+
+```yaml .github/workflows/sync-skills.yml
+name: Sync Caylex skills
+on:
+  push:
+    branches: [main]
+    paths: ["skills/**"]
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python sync_skills.py
+        env:
+          CAYLEX_PLATFORM_TOKEN: ${{ secrets.CAYLEX_PLATFORM_TOKEN }}
+          CAYLEX_PROJECT: "Production Project"
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
+    Create and manage the platform access token these recipes use.
+  </Card>
+  <Card title="Provision customer projects" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Stand up a project per customer and seed it from a model project.
+  </Card>
+</CardGroup>
