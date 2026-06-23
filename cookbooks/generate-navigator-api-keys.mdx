@@ -1,0 +1,217 @@
+---
+title: "Generate Navigator API Keys"
+description: "Mint a runtime API key for each navigator instance and store it securely."
+icon: "key-skeleton"
+---
+
+Connecting a navigator to a project creates a **navigator instance**, but that instance can't be used at runtime until it has an **API key**. The navigator API key (`ck_…`) is the credential submitted to Caylex on each agent tool call to identify which Navigator should be used for tool execution — distinct from the **platform access token** you use to manage your workspace.
+
+So after you [provision a project per customer](/cookbooks/provision-customer-projects) (or any time you add a navigator to a project), the natural next step is to mint a key for each new navigator instance and store it where your application can find it.
+
+<Note>
+The two credentials do different jobs. The **platform access token** is the admin/control-plane credential used by every cookbook here. The **navigator API key** is the per-navigator-instance runtime credential your agent connects with — see [Connecting your agent](/integration/connecting).
+</Note>
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /navigator-instances?project_id={id}` | List the navigator instances in a project. |
+| `GET /navigator-instances/{id}/api-keys` | List existing keys for an instance (to stay idempotent). |
+| `POST /navigator-instances/{id}/api-keys` | Mint a new key. Returns the full `key` value **once**. |
+| `DELETE /navigator-instances/{id}/api-keys/{key_id}` | Revoke a key (for rotation). |
+
+The create response returns the full secret exactly once:
+
+```json
+{
+  "id": "456e7890-e89b-12d3-a456-426614174027",
+  "preview": "ck_abcd…wxyz",
+  "key": "ck_0fc96c14-...-full-secret-shown-once"
+}
+```
+
+<Warning>
+The `key` value is shown **only on creation** — it is never returned again. Capture it from the create response and store it immediately in a secret manager or your application database. The list endpoint only returns a non-secret `preview`. If you lose a key, revoke it and mint a new one.
+</Warning>
+
+## The procedure
+
+<Steps>
+  <Step title="Find the project's navigator instances">
+    `GET /navigator-instances?project_id={project_id}` to get each instance's `id` and `navigator_name`.
+  </Step>
+  <Step title="Skip instances that already have a key (optional)">
+    `GET /navigator-instances/{id}/api-keys` and check by name, so re-running doesn't pile up duplicate keys.
+  </Step>
+  <Step title="Mint a key">
+    `POST /navigator-instances/{id}/api-keys` with a descriptive `name` (and optional `expires_at`). Read the `key` field from the response.
+  </Step>
+  <Step title="Store it securely">
+    Persist the `key` keyed by something stable — for example `(project_name, navigator_name)` — in your secret store. Your runtime looks it up when starting an agent session for that customer.
+  </Step>
+</Steps>
+
+## Full script
+
+This mints one key per navigator instance in a project and returns a `{navigator_name: key}` map ready to hand to your secret store. It skips instances that already have a key with the same name, so it's safe to re-run.
+
+<Tabs>
+  <Tab title="Python">
+    ```python generate_navigator_keys.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+    PROJECT = "Acme Corp"
+    KEY_NAME = "runtime"  # name used to identify the key this script manages
+
+
+    def get_items(path: str, params: dict | None = None) -> list[dict]:
+        """Fetch a list endpoint (returns up to 100 items per call)."""
+        params = {**(params or {}), "size": 100}
+        resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=params)
+        resp.raise_for_status()
+        return resp.json()["items"]
+
+
+    def project_id_by_name(name: str) -> str | None:
+        return next((p["id"] for p in get_items("/projects") if p["name"] == name), None)
+
+
+    def mint_keys(project_name: str) -> dict[str, str]:
+        project_id = project_id_by_name(project_name)
+        if not project_id:
+            raise SystemExit(f"Project {project_name!r} not found")
+
+        secrets: dict[str, str] = {}
+        for ni in get_items("/navigator-instances", {"project_id": project_id}):
+            existing = get_items(f"/navigator-instances/{ni['id']}/api-keys")
+            if any(k["name"] == KEY_NAME for k in existing):
+                print(f"skip (key exists): {ni['navigator_name']}")
+                continue
+
+            resp = requests.post(
+                f"{BASE_URL}/navigator-instances/{ni['id']}/api-keys",
+                headers=HEADERS,
+                json={"name": KEY_NAME, "description": f"Runtime key for {project_name}"},
+            )
+            resp.raise_for_status()
+            # `key` is only returned here, once — capture it now.
+            secrets[ni["navigator_name"]] = resp.json()["key"]
+            print(f"minted key for {ni['navigator_name']}")
+        return secrets
+
+
+    if __name__ == "__main__":
+        keys = mint_keys(PROJECT)
+        # Hand these to your secret manager, keyed by (project, navigator).
+        # e.g. store_secret(f"caylex/{PROJECT}/{navigator}", key)
+        for navigator, key in keys.items():
+            print(f"{navigator}: {key[:8]}… (store securely)")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript generateNavigatorKeys.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = {
+      Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
+      "Content-Type": "application/json",
+    };
+
+    const PROJECT = "Acme Corp";
+    const KEY_NAME = "runtime";
+
+    async function getItems(path: string, params: Record<string, string> = {}) {
+      const qs = new URLSearchParams({ ...params, size: "100" });
+      const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers });
+      if (!res.ok) throw new Error(`GET ${path} failed: HTTP ${res.status}`);
+      return (await res.json()).items as any[];
+    }
+
+    async function projectIdByName(name: string) {
+      return (await getItems("/projects")).find((p) => p.name === name)?.id as string | undefined;
+    }
+
+    async function mintKeys(projectName: string): Promise<Record<string, string>> {
+      const projectId = await projectIdByName(projectName);
+      if (!projectId) throw new Error(`Project "${projectName}" not found`);
+
+      const secrets: Record<string, string> = {};
+      for (const ni of await getItems("/navigator-instances", { project_id: projectId })) {
+        const existing = await getItems(`/navigator-instances/${ni.id}/api-keys`);
+        if (existing.some((k) => k.name === KEY_NAME)) {
+          console.log(`skip (key exists): ${ni.navigator_name}`);
+          continue;
+        }
+
+        const res = await fetch(`${BASE_URL}/navigator-instances/${ni.id}/api-keys`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ name: KEY_NAME, description: `Runtime key for ${projectName}` }),
+        });
+        if (!res.ok) throw new Error(`Mint key failed: HTTP ${res.status}`);
+        // `key` is only returned here, once — capture it now.
+        secrets[ni.navigator_name] = (await res.json()).key;
+        console.log(`minted key for ${ni.navigator_name}`);
+      }
+      return secrets;
+    }
+
+    mintKeys(PROJECT).then((keys) => {
+      // Hand these to your secret manager, keyed by (project, navigator).
+      for (const [navigator, key] of Object.entries(keys)) {
+        console.log(`${navigator}: ${key.slice(0, 8)}… (store securely)`);
+      }
+    });
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # List the navigator instances in a project
+    curl "$BASE/navigator-instances?project_id=$PROJECT_ID" -H "$AUTH"
+
+    # List existing keys for one instance (only previews, never the secret)
+    curl "$BASE/navigator-instances/$INSTANCE_ID/api-keys" -H "$AUTH"
+
+    # Mint a key — the response's "key" field is the secret, shown once
+    curl -X POST "$BASE/navigator-instances/$INSTANCE_ID/api-keys" \
+      -H "$AUTH" -H "Content-Type: application/json" \
+      -d '{"name": "runtime", "description": "Runtime key for Acme Corp"}'
+
+    # Revoke a key (rotation)
+    curl -X DELETE "$BASE/navigator-instances/$INSTANCE_ID/api-keys/$KEY_ID" -H "$AUTH"
+    ```
+  </Tab>
+</Tabs>
+
+## Rotating a key
+
+To rotate without downtime: mint a new key, deploy it to your runtime, then `DELETE` the old one. Deleting a key takes effect immediately — any integration still using it will stop working — so swap it in first.
+
+<Tip>
+Set `expires_at` on keys you want to be short-lived, and use the key `name`/`description` to record which system or environment each key belongs to. The `GET …/api-keys` list shows these fields (and a `preview`) so you can audit what exists without exposing the secrets.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connecting your agent" icon="plug" href="/integration/connecting">
+    Use a navigator API key to connect an agent to the Caylex MCP runtime.
+  </Card>
+  <Card title="Provision customer projects" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Create the projects and navigator instances these keys belong to.
+  </Card>
+  <Card title="Background Agent Tasks" icon="robot" href="/background-tasks/agent-tasks">
+    Hand a navigator API key to a background task to run the agent server-to-server.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Full request/response schemas for the API-key endpoints.
+  </Card>
+</CardGroup>

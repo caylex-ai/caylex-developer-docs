@@ -67,6 +67,10 @@ The connection endpoints (`POST /servers/{id}/connections` and `POST /navigators
 Servers with **user-level** authentication (`auth_credentials_level: user`) only need to be connected here — each end user still authenticates individually at runtime via [auth links](/auth/auth-links) or [in-chat authentication](/navigator/in-chat-authentication). Connecting the server does not grant access to anyone's data.
 </Note>
 
+<Warning>
+Connecting a navigator creates a navigator instance, but that instance has **no API key yet** — and your agent needs a navigator API key (`ck_…`) to connect at runtime. After provisioning, mint a key for each new navigator instance and store it; see [Generate Navigator API Keys](/cookbooks/generate-navigator-api-keys).
+</Warning>
+
 ## Full provisioning script
 
 The Python and TypeScript tabs run the whole loop; the cURL tab shows the individual building-block calls.
@@ -272,6 +276,9 @@ The `POST /projects` call returns `409` if a project with that name already exis
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Generate navigator API keys" icon="key-skeleton" href="/cookbooks/generate-navigator-api-keys">
+    Mint the runtime API key each new navigator instance needs before your agent can connect.
+  </Card>
   <Card title="Copy tool permissions" icon="shield-halved" href="/cookbooks/copy-tool-permissions">
     Now make each new navigator enforce the same tool-permission policy as the model project.
   </Card>

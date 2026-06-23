@@ -21,6 +21,10 @@ The skill endpoints address your project **by name** and each skill by its `SKIL
 Project names are matched exactly and are case-sensitive. URL-encode names that contain spaces — `Production Project` becomes `Production%20Project`. The skill's `name` is taken from its `SKILL.md` frontmatter, not the folder name.
 </Note>
 
+<Note>
+In the URL, a skill is identified by its **slug** — the kebab-cased form of its name (`Code Review` → `code-review`). The API also accepts the display name and normalizes it (case-insensitively), so either works; the list response returns both `name` and `slug` if you want to address keys explicitly.
+</Note>
+
 ## The procedure
 
 <Steps>
