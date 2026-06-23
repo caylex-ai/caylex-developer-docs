@@ -1,83 +1,72 @@
 ---
-title: "Provision a Project per Customer"
-description: "Create one Caylex project for each of your customers and seed every new project with the servers and navigators from a model project."
+title: "Provision a Customer Project"
+description: "Create a project for a new customer that mirrors a model project — servers, navigators, tool permissions, and runtime keys — in a single API call."
 icon: "diagram-project"
 ---
 
-If you run Caylex on behalf of your own customers (a multi-tenant SaaS pattern), you'll often want **one project per customer**, each pre-loaded with the same set of servers and navigators. Rather than building each one by hand in the Caylex Platform UI, you can stand up a **model project** once, get it exactly how you like it, and then clone its server/navigator setup onto a fresh project for every customer.
+If you run Caylex on behalf of your own customers (a multi-tenant SaaS pattern), you'll often want **one project per customer**, each pre-loaded with the same servers, navigators, and tool-permission policy. Rather than building each one by hand in the Caylex Platform UI — or scripting the half-dozen calls it takes — you can stand up a **model project** once and clone it for every customer with a single request.
 
-This recipe implements that loop:
+## Clone a project in one call
 
-```text
-seed_project   = "Model Project"
-seed_servers   = servers connected to seed_project
-seed_navigators = navigators connected to seed_project
+`POST /projects/from-seed` takes a reference to a **seed (model) project** and a **new project name**, then does everything needed to stand up an equivalent project:
 
-for customer in customers:
-    if customer not already a project:
-        create_project(name=customer)
-        connect seed_servers   to the new project
-        connect seed_navigators to the new project
+1. Creates the new project (`409` if the name is already taken — names are unique per tenant).
+2. Connects the **same servers** as the seed project.
+3. Connects the **same navigators** as the seed project.
+4. Copies each navigator's **tool-permission policy** onto the new navigator instances.
+5. Mints a **runtime API key** for each new navigator instance and returns it (shown once).
+
+### Request
+
+```
+POST https://api.caylex.ai/api/v1/projects/from-seed
+Authorization: Bearer <platform_access_token>
 ```
 
-## How the model fits together
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Name for the new project. Unique within your tenant — `409` if it already exists. |
+| `seed_project_id` | One of | UUID of the project to clone. |
+| `seed_project_name` | One of | Name of the project to clone. Provide **exactly one** of `seed_project_id` / `seed_project_name`. |
+| `description` | No | Description for the new project. |
+| `icon` | No | Icon for the new project. |
 
-In Caylex, **servers** and **navigators** are defined once at the **tenant** level. Adding one to a project creates an *instance*:
+### Response
 
-- A **server instance** = a server connected to a project.
-- A **navigator instance** = a navigator connected to a project.
+```json
+{
+  "id": "456e7890-e89b-12d3-a456-426614174015",
+  "name": "Acme Corp",
+  "seed_project_id": "123e4567-e89b-12d3-a456-426614174003",
+  "seeded_server_count": 9,
+  "seeded_navigator_count": 2,
+  "servers": [
+    { "server_id": "…", "server_name": "Shopify", "server_instance_id": "…" }
+  ],
+  "navigators": [
+    {
+      "navigator_id": "…",
+      "navigator_name": "Customer Support",
+      "navigator_instance_id": "…",
+      "api_key_id": "…",
+      "api_key": "ck_…full-secret-shown-once"
+    }
+  ],
+  "warnings": []
+}
+```
 
-So "seeding a project" means connecting the same tenant-level servers and navigators that the model project uses to each new project.
-
-<Warning>
-The connection endpoints (`POST /servers/{id}/connections` and `POST /navigators/{id}/connections`) **replace the full set** of projects a server or navigator is connected to — they create or remove instances to match the `project_ids` you send. To *add* a project without detaching the resource from others, you must **GET the current connections, append the new project, and POST the union.** The example below does exactly this.
-</Warning>
-
-## Endpoints used
-
-| Method & path | Purpose |
-| --- | --- |
-| `GET /projects` | List existing projects (to skip customers that already have one). |
-| `POST /projects` | Create a new project. Returns `409` if the name already exists in your tenant. |
-| `GET /server-instances?project_id={id}` | List the servers connected to the model project. |
-| `GET /navigator-instances?project_id={id}` | List the navigators connected to the model project. |
-| `GET /servers/{server_id}/connections` | Read a server's current project connections. |
-| `POST /servers/{server_id}/connections` | Set a server's project connections (full set). |
-| `GET /navigators/{navigator_id}/connections` | Read a navigator's current project connections. |
-| `POST /navigators/{navigator_id}/connections` | Set a navigator's project connections (full set). |
-
-## The procedure
-
-<Steps>
-  <Step title="Resolve the model project and its setup">
-    Find the model project's `id`, then list its server instances (`GET /server-instances?project_id=…`) and navigator instances (`GET /navigator-instances?project_id=…`). Collect the distinct `server_id` and `navigator_id` values — those are the tenant-level resources to replicate.
-  </Step>
-  <Step title="List existing projects">
-    `GET /projects` and build a set of names that already exist, so the loop is idempotent and safe to re-run.
-  </Step>
-  <Step title="Create a project for each new customer">
-    For every customer without a project, `POST /projects` with the customer's name. Keep the returned `id`.
-  </Step>
-  <Step title="Connect the seed servers and navigators">
-    For each seed `server_id`/`navigator_id`, read its current connections, add the new project's `id`, and POST the merged list. This attaches the resource to the new project without disturbing the model project (or any other).
-  </Step>
-</Steps>
-
-<Note>
-Servers with **user-level** authentication (`auth_credentials_level: user`) only need to be connected here — each end user still authenticates individually at runtime via [auth links](/auth/auth-links) or [in-chat authentication](/navigator/in-chat-authentication). Connecting the server does not grant access to anyone's data.
-</Note>
+The `navigator_instance_id` and `server_instance_id` values are the handles for any follow-up calls (tool permissions, key rotation, pausing a server, etc.). Each navigator's **`api_key` is returned only once** — store it immediately.
 
 <Warning>
-Connecting a navigator creates a navigator instance, but that instance has **no API key yet** — and your agent needs a navigator API key (`ck_…`) to connect at runtime. After provisioning, mint a key for each new navigator instance and store it; see [Generate Navigator API Keys](/cookbooks/generate-navigator-api-keys).
+The `api_key` values are shown **only in this response**. Capture them and store them in your secret manager keyed by customer + navigator. The runtime API key is what your agent submits to Caylex on each tool call to identify which navigator to use — see [Connecting your agent](/integration/connecting).
 </Warning>
 
-## Full provisioning script
-
-The Python and TypeScript tabs run the whole loop; the cURL tab shows the individual building-block calls.
+### Example
 
 <Tabs>
   <Tab title="Python">
-    ```python provision_projects.py
+    ```python provision_from_seed.py
     import os
 
     import requests
@@ -89,8 +78,132 @@ The Python and TypeScript tabs run the whole loop; the cURL tab shows the indivi
     CUSTOMERS = ["Acme Corp", "Globex", "Initech"]
 
 
+    def provision(customer: str) -> dict | None:
+        resp = requests.post(
+            f"{BASE_URL}/projects/from-seed",
+            headers=HEADERS,
+            json={"name": customer, "seed_project_name": SEED_PROJECT},
+        )
+        if resp.status_code == 409:
+            print(f"skip (already exists): {customer}")
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+
+    for customer in CUSTOMERS:
+        result = provision(customer)
+        if not result:
+            continue
+        print(
+            f"created {customer} ({result['id']}): "
+            f"{result['seeded_server_count']} servers, "
+            f"{result['seeded_navigator_count']} navigators"
+        )
+        # The runtime key for each navigator is returned once — store it now.
+        for nav in result["navigators"]:
+            if nav["api_key"]:
+                # store_secret(f"caylex/{customer}/{nav['navigator_name']}", nav["api_key"])
+                print(f"  store key for {nav['navigator_name']}: {nav['api_key'][:8]}…")
+        for warning in result["warnings"]:
+            print(f"  warning: {warning}")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript provisionFromSeed.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = {
+      Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
+      "Content-Type": "application/json",
+    };
+
+    const SEED_PROJECT = "Model Project";
+    const CUSTOMERS = ["Acme Corp", "Globex", "Initech"];
+
+    async function provision(customer: string) {
+      const res = await fetch(`${BASE_URL}/projects/from-seed`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: customer, seed_project_name: SEED_PROJECT }),
+      });
+      if (res.status === 409) {
+        console.log(`skip (already exists): ${customer}`);
+        return null;
+      }
+      if (!res.ok) throw new Error(`Provision ${customer} failed: HTTP ${res.status}`);
+      return res.json();
+    }
+
+    for (const customer of CUSTOMERS) {
+      const result = await provision(customer);
+      if (!result) continue;
+      console.log(
+        `created ${customer} (${result.id}): ${result.seeded_server_count} servers, ` +
+          `${result.seeded_navigator_count} navigators`,
+      );
+      // The runtime key for each navigator is returned once — store it now.
+      for (const nav of result.navigators) {
+        if (nav.api_key) {
+          // await storeSecret(`caylex/${customer}/${nav.navigator_name}`, nav.api_key);
+          console.log(`  store key for ${nav.navigator_name}: ${nav.api_key.slice(0, 8)}…`);
+        }
+      }
+      for (const warning of result.warnings) console.log(`  warning: ${warning}`);
+    }
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://api.caylex.ai/api/v1/projects/from-seed" \
+      -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "Acme Corp", "seed_project_name": "Model Project"}'
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+The call returns `409` if a project with that name already exists, so the loop above is safe to re-run — already-provisioned customers are skipped.
+</Note>
+
+<Note>
+Servers with **user-level** authentication only need to be connected — each end user still authenticates individually at runtime via [auth links](/auth/auth-links) or [in-chat authentication](/navigator/in-chat-authentication). Connecting the server does not grant access to anyone's data.
+</Note>
+
+<Warning>
+The endpoint runs its steps incrementally rather than as a single transaction. If a later step fails after the project is created, the project will exist (so a retry hits the `409` path) — finish the setup with the granular endpoints below, or delete the project and retry.
+</Warning>
+
+## Under the hood: the granular endpoints
+
+`from-seed` wraps the procedures below. You don't need them for the common case, but expand any step to see exactly what it does — useful if you want finer control, or to apply one piece (like copying permissions) to projects that already exist.
+
+<AccordionGroup>
+  <Accordion title="1. Connect servers and navigators" icon="plug">
+    Servers and navigators are defined once at the **tenant** level. Adding one to a project creates an *instance* (a **server instance** or **navigator instance**). To replicate a seed project, connect the same tenant-level servers and navigators to the new project.
+
+    | Method & path | Purpose |
+    | --- | --- |
+    | `GET /server-instances?project_id={id}` | List the servers connected to the seed project. |
+    | `GET /navigator-instances?project_id={id}` | List the navigators connected to the seed project. |
+    | `GET /servers/{server_id}/connections` | Read a server's current project connections. |
+    | `POST /servers/{server_id}/connections` | Set a server's project connections (full set). |
+    | `POST /navigators/{navigator_id}/connections` | Set a navigator's project connections (full set). |
+
+    <Warning>
+    The connection endpoints **replace the full set** of projects a server or navigator is connected to. To *add* a project without detaching the resource from others, GET the current connections, append the new project, and POST the union.
+    </Warning>
+
+    ```python connect_servers_navigators.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+
     def get_items(path: str, params: dict | None = None) -> list[dict]:
-        """Fetch a list endpoint (returns up to 100 items per call)."""
         params = {**(params or {}), "size": 100}
         resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=params)
         resp.raise_for_status()
@@ -112,7 +225,6 @@ The Python and TypeScript tabs run the whole loop; the cURL tab shows the indivi
         current.raise_for_status()
         project_ids = {c["project_id"] for c in current.json()["connections"]}
         project_ids.add(project_id)
-
         resp = requests.post(
             f"{BASE_URL}/{resource}/{resource_id}/connections",
             headers=HEADERS,
@@ -121,172 +233,66 @@ The Python and TypeScript tabs run the whole loop; the cURL tab shows the indivi
         resp.raise_for_status()
 
 
-    def main() -> None:
-        seed_id = project_id_by_name(SEED_PROJECT)
-        if not seed_id:
-            raise SystemExit(f"Model project {SEED_PROJECT!r} not found")
-
-        # Distinct tenant-level resources used by the model project.
-        seed_servers = {
-            si["server_id"]
-            for si in get_items("/server-instances", {"project_id": seed_id})
+    def seed_project(seed_name: str, new_project_id: str) -> None:
+        seed_id = project_id_by_name(seed_name)
+        servers = {
+            si["server_id"] for si in get_items("/server-instances", {"project_id": seed_id})
         }
-        seed_navigators = {
+        navigators = {
             ni["navigator_id"]
             for ni in get_items("/navigator-instances", {"project_id": seed_id})
         }
-
-        existing = {p["name"] for p in get_items("/projects")}
-
-        for customer in CUSTOMERS:
-            if customer in existing:
-                print(f"skip (already exists): {customer}")
-                continue
-
-            created = requests.post(
-                f"{BASE_URL}/projects",
-                headers=HEADERS,
-                json={"name": customer, "description": f"Provisioned for {customer}"},
-            )
-            created.raise_for_status()
-            project_id = created.json()["id"]
-            print(f"created project: {customer} ({project_id})")
-
-            for server_id in seed_servers:
-                connect_resource("servers", server_id, project_id)
-            for navigator_id in seed_navigators:
-                connect_resource("navigators", navigator_id, project_id)
-
-            print(
-                f"  seeded {len(seed_servers)} server(s) "
-                f"and {len(seed_navigators)} navigator(s)"
-            )
-
-
-    if __name__ == "__main__":
-        main()
+        for server_id in servers:
+            connect_resource("servers", server_id, new_project_id)
+        for navigator_id in navigators:
+            connect_resource("navigators", navigator_id, new_project_id)
     ```
-  </Tab>
-  <Tab title="TypeScript">
-    ```typescript provisionProjects.ts
-    const BASE_URL = "https://api.caylex.ai/api/v1";
-    const headers = {
-      Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
-      "Content-Type": "application/json",
-    };
+  </Accordion>
 
-    const SEED_PROJECT = "Model Project";
-    const CUSTOMERS = ["Acme Corp", "Globex", "Initech"];
+  <Accordion title="2. Generate navigator API keys" icon="key-skeleton">
+    Connecting a navigator creates a navigator instance, but it has **no runtime key yet** — and your agent needs a navigator API key (`ck_…`) to connect. `from-seed` mints one per navigator automatically; to do it yourself (or to rotate keys later):
 
-    // Fetch a list endpoint (returns up to 100 items per call).
-    async function getItems(path: string, params: Record<string, string> = {}) {
-      const qs = new URLSearchParams({ ...params, size: "100" });
-      const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers });
-      if (!res.ok) throw new Error(`GET ${path} failed: HTTP ${res.status}`);
-      return (await res.json()).items as any[];
-    }
+    | Method & path | Purpose |
+    | --- | --- |
+    | `GET /navigator-instances/{id}/api-keys` | List existing keys (only previews). |
+    | `POST /navigator-instances/{id}/api-keys` | Mint a key — returns the full value **once**. |
+    | `DELETE /navigator-instances/{id}/api-keys/{key_id}` | Revoke a key (rotation). |
 
-    async function projectIdByName(name: string): Promise<string | undefined> {
-      return (await getItems("/projects")).find((p) => p.name === name)?.id;
-    }
-
-    // Add `projectId` to a server/navigator's connections without dropping the rest.
-    async function connectResource(resource: "servers" | "navigators", id: string, projectId: string) {
-      const res = await fetch(`${BASE_URL}/${resource}/${id}/connections`, { headers });
-      if (!res.ok) throw new Error(`Read connections failed: HTTP ${res.status}`);
-      const ids = new Set<string>(((await res.json()).connections as any[]).map((c) => c.project_id));
-      ids.add(projectId);
-
-      const post = await fetch(`${BASE_URL}/${resource}/${id}/connections`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ project_ids: [...ids] }),
-      });
-      if (!post.ok) throw new Error(`Set connections failed: HTTP ${post.status}`);
-    }
-
-    async function main() {
-      const seedId = await projectIdByName(SEED_PROJECT);
-      if (!seedId) throw new Error(`Model project "${SEED_PROJECT}" not found`);
-
-      const seedServers = new Set<string>(
-        (await getItems("/server-instances", { project_id: seedId })).map((si) => si.server_id),
-      );
-      const seedNavigators = new Set<string>(
-        (await getItems("/navigator-instances", { project_id: seedId })).map((ni) => ni.navigator_id),
-      );
-
-      const existing = new Set<string>((await getItems("/projects")).map((p) => p.name));
-
-      for (const customer of CUSTOMERS) {
-        if (existing.has(customer)) {
-          console.log(`skip (already exists): ${customer}`);
-          continue;
-        }
-
-        const created = await fetch(`${BASE_URL}/projects`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ name: customer, description: `Provisioned for ${customer}` }),
-        });
-        if (!created.ok) throw new Error(`Create ${customer} failed: HTTP ${created.status}`);
-        const projectId = (await created.json()).id;
-        console.log(`created project: ${customer} (${projectId})`);
-
-        for (const serverId of seedServers) await connectResource("servers", serverId, projectId);
-        for (const navId of seedNavigators) await connectResource("navigators", navId, projectId);
-        console.log(`  seeded ${seedServers.size} server(s) and ${seedNavigators.size} navigator(s)`);
-      }
-    }
-
-    main();
-    ```
-  </Tab>
-  <Tab title="cURL">
     ```bash
-    BASE="https://api.caylex.ai/api/v1"
-    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
-
-    # Servers connected to the model project
-    curl "$BASE/server-instances?project_id=$SEED_PROJECT_ID" -H "$AUTH"
-
-    # Create a project for a customer
-    curl -X POST "$BASE/projects" -H "$AUTH" -H "Content-Type: application/json" \
-      -d '{"name": "Acme Corp", "description": "Provisioned for Acme Corp"}'
-
-    # Read a server's current project connections
-    curl "$BASE/servers/$SERVER_ID/connections" -H "$AUTH"
-
-    # Connect that server to projects (this is the FULL set — include existing ones)
-    curl -X POST "$BASE/servers/$SERVER_ID/connections" -H "$AUTH" \
+    curl -X POST "https://api.caylex.ai/api/v1/navigator-instances/$INSTANCE_ID/api-keys" \
+      -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"project_ids": ["<existing-project-id>", "<new-project-id>"]}'
+      -d '{"name": "runtime", "description": "Runtime key for Acme Corp"}'
     ```
-  </Tab>
-</Tabs>
 
-<Note>
-List endpoints return up to 100 items per call. If your workspace has more than 100 projects, servers, or navigators, follow `meta.next_cursor` from the response (passing it back as the `cursor` query parameter) until `meta.has_next` is `false`.
-</Note>
+    See the full recipe → [Generate Navigator API Keys](/cookbooks/generate-navigator-api-keys).
+  </Accordion>
 
-<Tip>
-The `POST /projects` call returns `409` if a project with that name already exists. The script avoids this by checking the existing-names set first, but you can also catch the `409` and treat it as "already provisioned" to make the job fully self-healing.
-</Tip>
+  <Accordion title="3. Copy tool permissions" icon="shield-halved">
+    Tool permissions are configured per navigator instance (`always_execute`, `require_approval`, or `disabled`). `from-seed` copies the seed navigator's policy onto each new navigator instance. To replicate a policy across projects that already exist:
+
+    | Method & path | Purpose |
+    | --- | --- |
+    | `GET /navigator-instances/{id}/tool-permissions` | Read a navigator instance's policy. |
+    | `PUT /navigator-instances/{id}/tool-permissions` | Apply a policy (`{tool_id, mode}` list). |
+
+    Because tools belong to tenant-level servers, a tool's `tool_id` is stable across projects that share that server — so copying is a `tool_id → mode` mapping.
+
+    See the full recipe → [Copy Tool Permissions Across Projects](/cookbooks/copy-tool-permissions).
+  </Accordion>
+</AccordionGroup>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Generate navigator API keys" icon="key-skeleton" href="/cookbooks/generate-navigator-api-keys">
-    Mint the runtime API key each new navigator instance needs before your agent can connect.
+    Rotate or mint additional runtime keys for a navigator instance.
   </Card>
   <Card title="Copy tool permissions" icon="shield-halved" href="/cookbooks/copy-tool-permissions">
-    Now make each new navigator enforce the same tool-permission policy as the model project.
+    Replicate a navigator's tool-permission policy onto existing projects.
   </Card>
   <Card title="Managing users" icon="users" href="/auth/managing-users">
     Add end users to each customer project and generate their auth links.
-  </Card>
-  <Card title="Projects" icon="folder" href="/platform/projects">
-    Learn how projects, servers, and navigators relate.
   </Card>
   <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
     Full request/response schemas for every endpoint used here.

@@ -8,6 +8,10 @@ icon: "shield-halved"
 
 The recipe reads the model instance's policy as a `tool_id → mode` map and applies the same `mode` to the matching tools on each target instance. This assumes both projects have the **same servers connected** (which the [provisioning recipe](/cookbooks/provision-customer-projects) guarantees); any tool that doesn't exist on the target is simply skipped.
 
+<Tip>
+When you provision a new project with [`POST /projects/from-seed`](/cookbooks/provision-customer-projects), the seed's tool-permission policy is copied automatically. Use this recipe to push a policy onto projects that **already exist**.
+</Tip>
+
 ## Endpoints used
 
 | Method & path | Purpose |

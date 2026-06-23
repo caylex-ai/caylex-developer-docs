@@ -78,16 +78,6 @@
             ]
           },
           {
-            "group": "Cookbooks",
-            "pages": [
-              "cookbooks/overview",
-              "cookbooks/sync-skills",
-              "cookbooks/provision-customer-projects",
-              "cookbooks/generate-navigator-api-keys",
-              "cookbooks/copy-tool-permissions"
-            ]
-          },
-          {
             "group": "Analytics",
             "pages": [
               "analytics/overview"
@@ -201,6 +191,16 @@
               "oauth-guides/zoho"
             ]
           }
+        ]
+      },
+      {
+        "tab": "Cookbooks",
+        "pages": [
+          "cookbooks/overview",
+          "cookbooks/sync-skills",
+          "cookbooks/provision-customer-projects",
+          "cookbooks/generate-navigator-api-keys",
+          "cookbooks/copy-tool-permissions"
         ]
       }
     ],

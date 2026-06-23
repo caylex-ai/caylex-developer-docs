@@ -12,6 +12,10 @@ So after you [provision a project per customer](/cookbooks/provision-customer-pr
 The two credentials do different jobs. The **platform access token** is the admin/control-plane credential used by every cookbook here. The **navigator API key** is the per-navigator-instance runtime credential your agent connects with — see [Connecting your agent](/integration/connecting).
 </Note>
 
+<Tip>
+If you're standing up a new customer project, [`POST /projects/from-seed`](/cookbooks/provision-customer-projects) already mints a runtime key per navigator and returns it. Use this recipe to mint *additional* keys or to **rotate** existing ones.
+</Tip>
+
 ## Endpoints used
 
 | Method & path | Purpose |
