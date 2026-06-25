@@ -1,0 +1,278 @@
+---
+title: "Get all messages for a session"
+description: "List the full message timeline of an assistant chat session, with the tools it called, and learn how to find a session's ID."
+icon: "messages"
+---
+
+Every assistant conversation is a **chat session** identified by a UUID. This recipe shows how to pull the complete, ordered transcript for a session — user turns, assistant replies, and the tools the agent called — and how to find the session ID in the first place.
+
+The messages endpoint returns a flattened, typed **event** timeline: each message expands into one or more events (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool activity is part of the transcript rather than a separate call.
+
+Both endpoints live under the same `…/api/v1/assistants/` prefix and are reached with your platform access token.
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /api/v1/assistants/sessions` | List chat sessions for your tenant (to find a `session_id`). |
+| `GET /api/v1/assistants/sessions/{session_id}/messages` | Get a page of the session's message timeline. |
+
+### Finding the session ID
+
+`GET /api/v1/assistants/sessions` returns sessions for your workspace. Filter with `navigator_instance_id`, `is_playground`, and page with `limit` (max 200) / `offset`:
+
+```json
+{
+  "sessions": [
+    {
+      "session_id": "0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34",
+      "session_name": "Help with Q4 planning",
+      "navigator_name": "Support Agent",
+      "navigator_instance_id": "…",
+      "project_id": "…",
+      "model_name": "claude-…",
+      "is_playground": false,
+      "message_count": 12,
+      "created_at": "2026-06-09T18:33:24Z",
+      "last_message_at": "2026-06-09T18:41:02Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+<Tip>
+You can also grab a session ID straight from the **Session Logs** page in the Caylex Platform UI — it's the UUID in the URL of an open session.
+</Tip>
+
+### Reading the messages
+
+`GET /api/v1/assistants/sessions/{session_id}/messages` returns the canonical paginated envelope plus a top-level `session` block identifying who the session belonged to:
+
+| Query parameter | Default | Notes |
+| --- | --- | --- |
+| `format` | `raw` | `raw` = every event, including Caylex meta-tools. `simple` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
+| `size` | `20` | Messages per page (1–100). Each message can expand into several events. |
+| `cursor` | — | Opaque cursor from a previous page's `meta.next_cursor`; omit for the first page. |
+
+```json
+{
+  "session": {
+    "session_id": "0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34",
+    "session_name": "Help with Q4 planning",
+    "user_email": "jane@acme.com",
+    "tenant_user_id": null,
+    "project_id": "…",
+    "navigator_instance_id": "…",
+    "model_name": "claude-…",
+    "is_playground": false,
+    "created_at": "2026-06-09T18:33:24Z",
+    "last_message_at": "2026-06-09T18:41:02Z"
+  },
+  "items": [
+    {
+      "message_id": "96aaba1d-c787-4e5f-afd0-1759b07569bc",
+      "role": "user",
+      "message_type": "text",
+      "sequence_number": 1,
+      "timestamp": "2026-06-09T18:33:24Z",
+      "events": [
+        {
+          "type": "user_message",
+          "event_id": "96aaba1d-…:0",
+          "text": "what services do we have? can you check my email?"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "size": 20,
+    "total": 12,
+    "next_cursor": "eyJzb3J0Ijog…",
+    "has_next": false,
+    "has_prev": false
+  }
+}
+```
+
+<Note>
+`size` and `total` count **messages**, not events — one message can hold several events (e.g. an assistant turn with text plus parallel tool calls), so the `items` array's combined event count is usually larger than `size`.
+</Note>
+
+## `raw` vs `simple`
+
+The agent talks to Caylex through **meta-tools** (`suggest_tools`, `get_tool_schemas`, `invoke_tools`, `list_skills`, …). `invoke_tools` is the one that runs the real downstream tools.
+
+- **`format=raw`** (default) shows exactly what happened, meta-tools included — useful for debugging the agent loop.
+- **`format=simple`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual tool calls and results it performed, so you see business tools like `gmail_search_messages` directly. Messages left empty by filtering are skipped, and pagination stays exact.
+
+In `simple` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
+
+## The procedure
+
+<Steps>
+  <Step title="Find the session">
+    `GET /api/v1/assistants/sessions` and pick the `session_id` you want (filter by `navigator_instance_id` or `is_playground` as needed).
+  </Step>
+  <Step title="Fetch the first page of messages">
+    `GET /api/v1/assistants/sessions/{session_id}/messages?size=100` (add `format=simple` to hide meta-tools). Read `items` and `meta`.
+  </Step>
+  <Step title="Page until done">
+    While `meta.has_next` is `true`, call again with `cursor=meta.next_cursor`, accumulating `items` until `has_next` is `false`.
+  </Step>
+</Steps>
+
+## Full script
+
+This finds a session by name, then pages through **all** of its messages and returns the complete, ordered transcript. Pass `format="simple"` to get business tools instead of Caylex meta-tools.
+
+<Tabs>
+  <Tab title="Python">
+    ```python get_session_messages.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+
+    def find_session_id(session_name: str) -> str | None:
+        """Look up a session ID by its display name."""
+        resp = requests.get(
+            f"{BASE_URL}/assistants/sessions",
+            headers=HEADERS,
+            params={"limit": 200},
+        )
+        resp.raise_for_status()
+        for s in resp.json()["sessions"]:
+            if s["session_name"] == session_name:
+                return s["session_id"]
+        return None
+
+
+    def get_all_messages(session_id: str, fmt: str = "raw") -> list[dict]:
+        """Page through the whole timeline and return every message item."""
+        items: list[dict] = []
+        cursor: str | None = None
+        while True:
+            params = {"format": fmt, "size": 100}
+            if cursor:
+                params["cursor"] = cursor
+            resp = requests.get(
+                f"{BASE_URL}/assistants/sessions/{session_id}/messages",
+                headers=HEADERS,
+                params=params,
+            )
+            resp.raise_for_status()
+            page = resp.json()
+            items.extend(page["items"])
+            if not page["meta"]["has_next"]:
+                # The session block is identical on every page.
+                print(f"session owner: {page['session']['user_email']}")
+                break
+            cursor = page["meta"]["next_cursor"]
+        return items
+
+
+    if __name__ == "__main__":
+        session_id = find_session_id("Help with Q4 planning")
+        if not session_id:
+            raise SystemExit("session not found")
+
+        messages = get_all_messages(session_id, fmt="simple")
+        print(f"{len(messages)} messages")
+        for m in messages:
+            for e in m["events"]:
+                if e["type"] in ("user_message", "assistant_message"):
+                    print(f"[{m['role']}] {e['text'][:80]}")
+                elif e["type"] == "tool_call":
+                    print(f"[tool_call] {e['name']}")
+                elif e["type"] == "tool_result":
+                    status = "error" if e.get("is_error") else "ok"
+                    print(f"[tool_result] {e.get('tool_name') or ''} ({status})")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript get_session_messages.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const AUTH = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+
+    async function findSessionId(sessionName: string): Promise<string | null> {
+      const res = await fetch(`${BASE_URL}/assistants/sessions?limit=200`, {
+        headers: AUTH,
+      });
+      if (!res.ok) throw new Error(`list sessions failed: ${res.status}`);
+      const { sessions } = await res.json();
+      return (
+        sessions.find((s: any) => s.session_name === sessionName)?.session_id ?? null
+      );
+    }
+
+    async function getAllMessages(sessionId: string, fmt = "raw"): Promise<any[]> {
+      const items: any[] = [];
+      let cursor: string | null = null;
+      do {
+        const params = new URLSearchParams({ format: fmt, size: "100" });
+        if (cursor) params.set("cursor", cursor);
+        const res = await fetch(
+          `${BASE_URL}/assistants/sessions/${sessionId}/messages?${params}`,
+          { headers: AUTH },
+        );
+        if (!res.ok) throw new Error(`get messages failed: ${res.status}`);
+        const page = await res.json();
+        items.push(...page.items);
+        if (!page.meta.has_next) {
+          console.log(`session owner: ${page.session.user_email}`);
+          cursor = null;
+        } else {
+          cursor = page.meta.next_cursor;
+        }
+      } while (cursor);
+      return items;
+    }
+
+    const sessionId = await findSessionId("Help with Q4 planning");
+    if (!sessionId) throw new Error("session not found");
+    const messages = await getAllMessages(sessionId, "simple");
+    console.log(`${messages.length} messages`);
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # 1. Find a session ID (filter as needed)
+    curl "$BASE/assistants/sessions?limit=200" -H "$AUTH"
+
+    # 2. First page of messages (add &format=simple to hide Caylex meta-tools)
+    curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100" -H "$AUTH"
+
+    # 3. Next page — pass the previous response's meta.next_cursor
+    curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100&cursor=$NEXT_CURSOR" \
+      -H "$AUTH"
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result` by `tool_use_id` — they share that ID even when they land in different messages (parallel tool calls return out of order). In `simple` mode, the unwrapped events share the parent `invoke_tools` ID via `parent_tool_use_id`.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Analytics overview" icon="chart-line" href="/analytics/overview">
+    Aggregate metrics — queries, tool calls, error rates — across sessions.
+  </Card>
+  <Card title="Background Agent Tasks" icon="robot" href="/background-tasks/agent-tasks">
+    Run the agent server-to-server; each task is backed by a chat session you can read here.
+  </Card>
+  <Card title="Cookbooks" icon="utensils" href="/cookbooks/overview">
+    More copy-pasteable recipes for automating Caylex with the Platform API.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Full request/response schemas for these endpoints.
+  </Card>
+</CardGroup>

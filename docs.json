@@ -200,7 +200,8 @@
           "cookbooks/sync-skills",
           "cookbooks/provision-customer-projects",
           "cookbooks/generate-navigator-api-keys",
-          "cookbooks/copy-tool-permissions"
+          "cookbooks/copy-tool-permissions",
+          "cookbooks/get-session-messages"
         ]
       }
     ],
