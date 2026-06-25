@@ -10,6 +10,10 @@ The messages endpoint returns a flattened, typed **event** timeline: each messag
 
 Both endpoints live under the same `…/api/v1/assistants/` prefix and are reached with your platform access token.
 
+<Note>
+These are **admin, tenant-wide** reads: an admin-scoped platform access token (or an admin dashboard session) can read **any** session in your tenant — not just sessions you started. End-user sessions driven through the widget or API have no `tenant_user_id`, so `user_email` in the `session` block is the field that tells you who actually used the session.
+</Note>
+
 ## Endpoints used
 
 | Method & path | Purpose |
