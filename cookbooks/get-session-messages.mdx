@@ -4,14 +4,14 @@ description: "List the full message timeline of an assistant chat session, with 
 icon: "messages"
 ---
 
-Every assistant conversation is a **chat session** identified by a UUID. This recipe shows how to pull the complete, ordered transcript for a session — user turns, assistant replies, and the tools the agent called — and how to find the session ID in the first place.
+Every assistant conversation is a **chat session** identified by a UUID. This recipe shows how to pull the complete, ordered transcript for a session (user turns, assistant replies, and the tools the agent called), and how to find the session ID in the first place.
 
 The messages endpoint returns a flattened, typed **event** timeline: each message expands into one or more events (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool activity is part of the transcript rather than a separate call.
 
 Both endpoints live under the same `…/api/v1/assistants/` prefix and are reached with your platform access token.
 
 <Note>
-These are **admin, tenant-wide** reads: an admin-scoped platform access token (or an admin dashboard session) can read **any** session in your tenant — not just sessions you started. End-user sessions driven through the widget or API have no `tenant_user_id`, so `user_email` in the `session` block is the field that tells you who actually used the session.
+These are **admin, tenant-wide** reads: an admin-scoped platform access token (or an admin dashboard session) can read **any** session in your tenant, not just sessions you started. End-user sessions driven through the widget or API have no `tenant_user_id`, so `user_email` in the `session` block is the field that tells you who actually used the session.
 </Note>
 
 ## Endpoints used
@@ -46,7 +46,7 @@ These are **admin, tenant-wide** reads: an admin-scoped platform access token (o
 ```
 
 <Tip>
-You can also grab a session ID straight from the **Session Logs** page in the Caylex Platform UI — it's the UUID in the URL of an open session.
+You can also grab a session ID straight from the **Session Logs** page in the Caylex Platform UI. It's the UUID in the URL of an open session.
 </Tip>
 
 ### Reading the messages
@@ -57,7 +57,7 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 | --- | --- | --- |
 | `view` | `raw` | `raw` = every event, including Caylex meta-tools. `resolved` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
 | `size` | `20` | Messages per page (1–100). Each message can expand into several events. |
-| `cursor` | — | Opaque cursor from a previous page's `meta.next_cursor`; omit for the first page. |
+| `cursor` | (none) | Opaque cursor from a previous page's `meta.next_cursor`; omit for the first page. |
 
 ```json
 {
@@ -100,14 +100,14 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 ```
 
 <Note>
-`size` and `total` count **messages**, not events — one message can hold several events (e.g. an assistant turn with text plus parallel tool calls), so the `items` array's combined event count is usually larger than `size`.
+`size` and `total` count **messages**, not events. One message can hold several events (e.g. an assistant turn with text plus parallel tool calls), so the `items` array's combined event count is usually larger than `size`.
 </Note>
 
 ## `raw` vs `resolved`
 
 The agent talks to Caylex through **meta-tools** (`suggest_tools`, `get_tool_schemas`, `invoke_tools`, `list_skills`, …). `invoke_tools` is the one that runs the real downstream tools.
 
-- **`view=raw`** (default) shows exactly what happened, meta-tools included — useful for debugging the agent loop.
+- **`view=raw`** (default) shows exactly what happened, meta-tools included, useful for debugging the agent loop.
 - **`view=resolved`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual tool calls and results it performed, so you see business tools like `gmail_search_messages` directly. Messages left empty by filtering are skipped, and pagination stays exact.
 
 In `resolved` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
@@ -253,7 +253,7 @@ This finds a session by name, then pages through **all** of its messages and ret
     # 2. First page of messages (add &view=resolved to hide Caylex meta-tools)
     curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100" -H "$AUTH"
 
-    # 3. Next page — pass the previous response's meta.next_cursor
+    # 3. Next page: pass the previous response's meta.next_cursor
     curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100&cursor=$NEXT_CURSOR" \
       -H "$AUTH"
     ```
@@ -261,14 +261,14 @@ This finds a session by name, then pages through **all** of its messages and ret
 </Tabs>
 
 <Tip>
-To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result` by `tool_use_id` — they share that ID even when they land in different messages (parallel tool calls return out of order). In `resolved` mode, the unwrapped events share the parent `invoke_tools` ID via `parent_tool_use_id`.
+To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result` by `tool_use_id`. They share that ID even when they land in different messages (parallel tool calls return out of order). In `resolved` mode, the unwrapped events share the parent `invoke_tools` ID via `parent_tool_use_id`.
 </Tip>
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Analytics overview" icon="chart-line" href="/analytics/overview">
-    Aggregate metrics — queries, tool calls, error rates — across sessions.
+    Aggregate metrics (queries, tool calls, error rates) across sessions.
   </Card>
   <Card title="Background Agent Tasks" icon="robot" href="/background-tasks/agent-tasks">
     Run the agent server-to-server; each task is backed by a chat session you can read here.
