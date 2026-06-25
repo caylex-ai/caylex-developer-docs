@@ -6,15 +6,15 @@ icon: "messages"
 
 Every assistant conversation is a **chat session** identified by a UUID. This recipe shows how to pull the complete, ordered transcript for a session (user turns, assistant replies, and the tools the agent called), and how to find the session ID in the first place.
 
-The messages endpoint returns a flattened, typed **event** timeline: each message expands into one or more events (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool activity is part of the transcript rather than a separate call.
+The `/api/v1/assistants/sessions` endpoint lists chat sessions for your tenant so you can discover or pick the `session_id` you need.
 
-Both endpoints live under the same `…/api/v1/assistants/` prefix and are reached with your platform access token.
+The `/api/v1/assistants/sessions/{session_id}/messages` endpoint returns a flattened, typed **event** timeline: each message expands into one or more events (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool activity is part of the transcript rather than a separate call.
 
 <Note>
-These are **admin, tenant-wide** reads: an admin-scoped platform access token (or an admin dashboard session) can read **any** session in your tenant, not just sessions you started. End-user sessions driven through the widget or API have no `tenant_user_id`, so `user_email` in the `session` block is the field that tells you who actually used the session.
+Both endpoints require **admin** access and operate at **tenant** scope: with an admin platform access token or dashboard session, you can list and read **any** session in your workspace, not only ones you started.
 </Note>
 
-## Endpoints used
+## Endpoints used 
 
 | Method & path | Purpose |
 | --- | --- |
@@ -102,6 +102,10 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 <Note>
 `size` and `total` count **messages**, not events. One message can hold several events (e.g. an assistant turn with text plus parallel tool calls), so the `items` array's combined event count is usually larger than `size`.
 </Note>
+
+<Tip>
+The full request and response schema for this endpoint is browsable in the interactive API reference: [developers.caylex.ai](https://developers.caylex.ai) (production) and [developers.caylex.dev](https://developers.caylex.dev) (development).
+</Tip>
 
 ## `raw` vs `resolved`
 
