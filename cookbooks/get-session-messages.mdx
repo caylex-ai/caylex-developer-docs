@@ -55,7 +55,7 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 
 | Query parameter | Default | Notes |
 | --- | --- | --- |
-| `format` | `raw` | `raw` = every event, including Caylex meta-tools. `simple` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
+| `view` | `raw` | `raw` = every event, including Caylex meta-tools. `resolved` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
 | `size` | `20` | Messages per page (1–100). Each message can expand into several events. |
 | `cursor` | — | Opaque cursor from a previous page's `meta.next_cursor`; omit for the first page. |
 
@@ -103,14 +103,14 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 `size` and `total` count **messages**, not events — one message can hold several events (e.g. an assistant turn with text plus parallel tool calls), so the `items` array's combined event count is usually larger than `size`.
 </Note>
 
-## `raw` vs `simple`
+## `raw` vs `resolved`
 
 The agent talks to Caylex through **meta-tools** (`suggest_tools`, `get_tool_schemas`, `invoke_tools`, `list_skills`, …). `invoke_tools` is the one that runs the real downstream tools.
 
-- **`format=raw`** (default) shows exactly what happened, meta-tools included — useful for debugging the agent loop.
-- **`format=simple`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual tool calls and results it performed, so you see business tools like `gmail_search_messages` directly. Messages left empty by filtering are skipped, and pagination stays exact.
+- **`view=raw`** (default) shows exactly what happened, meta-tools included — useful for debugging the agent loop.
+- **`view=resolved`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual tool calls and results it performed, so you see business tools like `gmail_search_messages` directly. Messages left empty by filtering are skipped, and pagination stays exact.
 
-In `simple` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
+In `resolved` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
 
 ## The procedure
 
@@ -119,7 +119,7 @@ In `simple` mode, unwrapped `tool_call` events carry `server_name`, `intent`, an
     `GET /api/v1/assistants/sessions` and pick the `session_id` you want (filter by `navigator_instance_id` or `is_playground` as needed).
   </Step>
   <Step title="Fetch the first page of messages">
-    `GET /api/v1/assistants/sessions/{session_id}/messages?size=100` (add `format=simple` to hide meta-tools). Read `items` and `meta`.
+    `GET /api/v1/assistants/sessions/{session_id}/messages?size=100` (add `view=resolved` to hide meta-tools). Read `items` and `meta`.
   </Step>
   <Step title="Page until done">
     While `meta.has_next` is `true`, call again with `cursor=meta.next_cursor`, accumulating `items` until `has_next` is `false`.
@@ -128,7 +128,7 @@ In `simple` mode, unwrapped `tool_call` events carry `server_name`, `intent`, an
 
 ## Full script
 
-This finds a session by name, then pages through **all** of its messages and returns the complete, ordered transcript. Pass `format="simple"` to get business tools instead of Caylex meta-tools.
+This finds a session by name, then pages through **all** of its messages and returns the complete, ordered transcript. Pass `view=resolved` to get business tools instead of Caylex meta-tools.
 
 <Tabs>
   <Tab title="Python">
@@ -160,7 +160,7 @@ This finds a session by name, then pages through **all** of its messages and ret
         items: list[dict] = []
         cursor: str | None = None
         while True:
-            params = {"format": fmt, "size": 100}
+            params = {"view": fmt, "size": 100}
             if cursor:
                 params["cursor"] = cursor
             resp = requests.get(
@@ -184,7 +184,7 @@ This finds a session by name, then pages through **all** of its messages and ret
         if not session_id:
             raise SystemExit("session not found")
 
-        messages = get_all_messages(session_id, fmt="simple")
+        messages = get_all_messages(session_id, fmt="resolved")
         print(f"{len(messages)} messages")
         for m in messages:
             for e in m["events"]:
@@ -217,7 +217,7 @@ This finds a session by name, then pages through **all** of its messages and ret
       const items: any[] = [];
       let cursor: string | null = null;
       do {
-        const params = new URLSearchParams({ format: fmt, size: "100" });
+        const params = new URLSearchParams({ view: fmt, size: "100" });
         if (cursor) params.set("cursor", cursor);
         const res = await fetch(
           `${BASE_URL}/assistants/sessions/${sessionId}/messages?${params}`,
@@ -238,7 +238,7 @@ This finds a session by name, then pages through **all** of its messages and ret
 
     const sessionId = await findSessionId("Help with Q4 planning");
     if (!sessionId) throw new Error("session not found");
-    const messages = await getAllMessages(sessionId, "simple");
+    const messages = await getAllMessages(sessionId, "resolved");
     console.log(`${messages.length} messages`);
     ```
   </Tab>
@@ -250,7 +250,7 @@ This finds a session by name, then pages through **all** of its messages and ret
     # 1. Find a session ID (filter as needed)
     curl "$BASE/assistants/sessions?limit=200" -H "$AUTH"
 
-    # 2. First page of messages (add &format=simple to hide Caylex meta-tools)
+    # 2. First page of messages (add &view=resolved to hide Caylex meta-tools)
     curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100" -H "$AUTH"
 
     # 3. Next page — pass the previous response's meta.next_cursor
@@ -261,7 +261,7 @@ This finds a session by name, then pages through **all** of its messages and ret
 </Tabs>
 
 <Tip>
-To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result` by `tool_use_id` — they share that ID even when they land in different messages (parallel tool calls return out of order). In `simple` mode, the unwrapped events share the parent `invoke_tools` ID via `parent_tool_use_id`.
+To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result` by `tool_use_id` — they share that ID even when they land in different messages (parallel tool calls return out of order). In `resolved` mode, the unwrapped events share the parent `invoke_tools` ID via `parent_tool_use_id`.
 </Tip>
 
 ## Next steps
