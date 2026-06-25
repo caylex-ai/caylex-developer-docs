@@ -1,14 +1,14 @@
 ---
-title: "Get All Messages for a Session"
-description: "List the full message timeline of an assistant chat session, with the tools it called, and learn how to find a session's ID."
+title: "Get All Assistant Session Messages"
+description: "Learn how to find a session's ID and list the full message timeline of an assistant chat session, with the tools it called."
 icon: "messages"
 ---
 
-Every assistant conversation is a **chat session** identified by a UUID. This recipe shows how to pull the complete, ordered transcript for a session (user turns, assistant replies, and the tools the agent called), and how to find the session ID in the first place.
+Every assistant conversation is a **chat session** identified by an ID. This recipe shows how to find the session ID in the first place, and how to pull the complete, ordered transcript for a session (user turns, assistant replies, and the tools the agent called).
 
-The `/api/v1/assistants/sessions` endpoint lists chat sessions for your tenant so you can discover or pick the `session_id` you need.
+Start with `GET /api/v1/assistants/sessions` to list chat sessions in your tenant and find the `session_id` you need. Then call `GET /api/v1/assistants/sessions/{session_id}/messages` to fetch the ordered transcript. 
 
-The `/api/v1/assistants/sessions/{session_id}/messages` endpoint returns a flattened, typed **event** timeline: each message expands into one or more events (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool activity is part of the transcript rather than a separate call.
+Each message expands into one or more typed **events** (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool calls and results appear inline rather than on a separate endpoint.
 
 <Note>
 Both endpoints require **admin** access and operate at **tenant** scope: with an admin platform access token or dashboard session, you can list and read **any** session in your workspace, not only ones you started.
@@ -55,7 +55,7 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 
 | Query parameter | Default | Notes |
 | --- | --- | --- |
-| `view` | `raw` | `raw` = every event, including Caylex meta-tools. `resolved` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
+| `view` | `raw` | `raw` = every event, including Caylex meta-tools.<br />`resolved` = drop meta-tools and unwrap `invoke_tools` into the real tools it ran (see below). |
 | `size` | `20` | Messages per page (1–100). Each message can expand into several events. |
 | `cursor` | (none) | Opaque cursor from a previous page's `meta.next_cursor`; omit for the first page. |
 
@@ -104,7 +104,7 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 </Note>
 
 <Tip>
-The full request and response schema for this endpoint is browsable in the interactive API reference: [developers.caylex.ai](https://developers.caylex.ai) (production) and [developers.caylex.dev](https://developers.caylex.dev) (development).
+The full request and response schema for this endpoint is browsable in the interactive API reference at [https://developers.caylex.ai](https://developers.caylex.ai).
 </Tip>
 
 ## `raw` vs `resolved`
