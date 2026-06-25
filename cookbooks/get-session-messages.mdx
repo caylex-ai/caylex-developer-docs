@@ -109,11 +109,10 @@ The full request and response schema for this endpoint is browsable in the inter
 
 ## `raw` vs `resolved`
 
-The agent talks to Caylex through **meta-tools** (`suggest_tools`, `get_tool_schemas`, `invoke_tools`, `list_skills`, …). `invoke_tools` is the one that runs the real downstream tools.
+The agent talks to the Caylex Navigator through **meta-tools** (`suggest_tools`, `get_tool_schemas`, `invoke_tools`, `list_skills`, …). `invoke_tools` is the one that runs the real downstream tools.
 
 - **`view=raw`** (default) shows exactly what happened, meta-tools included, useful for debugging the agent loop.
-- **`view=resolved`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual tool calls and results it performed, so you see business tools like `gmail_search_messages` directly. Messages left empty by filtering are skipped, and pagination stays exact.
-
+- **`view=resolved`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual server tool calls and results it performed, so you see business tools like `gmail_search_messages` directly.
 In `resolved` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
 
 ## The procedure
