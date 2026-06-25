@@ -1,29 +1,62 @@
 ---
 title: "Get All Assistant Session Messages"
-description: "Learn how to find a session's ID and list the full message timeline of an assistant chat session, with the tools it called."
+description: "Learn how to find session IDs for a project within a date range and export the full message timeline for each assistant chat session."
 icon: "messages"
 ---
 
-Every assistant conversation is a **chat session** identified by an ID. This recipe shows how to find the session ID in the first place, and how to pull the complete, ordered transcript for a session (user turns, assistant replies, and the tools the agent called).
+Every assistant conversation is a **chat session** identified by an ID. This recipe walks through a common export pattern:
 
-Start with `GET /api/v1/assistants/sessions` to list chat sessions in your tenant and find the `session_id` you need. Then call `GET /api/v1/assistants/sessions/{session_id}/messages` to fetch the ordered transcript. 
+1. Resolve a **project ID** (by name or from a known UUID).
+2. **List session IDs** for that project within a **created_at** date range.
+3. **Fetch every message** in each session (user turns, assistant replies, and tool calls).
 
 Each message expands into one or more typed **events** (`user_message`, `assistant_message`, `tool_call`, `tool_result`, `compaction`), so tool calls and results appear inline rather than on a separate endpoint.
 
 <Note>
-Both endpoints require **admin** access and operate at **tenant** scope: with an admin platform access token or dashboard session, you can list and read **any** session in your workspace, not only ones you started.
+All endpoints require **admin** access and operate at **tenant** scope: with an admin platform access token or dashboard session, you can list and read **any** session in your workspace, not only ones you started.
 </Note>
 
-## Endpoints used 
+## Endpoints used
 
 | Method & path | Purpose |
 | --- | --- |
-| `GET /api/v1/assistants/sessions` | List chat sessions for your tenant (to find a `session_id`). |
-| `GET /api/v1/assistants/sessions/{session_id}/messages` | Get a page of the session's message timeline. |
+| `GET /api/v1/projects` | List projects in your tenant (to resolve a `project_id` by name). |
+| `GET /api/v1/assistants/sessions` | List chat sessions; filter by `project_id`, date range, navigator, and playground flag. |
+| `GET /api/v1/assistants/sessions/{session_id}/messages` | Get a page of a session's message timeline. |
 
-### Finding the session ID
+### Resolve the project ID
 
-`GET /api/v1/assistants/sessions` returns sessions for your workspace. Filter with `navigator_instance_id`, `is_playground`, and page with `limit` (max 200) / `offset`:
+If you already have a project ID, skip this step.
+
+`GET /api/v1/projects` returns paginated projects.
+
+```json
+{
+  "items": [
+    {
+      "id": "7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+      "name": "Acme Corp",
+      "description": "Production deployment for Acme",
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "meta": { "size": 20, "total": 1, "has_next": false, "has_prev": false }
+}
+```
+
+### List sessions for a project and date range
+
+`GET /api/v1/assistants/sessions` returns sessions for your workspace. Use **`project_id`** plus **`timestamp_start`** / **`timestamp_end`** to restrict to sessions **created** within a range (both bounds are inclusive, ISO 8601):
+
+| Query parameter | Notes |
+| --- | --- |
+| `project_id` | ID of the project. |
+| `timestamp_start` | Inclusive lower bound on `created_at` (e.g. `2026-06-01T00:00:00Z`). |
+| `timestamp_end` | Inclusive upper bound on `created_at` (e.g. `2026-06-30T23:59:59Z`). |
+| `navigator_instance_id` | Further restrict to one navigator instance. |
+| `is_playground` | `true` / `false` to include only playground or production sessions. |
+| `limit` | Page size, default `50`, max `200`. |
+| `offset` | Skip N results for pagination (use with `count` to walk all pages). |
 
 ```json
 {
@@ -32,9 +65,9 @@ Both endpoints require **admin** access and operate at **tenant** scope: with an
       "session_id": "0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34",
       "session_name": "Help with Q4 planning",
       "navigator_name": "Support Agent",
-      "navigator_instance_id": "…",
-      "project_id": "…",
-      "model_name": "claude-…",
+      "navigator_instance_id": "9a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "project_id": "7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+      "model_name": "claude-sonnet-4-6",
       "is_playground": false,
       "message_count": 12,
       "created_at": "2026-06-09T18:33:24Z",
@@ -45,8 +78,15 @@ Both endpoints require **admin** access and operate at **tenant** scope: with an
 }
 ```
 
+<Note>
+**`count`** is the total number of sessions matching your filters, not just the current page. 
+</Note>
+<Note>
+If `timestamp_start` is after `timestamp_end`, the API returns **400**.
+</Note>
+
 <Tip>
-You can also grab a session ID straight from the **Session Logs** page in the Caylex Platform UI. It's the UUID in the URL of an open session.
+You can also grab a single session ID from the **Session Logs** page in the Caylex Platform UI — it's the ID in the URL of an open session.
 </Tip>
 
 ### Reading the messages
@@ -66,9 +106,9 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
     "session_name": "Help with Q4 planning",
     "user_email": "jane@acme.com",
     "tenant_user_id": null,
-    "project_id": "…",
-    "navigator_instance_id": "…",
-    "model_name": "claude-…",
+    "project_id": "7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+    "navigator_instance_id": "9a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    "model_name": "claude-sonnet-4-6",
     "is_playground": false,
     "created_at": "2026-06-09T18:33:24Z",
     "last_message_at": "2026-06-09T18:41:02Z"
@@ -104,7 +144,7 @@ You can also grab a session ID straight from the **Session Logs** page in the Ca
 </Note>
 
 <Tip>
-The full request and response schema for this endpoint is browsable in the interactive API reference at [https://developers.caylex.ai](https://developers.caylex.ai).
+The full request and response schema for these endpoints is browsable in the interactive API reference at [https://developers.caylex.ai](https://developers.caylex.ai).
 </Tip>
 
 ## `raw` vs `resolved`
@@ -113,29 +153,33 @@ The agent talks to the Caylex Navigator through **meta-tools** (`suggest_tools`,
 
 - **`view=raw`** (default) shows exactly what happened, meta-tools included, useful for debugging the agent loop.
 - **`view=resolved`** drops the pure meta-tools and **unwraps `invoke_tools`** into the actual server tool calls and results it performed, so you see business tools like `gmail_search_messages` directly.
+
 In `resolved` mode, unwrapped `tool_call` events carry `server_name`, `intent`, and `parent_tool_use_id`; unwrapped `tool_result` events carry `tool_name` and `parent_tool_use_id`.
 
 ## The procedure
 
 <Steps>
-  <Step title="Find the session">
-    `GET /api/v1/assistants/sessions` and pick the `session_id` you want (filter by `navigator_instance_id` or `is_playground` as needed).
+  <Step title="Resolve the project ID">
+    `GET /api/v1/projects` and find the `id` for your project name — or use a `project_id` you already have from provisioning or the UI.
   </Step>
-  <Step title="Fetch the first page of messages">
-    `GET /api/v1/assistants/sessions/{session_id}/messages?size=100` (add `view=resolved` to hide meta-tools). Read `items` and `meta`.
+  <Step title="List sessions in the date range">
+    `GET /api/v1/assistants/sessions?project_id={id}&timestamp_start=…&timestamp_end=…` and collect each `session_id`. Page with `limit` / `offset` while `offset + len(sessions) < count`.
   </Step>
-  <Step title="Page until done">
+  <Step title="Fetch messages for each session">
+    For every `session_id`, call `GET /api/v1/assistants/sessions/{session_id}/messages?size=100` (add `view=resolved` to hide meta-tools).
+  </Step>
+  <Step title="Page each session until done">
     While `meta.has_next` is `true`, call again with `cursor=meta.next_cursor`, accumulating `items` until `has_next` is `false`.
   </Step>
 </Steps>
 
 ## Full script
 
-This finds a session by name, then pages through **all** of its messages and returns the complete, ordered transcript. Pass `view=resolved` to get business tools instead of Caylex meta-tools.
+This resolves a project by name, lists **all** assistant sessions created in June 2026 for that project, then exports the complete message timeline for each session. Pass `view=resolved` to get business tools instead of Caylex meta-tools.
 
 <Tabs>
   <Tab title="Python">
-    ```python get_session_messages.py
+    ```python export_project_sessions.py
     import os
 
     import requests
@@ -143,19 +187,65 @@ This finds a session by name, then pages through **all** of its messages and ret
     BASE_URL = "https://api.caylex.ai/api/v1"
     HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
 
+    PROJECT_NAME = "Acme Corp"
+    TIMESTAMP_START = "2026-06-01T00:00:00Z"
+    TIMESTAMP_END = "2026-06-30T23:59:59Z"
 
-    def find_session_id(session_name: str) -> str | None:
-        """Look up a session ID by its display name."""
-        resp = requests.get(
-            f"{BASE_URL}/assistants/sessions",
-            headers=HEADERS,
-            params={"limit": 200},
-        )
-        resp.raise_for_status()
-        for s in resp.json()["sessions"]:
-            if s["session_name"] == session_name:
-                return s["session_id"]
-        return None
+
+    def get_items(path: str, params: dict | None = None) -> list[dict]:
+        """Fetch a cursor-paginated list endpoint (returns all items)."""
+        params = dict(params or {})
+        params.setdefault("size", 100)
+        items: list[dict] = []
+        cursor: str | None = None
+        while True:
+            page_params = {**params}
+            if cursor:
+                page_params["cursor"] = cursor
+            resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=page_params)
+            resp.raise_for_status()
+            page = resp.json()
+            items.extend(page["items"])
+            if not page["meta"]["has_next"]:
+                break
+            cursor = page["meta"]["next_cursor"]
+        return items
+
+
+    def project_id_by_name(name: str) -> str | None:
+        return next((p["id"] for p in get_items("/projects") if p["name"] == name), None)
+
+
+    def list_sessions_for_project(
+        project_id: str,
+        *,
+        timestamp_start: str,
+        timestamp_end: str,
+    ) -> list[dict]:
+        """Page through GET /assistants/sessions with limit/offset."""
+        sessions: list[dict] = []
+        limit = 200
+        offset = 0
+        while True:
+            resp = requests.get(
+                f"{BASE_URL}/assistants/sessions",
+                headers=HEADERS,
+                params={
+                    "project_id": project_id,
+                    "timestamp_start": timestamp_start,
+                    "timestamp_end": timestamp_end,
+                    "limit": limit,
+                    "offset": offset,
+                },
+            )
+            resp.raise_for_status()
+            page = resp.json()
+            sessions.extend(page["sessions"])
+            total = page["count"]
+            offset += len(page["sessions"])
+            if offset >= total or not page["sessions"]:
+                break
+        return sessions
 
 
     def get_all_messages(session_id: str, fmt: str = "raw") -> list[dict]:
@@ -175,48 +265,96 @@ This finds a session by name, then pages through **all** of its messages and ret
             page = resp.json()
             items.extend(page["items"])
             if not page["meta"]["has_next"]:
-                # The session block is identical on every page.
-                print(f"session owner: {page['session']['user_email']}")
                 break
             cursor = page["meta"]["next_cursor"]
         return items
 
 
     if __name__ == "__main__":
-        session_id = find_session_id("Help with Q4 planning")
-        if not session_id:
-            raise SystemExit("session not found")
+        project_id = project_id_by_name(PROJECT_NAME)
+        if not project_id:
+            raise SystemExit(f"project not found: {PROJECT_NAME!r}")
 
-        messages = get_all_messages(session_id, fmt="resolved")
-        print(f"{len(messages)} messages")
-        for m in messages:
-            for e in m["events"]:
-                if e["type"] in ("user_message", "assistant_message"):
-                    print(f"[{m['role']}] {e['text'][:80]}")
-                elif e["type"] == "tool_call":
-                    print(f"[tool_call] {e['name']}")
-                elif e["type"] == "tool_result":
-                    status = "error" if e.get("is_error") else "ok"
-                    print(f"[tool_result] {e.get('tool_name') or ''} ({status})")
+        sessions = list_sessions_for_project(
+            project_id,
+            timestamp_start=TIMESTAMP_START,
+            timestamp_end=TIMESTAMP_END,
+        )
+        print(f"{len(sessions)} sessions in range for {PROJECT_NAME}")
+
+        for s in sessions:
+            session_id = s["session_id"]
+            messages = get_all_messages(session_id, fmt="resolved")
+            print(f"\n{s['session_name']!r} ({session_id}): {len(messages)} messages")
+            for m in messages:
+                for e in m["events"]:
+                    if e["type"] in ("user_message", "assistant_message"):
+                        print(f"  [{m['role']}] {e['text'][:80]}")
+                    elif e["type"] == "tool_call":
+                        print(f"  [tool_call] {e['name']}")
+                    elif e["type"] == "tool_result":
+                        status = "error" if e.get("is_error") else "ok"
+                        print(f"  [tool_result] {e.get('tool_name') or ''} ({status})")
     ```
   </Tab>
   <Tab title="TypeScript">
-    ```typescript get_session_messages.ts
+    ```typescript exportProjectSessions.ts
     const BASE_URL = "https://api.caylex.ai/api/v1";
     const AUTH = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
 
-    async function findSessionId(sessionName: string): Promise<string | null> {
-      const res = await fetch(`${BASE_URL}/assistants/sessions?limit=200`, {
-        headers: AUTH,
-      });
-      if (!res.ok) throw new Error(`list sessions failed: ${res.status}`);
-      const { sessions } = await res.json();
-      return (
-        sessions.find((s: any) => s.session_name === sessionName)?.session_id ?? null
-      );
+    const PROJECT_NAME = "Acme Corp";
+    const TIMESTAMP_START = "2026-06-01T00:00:00Z";
+    const TIMESTAMP_END = "2026-06-30T23:59:59Z";
+
+    async function getItems(path: string, params: Record<string, string> = {}) {
+      const items: any[] = [];
+      let cursor: string | null = null;
+      do {
+        const qs = new URLSearchParams({ ...params, size: "100" });
+        if (cursor) qs.set("cursor", cursor);
+        const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers: AUTH });
+        if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+        const page = await res.json();
+        items.push(...page.items);
+        cursor = page.meta.has_next ? page.meta.next_cursor : null;
+      } while (cursor);
+      return items;
     }
 
-    async function getAllMessages(sessionId: string, fmt = "raw"): Promise<any[]> {
+    async function projectIdByName(name: string) {
+      return (await getItems("/projects")).find((p) => p.name === name)?.id as
+        | string
+        | undefined;
+    }
+
+    async function listSessionsForProject(
+      projectId: string,
+      timestampStart: string,
+      timestampEnd: string,
+    ) {
+      const sessions: any[] = [];
+      const limit = 200;
+      let offset = 0;
+      let total = 0;
+      do {
+        const qs = new URLSearchParams({
+          project_id: projectId,
+          timestamp_start: timestampStart,
+          timestamp_end: timestampEnd,
+          limit: String(limit),
+          offset: String(offset),
+        });
+        const res = await fetch(`${BASE_URL}/assistants/sessions?${qs}`, { headers: AUTH });
+        if (!res.ok) throw new Error(`list sessions failed: ${res.status}`);
+        const page = await res.json();
+        sessions.push(...page.sessions);
+        total = page.count;
+        offset += page.sessions.length;
+      } while (offset < total && sessions.length > 0);
+      return sessions;
+    }
+
+    async function getAllMessages(sessionId: string, fmt = "raw") {
       const items: any[] = [];
       let cursor: string | null = null;
       do {
@@ -229,20 +367,25 @@ This finds a session by name, then pages through **all** of its messages and ret
         if (!res.ok) throw new Error(`get messages failed: ${res.status}`);
         const page = await res.json();
         items.push(...page.items);
-        if (!page.meta.has_next) {
-          console.log(`session owner: ${page.session.user_email}`);
-          cursor = null;
-        } else {
-          cursor = page.meta.next_cursor;
-        }
+        cursor = page.meta.has_next ? page.meta.next_cursor : null;
       } while (cursor);
       return items;
     }
 
-    const sessionId = await findSessionId("Help with Q4 planning");
-    if (!sessionId) throw new Error("session not found");
-    const messages = await getAllMessages(sessionId, "resolved");
-    console.log(`${messages.length} messages`);
+    const projectId = await projectIdByName(PROJECT_NAME);
+    if (!projectId) throw new Error(`project not found: ${PROJECT_NAME}`);
+
+    const sessions = await listSessionsForProject(
+      projectId,
+      TIMESTAMP_START,
+      TIMESTAMP_END,
+    );
+    console.log(`${sessions.length} sessions in range for ${PROJECT_NAME}`);
+
+    for (const s of sessions) {
+      const messages = await getAllMessages(s.session_id, "resolved");
+      console.log(`\n${s.session_name} (${s.session_id}): ${messages.length} messages`);
+    }
     ```
   </Tab>
   <Tab title="cURL">
@@ -250,13 +393,27 @@ This finds a session by name, then pages through **all** of its messages and ret
     BASE="https://api.caylex.ai/api/v1"
     AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
 
-    # 1. Find a session ID (filter as needed)
-    curl "$BASE/assistants/sessions?limit=200" -H "$AUTH"
+    # 1. Resolve project ID by name (pick the matching id from items[])
+    curl "$BASE/projects?size=100" -H "$AUTH"
 
-    # 2. First page of messages (add &view=resolved to hide Caylex meta-tools)
+    PROJECT_ID="7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b"
+
+    # 2. List sessions for the project within a created_at range
+    curl -G "$BASE/assistants/sessions" -H "$AUTH" \
+      --data-urlencode "project_id=$PROJECT_ID" \
+      --data-urlencode "timestamp_start=2026-06-01T00:00:00Z" \
+      --data-urlencode "timestamp_end=2026-06-30T23:59:59Z" \
+      --data-urlencode "limit=200" \
+      --data-urlencode "offset=0"
+
+    # If count > limit, repeat with offset=200, offset=400, … until you have all session_ids.
+
+    SESSION_ID="0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34"
+
+    # 3. First page of messages for one session (add &view=resolved to hide meta-tools)
     curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100" -H "$AUTH"
 
-    # 3. Next page: pass the previous response's meta.next_cursor
+    # 4. Next page: pass the previous response's meta.next_cursor
     curl "$BASE/assistants/sessions/$SESSION_ID/messages?size=100&cursor=$NEXT_CURSOR" \
       -H "$AUTH"
     ```
@@ -270,14 +427,14 @@ To reconstruct the agent's reasoning, match each `tool_call` to its `tool_result
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Provision a customer project" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Stand up a project per customer and capture the returned `id` for session exports.
+  </Card>
   <Card title="Analytics overview" icon="chart-line" href="/analytics/overview">
     Aggregate metrics (queries, tool calls, error rates) across sessions.
   </Card>
   <Card title="Background Agent Tasks" icon="robot" href="/background-tasks/agent-tasks">
     Run the agent server-to-server; each task is backed by a chat session you can read here.
-  </Card>
-  <Card title="Cookbooks" icon="utensils" href="/cookbooks/overview">
-    More copy-pasteable recipes for automating Caylex with the Platform API.
   </Card>
   <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
     Full request/response schemas for these endpoints.
