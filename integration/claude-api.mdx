@@ -1,0 +1,161 @@
+---
+title: "Claude API"
+description: "Connect the Caylex Navigator to Anthropic's Messages API using the native remote MCP connector."
+icon: "robot"
+---
+
+Anthropic's [MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector) lets the Messages API connect to a remote MCP server directly — Claude handles tool discovery and execution server-side, with no MCP client code on your end. This guide shows you how to point that connector at the Caylex Navigator.
+
+## Authentication: use a bearer token
+
+The Caylex Navigator normally authenticates with two custom headers (`x-api-key` and `x-user-email`). Anthropic's MCP connector, however, only supports a **single** auth field — `authorization_token`, which it sends as `Authorization: Bearer <token>`. It does **not** support custom headers.
+
+To bridge this, the Navigator accepts a **bearer token** that packs both values into one string:
+
+- Token = `base64url(JSON{"api_key": "...", "user_email": "..."})` (padding optional)
+- Sent by Claude as `Authorization: Bearer <token>`
+- The Navigator decodes it and authenticates exactly as it would with the two headers
+
+<Note>
+The token is **not** signed or encrypted. Your API key is the real credential — it's validated (and independently revocable) on every request, just like the header-based flows. Treat the token like an API key: build it server-side, never expose it in client code.
+</Note>
+
+## Prerequisites
+
+- Python 3.10+ and the `anthropic` SDK (`pip install anthropic`)
+- A Caylex Navigator Instance with an API key ([create one here](/platform/navigators))
+- Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
+
+## Full example
+
+```python main.py
+import base64
+import json
+import os
+
+import anthropic
+
+
+def build_caylex_bearer_token(api_key: str, user_email: str) -> str:
+    """Pack the Caylex credentials into a single bearer token."""
+    payload = json.dumps({"api_key": api_key, "user_email": user_email}).encode("utf-8")
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+
+
+def main() -> None:
+    token = build_caylex_bearer_token(
+        api_key=os.environ["CAYLEX_API_KEY"],
+        user_email=os.environ["CAYLEX_USER_EMAIL"],
+    )
+
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    response = client.beta.messages.create(
+        model="claude-opus-4-8",
+        max_tokens=2048,
+        messages=[
+            {
+                "role": "user",
+                "content": "Check my Linear issues, find any blockers, "
+                "and post a summary to the relevant Slack channel.",
+            }
+        ],
+        mcp_servers=[
+            {
+                "type": "url",
+                "url": "https://navigator.caylex.ai/mcp",
+                "name": "caylex",
+                "authorization_token": token,
+            }
+        ],
+        tools=[{"type": "mcp_toolset", "mcp_server_name": "caylex"}],
+        betas=["mcp-client-2025-11-20"],
+    )
+
+    for block in response.content:
+        if block.type == "text":
+            print(block.text)
+
+
+main()
+```
+
+## Step-by-step
+
+<Steps>
+  <Step title="Set environment variables">
+    ```bash
+    export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+    export CAYLEX_USER_EMAIL="user@example.com"
+    export ANTHROPIC_API_KEY="your-anthropic-key"
+    ```
+  </Step>
+  <Step title="Build the bearer token">
+    Pack your Caylex API key and the end user's email into a base64url-encoded JSON token. Build it server-side, per user.
+
+    ```python
+    def build_caylex_bearer_token(api_key: str, user_email: str) -> str:
+        payload = json.dumps({"api_key": api_key, "user_email": user_email}).encode("utf-8")
+        return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    ```
+  </Step>
+  <Step title="Configure the MCP connector">
+    Add the Caylex Navigator to `mcp_servers` and pass the token as `authorization_token`. Reference the server from the `tools` array with an `mcp_toolset`.
+
+    ```python
+    mcp_servers=[
+        {
+            "type": "url",
+            "url": "https://navigator.caylex.ai/mcp",
+            "name": "caylex",
+            "authorization_token": token,
+        }
+    ],
+    tools=[{"type": "mcp_toolset", "mcp_server_name": "caylex"}],
+    betas=["mcp-client-2025-11-20"],
+    ```
+
+    <Warning>
+    The MCP connector is a beta feature and requires the `mcp-client-2025-11-20` beta header (passed via `betas=[...]`). Use `client.beta.messages.create`, not `client.messages.create`.
+    </Warning>
+  </Step>
+  <Step title="Read the response">
+    Claude executes Caylex tool calls server-side and returns the result in a single response. The `content` array contains `text` blocks plus `mcp_tool_use` / `mcp_tool_result` blocks for each tool call.
+
+    ```python
+    for block in response.content:
+        if block.type == "text":
+            print(block.text)
+        elif block.type == "mcp_tool_use":
+            print(f"called {block.name} with {block.input}")
+        elif block.type == "mcp_tool_result":
+            print(f"result (is_error={block.is_error}): {block.content}")
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+Build a fresh token per request from your app's authenticated user: the API key stays constant (it identifies your navigator instance) while the `user_email` changes per user (it determines whose credentials the Navigator uses). Because the connector calls the Navigator from Anthropic's infrastructure, the endpoint must be publicly reachable (it is) over the MCP Streamable HTTP transport — no extra configuration needed.
+</Tip>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Invalid request parameters at initialize">
+    If the connector fails during the MCP `initialize` handshake with a generic `-32602 Invalid request parameters`, it almost always means **authentication failed** — a malformed token, or an API key / email that isn't valid for the environment you're hitting. Double-check that the token decodes to the correct `api_key` and `user_email`, and that the key belongs to the same environment as the URL.
+  </Accordion>
+  <Accordion title="Tool calls to a server fail with an auth error">
+    The `x-user-email` packed into the token must exactly match the email the user authenticated with via an [Auth Link](/auth/auth-links). If it doesn't match, tool calls to servers requiring authentication will fail.
+  </Accordion>
+</AccordionGroup>
+
+## When to use the header-based flows instead
+
+If you control the MCP client yourself — including via the [Claude Agent SDK](/integration/claude-sdk) — you can send the standard `x-api-key` and `x-user-email` headers directly and skip the bearer token. The bearer token is specifically for the **hosted MCP connector** on the Messages API, which can't send custom headers.
+
+## Further reading
+
+- [Anthropic MCP connector documentation](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
+- [Claude Agent SDK](/integration/claude-sdk) — header-based integration where you control the client
+- [Connecting Your Agent](/integration/connecting) — details on how the Navigator works
+- [Server Authentication](/auth/server-authentication) for user-level vs project-level auth

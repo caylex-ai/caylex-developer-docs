@@ -37,7 +37,7 @@ async def main() -> None:
     async with MCPServerStreamableHttp(
         name="Caylex",
         params={
-            "url": "https://proxy.caylex.ai/mcp",
+            "url": "https://navigator.caylex.ai/mcp",
             "headers": {
                 "x-api-key": api_key,
                 "x-user-email": user_email,
@@ -79,7 +79,7 @@ asyncio.run(main())
     async with MCPServerStreamableHttp(
         name="Caylex",
         params={
-            "url": "https://proxy.caylex.ai/mcp",
+            "url": "https://navigator.caylex.ai/mcp",
             "headers": {
                 "x-api-key": api_key,
                 "x-user-email": user_email,
@@ -122,7 +122,7 @@ async def handle_user_request(user_email: str, query: str) -> str:
     async with MCPServerStreamableHttp(
         name="Caylex",
         params={
-            "url": "https://proxy.caylex.ai/mcp",
+            "url": "https://navigator.caylex.ai/mcp",
             "headers": {
                 "x-api-key": api_key,
                 "x-user-email": user_email,  # Dynamic per user

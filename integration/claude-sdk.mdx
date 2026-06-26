@@ -34,7 +34,7 @@ async def main() -> None:
     # Connect to Caylex MCP
     caylex_server = MCPServerStreamableHttp(
         name="Caylex",
-        url="https://proxy.caylex.ai/mcp",
+        url="https://navigator.caylex.ai/mcp",
         headers={
             "x-api-key": api_key,
             "x-user-email": user_email,
@@ -72,7 +72,7 @@ asyncio.run(main())
     ```python
     caylex_server = MCPServerStreamableHttp(
         name="Caylex",
-        url="https://proxy.caylex.ai/mcp",
+        url="https://navigator.caylex.ai/mcp",
         headers={
             "x-api-key": api_key,
             "x-user-email": user_email,

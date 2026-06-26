@@ -10,7 +10,7 @@ Caylex exposes a single MCP endpoint that your agent connects to. Through this o
 
 | Setting | Value |
 | --- | --- |
-| **Endpoint URL** | `https://proxy.caylex.ai/mcp` |
+| **Endpoint URL** | `https://navigator.caylex.ai/mcp` |
 | **Transport** | Streamable HTTP (MCP standard) |
 | **Protocol** | Model Context Protocol (MCP) |
 
@@ -46,7 +46,7 @@ When your agent connects and makes tool calls, here is what happens:
 
 <Steps>
   <Step title="Agent connects to the Navigator">
-    Your agent opens an MCP connection to `https://proxy.caylex.ai/mcp` with the `x-api-key` and `x-user-email` headers.
+    Your agent opens an MCP connection to `https://navigator.caylex.ai/mcp` with the `x-api-key` and `x-user-email` headers.
   </Step>
   <Step title="Navigator identifies context">
     The Navigator validates the API key and resolves:
@@ -109,7 +109,7 @@ Never commit API keys to version control. Use environment variables, secret mana
 
 Caylex works with any framework that supports the MCP Streamable HTTP transport. The connection pattern is always the same:
 
-1. Point at `https://proxy.caylex.ai/mcp`
+1. Point at `https://navigator.caylex.ai/mcp`
 2. Set the `x-api-key` and `x-user-email` headers
 3. Let the framework handle MCP tool discovery and invocation
 

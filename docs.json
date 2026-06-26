@@ -60,6 +60,7 @@
               "integration/openai-agents",
               "integration/langchain",
               "integration/claude-sdk",
+              "integration/claude-api",
               "integration/claude-desktop"
             ]
           },

@@ -19,7 +19,7 @@ graph LR
     Navigator --> S4["Your Custom MCP"]
 ```
 
-1. Your agent connects to the Caylex Navigator at `https://proxy.caylex.ai/mcp` using Streamable HTTP transport
+1. Your agent connects to the Caylex Navigator at `https://navigator.caylex.ai/mcp` using Streamable HTTP transport
 2. The Navigator identifies the navigator instance and project from the `x-api-key` header, and the user from the `x-user-email` header
 3. The Navigator exposes MCP tools that your agent uses to discover and execute tools across all connected servers
 4. When your agent invokes a tool, the Navigator automatically injects the correct credentials for that user and server, executes the call, and returns the result
