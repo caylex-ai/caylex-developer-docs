@@ -1,0 +1,325 @@
+---
+title: "Override a Server's Base URL"
+description: "Find a project's Foundry server instance and point it at a project-specific upstream base URL, without changing the shared server default."
+icon: "globe"
+---
+
+Servers generated in the **Server Foundry** are created with a single **default base URL** (the upstream API they call). Sometimes one customer/project needs the *same* generated server to talk to a **different upstream host** — for example a per-tenant subdomain or a staging environment. That's a **base URL override**: it lives on the **server instance** (the project's copy of the server), so each project can point at its own upstream without regenerating or forking the server.
+
+This recipe walks through the common flow:
+
+1. Resolve a **project ID** (by name or from a known UUID).
+2. **List the project's server instances** and pick the Foundry server to override.
+3. **Set the override** on that instance (or clear it to fall back to the default).
+
+<Note>
+Overrides apply to **Foundry-generated servers only** (`server_type` = `foundry`). Setting one on an external or catalog server returns **400**. All endpoints require **admin** access and operate at **tenant** scope, so a platform access token can read and update any instance in your workspace.
+</Note>
+
+<Note>
+At tool-call time the override is forwarded to the running server, which swaps its baked-in default base URL for your value. It only rewrites calls that target the **default** base URL — if the server was generated with multiple base URLs (per-endpoint routing), endpoints pinned to a *different* host keep theirs.
+</Note>
+
+## Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /api/v1/projects/search` | Find a project by name (targeted, server-side search). |
+| `GET /api/v1/server-instances` | List server instances; filter by `project_id`. |
+| `PATCH /api/v1/server-instances/{server_instance_id}/base-url-override` | Set or clear the per-instance base URL override. |
+
+### Resolve the project ID
+
+If you already have a project ID, skip this step. `GET /api/v1/projects/search?search={name}` does a case-insensitive partial match on project name/description and returns paginated results — pick the exact name from `items` (usually just one).
+
+```json
+{
+  "items": [
+    {
+      "id": "7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+      "name": "Acme Corp",
+      "description": "Production deployment for Acme",
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "meta": { "size": 20, "total": 1, "has_next": false, "has_prev": false }
+}
+```
+
+### List the project's server instances
+
+`GET /api/v1/server-instances?project_id={id}` returns the project's instances (cursor-paginated). Each item includes the fields you need to identify and override a Foundry server:
+
+| Field | Notes |
+| --- | --- |
+| `id` | The **server instance ID** — the path parameter for the PATCH below. |
+| `server_name` / `display_name` | Match your target server. `display_name` is the friendly name for Foundry servers. |
+| `server_type` | `foundry`, `external`, or `caylex`. Only `foundry` supports overrides. |
+| `default_base_url` | The server-level default upstream base URL (Foundry only). |
+| `base_url_override` | The current override, or `null` when the instance uses the default. |
+
+```json
+{
+  "items": [
+    {
+      "id": "3f9c2d10-8a4b-4e21-9f77-1c2d3e4f5a6b",
+      "server_id": "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e",
+      "project_id": "7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b",
+      "server_name": "acme-corp-platform-mcp",
+      "display_name": "Acme Corp Platform MCP",
+      "server_type": "foundry",
+      "default_base_url": "https://api.widgets.io",
+      "base_url_override": null,
+      "paused": false
+    }
+  ],
+  "meta": { "size": 20, "total": 1, "has_next": false, "next_cursor": null }
+}
+```
+
+### Set (or clear) the override
+
+`PATCH /api/v1/server-instances/{server_instance_id}/base-url-override` with a JSON body:
+
+```json
+{ "base_url_override": "https://acme.widgets.io" }
+```
+
+| Body field | Notes |
+| --- | --- |
+| `base_url_override` | The upstream base URL for this project. Send `null` or `""` to **clear** it (revert to `default_base_url`). |
+
+The value must be an absolute `http(s)` URL with a real, routable host — placeholder hosts (e.g. `example.com`, `localhost`) and unreachable/internal hosts are rejected with **400**. On success the endpoint echoes the stored (normalized) values:
+
+```json
+{
+  "server_instance_id": "3f9c2d10-8a4b-4e21-9f77-1c2d3e4f5a6b",
+  "base_url_override": "https://acme.widgets.io",
+  "default_base_url": "https://api.widgets.io"
+}
+```
+
+<Tip>
+You can also set this in the Caylex Platform UI: open the project-server side drawer and click the pencil next to **Base URL**. A blue dot indicates an active override.
+</Tip>
+
+## The procedure
+
+<Steps>
+  <Step title="Resolve the project ID">
+    `GET /api/v1/projects/search?search={name}` and pick the exact-name match's `id` — or use a `project_id` you already have.
+  </Step>
+  <Step title="Find the Foundry server instance">
+    `GET /api/v1/server-instances?project_id={id}`, then pick the item whose `server_name`/`display_name` matches your target and whose `server_type` is `foundry`. Keep its `id` (and note `default_base_url`).
+  </Step>
+  <Step title="Set the override">
+    `PATCH /api/v1/server-instances/{id}/base-url-override` with `{ "base_url_override": "https://…" }`.
+  </Step>
+  <Step title="(Optional) Clear it later">
+    `PATCH` the same path with `{ "base_url_override": null }` to revert the instance to the server default.
+  </Step>
+</Steps>
+
+## Full script
+
+This resolves a project by name, finds a Foundry server instance by name within that project, and sets its base URL override. Set `NEW_BASE_URL = None` to clear the override instead.
+
+<Tabs>
+  <Tab title="Python">
+    ```python set_base_url_override.py
+    import os
+    from urllib.parse import quote
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+    PROJECT_NAME = "Acme Corp"
+    SERVER_NAME = "Acme Corp Platform MCP"  # matches server_name or display_name
+    NEW_BASE_URL: str | None = "https://acme.widgets.io"  # None clears it
+
+
+    def get_items(path: str, params: dict | None = None) -> list[dict]:
+        """Fetch a cursor-paginated list endpoint (returns all items)."""
+        params = dict(params or {})
+        params.setdefault("size", 100)
+        items: list[dict] = []
+        cursor: str | None = None
+        while True:
+            page_params = {**params}
+            if cursor:
+                page_params["cursor"] = cursor
+            resp = requests.get(f"{BASE_URL}{path}", headers=HEADERS, params=page_params)
+            resp.raise_for_status()
+            page = resp.json()
+            items.extend(page["items"])
+            if not page["meta"]["has_next"]:
+                break
+            cursor = page["meta"]["next_cursor"]
+        return items
+
+
+    def project_id_by_name(name: str) -> str | None:
+        # Targeted server-side search (case-insensitive partial match); pick the exact name.
+        matches = get_items("/projects/search", {"search": name})
+        return next((p["id"] for p in matches if p["name"] == name), None)
+
+
+    def find_foundry_instance(project_id: str, server_name: str) -> dict | None:
+        instances = get_items("/server-instances", {"project_id": project_id})
+        return next(
+            (
+                si
+                for si in instances
+                if si.get("server_type") == "foundry"
+                and server_name in (si.get("display_name"), si.get("server_name"))
+            ),
+            None,
+        )
+
+
+    def set_base_url_override(instance_id: str, base_url: str | None) -> dict:
+        resp = requests.patch(
+            f"{BASE_URL}/server-instances/{quote(instance_id)}/base-url-override",
+            headers=HEADERS,
+            json={"base_url_override": base_url},
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+    if __name__ == "__main__":
+        project_id = project_id_by_name(PROJECT_NAME)
+        if not project_id:
+            raise SystemExit(f"project not found: {PROJECT_NAME!r}")
+
+        instance = find_foundry_instance(project_id, SERVER_NAME)
+        if not instance:
+            raise SystemExit(f"foundry server not found: {SERVER_NAME!r}")
+
+        print(f"default base URL: {instance['default_base_url']}")
+        print(f"current override: {instance['base_url_override']}")
+
+        result = set_base_url_override(instance["id"], NEW_BASE_URL)
+        action = "cleared" if NEW_BASE_URL is None else f"set to {result['base_url_override']}"
+        print(f"override {action} (default: {result['default_base_url']})")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript setBaseUrlOverride.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const AUTH = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+
+    const PROJECT_NAME = "Acme Corp";
+    const SERVER_NAME = "Acme Corp Platform MCP"; // matches server_name or display_name
+    const NEW_BASE_URL: string | null = "https://acme.widgets.io"; // null clears it
+
+    async function getItems(path: string, params: Record<string, string> = {}) {
+      const items: any[] = [];
+      let cursor: string | null = null;
+      do {
+        const qs = new URLSearchParams({ ...params, size: "100" });
+        if (cursor) qs.set("cursor", cursor);
+        const res = await fetch(`${BASE_URL}${path}?${qs}`, { headers: AUTH });
+        if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+        const page = await res.json();
+        items.push(...page.items);
+        cursor = page.meta.has_next ? page.meta.next_cursor : null;
+      } while (cursor);
+      return items;
+    }
+
+    async function projectIdByName(name: string) {
+      // Targeted server-side search (case-insensitive partial match); pick the exact name.
+      const matches = await getItems("/projects/search", { search: name });
+      return matches.find((p) => p.name === name)?.id as string | undefined;
+    }
+
+    async function findFoundryInstance(projectId: string, serverName: string) {
+      const instances = await getItems("/server-instances", { project_id: projectId });
+      return instances.find(
+        (si) =>
+          si.server_type === "foundry" &&
+          [si.display_name, si.server_name].includes(serverName),
+      );
+    }
+
+    async function setBaseUrlOverride(instanceId: string, baseUrl: string | null) {
+      const res = await fetch(
+        `${BASE_URL}/server-instances/${encodeURIComponent(instanceId)}/base-url-override`,
+        {
+          method: "PATCH",
+          headers: { ...AUTH, "Content-Type": "application/json" },
+          body: JSON.stringify({ base_url_override: baseUrl }),
+        },
+      );
+      if (!res.ok) throw new Error(`PATCH override failed: ${res.status}`);
+      return res.json();
+    }
+
+    const projectId = await projectIdByName(PROJECT_NAME);
+    if (!projectId) throw new Error(`project not found: ${PROJECT_NAME}`);
+
+    const instance = await findFoundryInstance(projectId, SERVER_NAME);
+    if (!instance) throw new Error(`foundry server not found: ${SERVER_NAME}`);
+
+    console.log(`default base URL: ${instance.default_base_url}`);
+    console.log(`current override: ${instance.base_url_override}`);
+
+    const result = await setBaseUrlOverride(instance.id, NEW_BASE_URL);
+    const action = NEW_BASE_URL === null ? "cleared" : `set to ${result.base_url_override}`;
+    console.log(`override ${action} (default: ${result.default_base_url})`);
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # 1. Find the project by name (targeted search; pick the exact match from items[])
+    curl -G "$BASE/projects/search" -H "$AUTH" --data-urlencode "search=Acme Corp"
+
+    PROJECT_ID="7e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b"
+
+    # 2. List the project's server instances; find the foundry one you want
+    #    and copy its "id" (and note "default_base_url" / "base_url_override").
+    curl -G "$BASE/server-instances" -H "$AUTH" \
+      --data-urlencode "project_id=$PROJECT_ID" \
+      --data-urlencode "size=100"
+
+    INSTANCE_ID="3f9c2d10-8a4b-4e21-9f77-1c2d3e4f5a6b"
+
+    # 3. Set the override for this project's instance
+    curl -X PATCH "$BASE/server-instances/$INSTANCE_ID/base-url-override" -H "$AUTH" \
+      -H "Content-Type: application/json" \
+      -d '{"base_url_override": "https://acme.widgets.io"}'
+
+    # 4. Clear it later (revert to the server default)
+    curl -X PATCH "$BASE/server-instances/$INSTANCE_ID/base-url-override" -H "$AUTH" \
+      -H "Content-Type: application/json" \
+      -d '{"base_url_override": null}'
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+The full request and response schema for these endpoints is browsable in the interactive API reference at [https://developers.caylex.ai](https://developers.caylex.ai).
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Provision a customer project" icon="diagram-project" href="/cookbooks/provision-customer-projects">
+    Stand up a project per customer, then point its Foundry servers at customer-specific upstreams.
+  </Card>
+  <Card title="Copy tool permissions" icon="clone" href="/cookbooks/copy-tool-permissions">
+    Replicate tool permission settings across server instances.
+  </Card>
+  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
+    Create and manage the platform access token these recipes use.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Full request/response schemas for these endpoints.
+  </Card>
+</CardGroup>
