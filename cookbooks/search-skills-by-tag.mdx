@@ -1,0 +1,181 @@
+---
+title: "Search Skills by Tag"
+description: "Find every skill carrying a given tag across all of your projects — or a specific set of them — in a single call."
+icon: "tags"
+---
+
+[Skills](/platform/projects) can carry **tags** in their `SKILL.md` frontmatter (`tags: [finance, onboarding]`). Tags are a great way to group related skills — but skills live inside individual projects, so answering "which skills across my workspace are tagged `finance`?" would normally mean listing every project's skills and filtering client-side.
+
+The `GET /skills` endpoint does this in one call: it searches **across projects** in your tenant and returns every skill that carries the tag, along with each match's project and file manifest.
+
+## Endpoint used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /skills?tag={tag}` | Return every skill tagged `{tag}` in your tenant, optionally scoped to a set of projects. |
+
+### Query parameters
+
+| Parameter | Required | Default | Description |
+| --- | --- | --- | --- |
+| `tag` | yes | — | The exact tag to match. |
+| `project` | no | `all` | Scope of the search. Pass `all` for every project in your tenant, or **repeat** the parameter to restrict to a set — each value is a project **name** or **UUID** (`project=Support&project=6f1c…`). |
+| `page` | no | `1` | Page number (1-based). |
+| `size` | no | `50` | Items per page (max `200`). |
+
+<Note>
+Tags live on the **skill bundle** (from its `SKILL.md` frontmatter), not on individual bundled files. Matching is an exact, case-sensitive comparison against the tags as they were uploaded.
+</Note>
+
+<Note>
+Project scoping accepts either the project **name** (exact, case-sensitive — URL-encode spaces, so `Support Team` becomes `Support%20Team`) or its **UUID**. Passing a name or UUID that doesn't exist in your tenant returns `404`.
+</Note>
+
+## Response shape
+
+The endpoint returns a **plain JSON array** (not the cursor-paginated envelope used by some other list endpoints). Each item is a matched skill with its project and current-revision file manifest — the `SKILL.md` body is omitted to keep the response compact:
+
+```json
+[
+  {
+    "id": "b3f1…",
+    "project_id": "6f1c…",
+    "project_name": "Support Team",
+    "slug": "refund-policy",
+    "name": "Refund Policy",
+    "description": "How to evaluate and process refund requests.",
+    "tags": ["finance", "support"],
+    "file_count": 2,
+    "total_size_bytes": 8123,
+    "revision": 3,
+    "original_uploader": { "id": "…", "email": "you@acme.com" },
+    "last_uploaded_by": { "id": "…", "email": "you@acme.com" },
+    "created_at": "2026-06-01T12:00:00Z",
+    "last_uploaded_at": "2026-06-20T09:30:00Z",
+    "files": [
+      { "path": "examples.md", "size_bytes": 4096, "content_type": "text/markdown", "kind": "reference" },
+      { "path": "scripts/calc.py", "size_bytes": 4027, "content_type": "text/x-python", "kind": "script" }
+    ]
+  }
+]
+```
+
+<Tip>
+Need the full `SKILL.md` body or a bundled file's contents? Use the per-skill detail endpoint (`GET /projects/{project_id}/skills/{skill_id}`) or a file endpoint with the `id`/`path` values returned here.
+</Tip>
+
+## The procedure
+
+<Steps>
+  <Step title="Pick your scope">
+    Search your whole workspace with `project=all` (the default), or narrow to specific projects by repeating `project=` with names or UUIDs.
+  </Step>
+  <Step title="Call the endpoint">
+    `GET /skills?tag={tag}` with your platform access token. The result is every matching skill across the requested scope.
+  </Step>
+  <Step title="Use the results">
+    Each item tells you which `project_name`/`project_id` the skill lives in and lists its files. Follow up with the per-skill endpoints if you need the `SKILL.md` body or file contents.
+  </Step>
+</Steps>
+
+## Full example
+
+Find every skill tagged `finance` across the workspace and print where each one lives. The `project` tab shows how to scope the same search to specific projects.
+
+<Tabs>
+  <Tab title="Python">
+    ```python search_skills.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+
+    def search_skills(tag: str, projects: list[str] | None = None) -> list[dict]:
+        # `project` defaults to "all"; pass a list of names/UUIDs to scope it.
+        params = [("tag", tag)]
+        params += [("project", p) for p in (projects or ["all"])]
+        resp = requests.get(f"{BASE_URL}/skills", headers=HEADERS, params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+
+    def main() -> None:
+        # Whole workspace:
+        skills = search_skills("finance")
+
+        # Or scope to a set of projects (names or UUIDs):
+        # skills = search_skills("finance", projects=["Support Team", "Billing"])
+
+        for skill in skills:
+            files = ", ".join(f["path"] for f in skill["files"]) or "(no bundled files)"
+            print(f"[{skill['project_name']}] {skill['name']} — {files}")
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript searchSkills.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+
+    interface SkillSearchItem {
+      project_name: string;
+      name: string;
+      files: { path: string }[];
+    }
+
+    async function searchSkills(
+      tag: string,
+      projects: string[] = ["all"],
+    ): Promise<SkillSearchItem[]> {
+      const params = new URLSearchParams({ tag });
+      for (const p of projects) params.append("project", p); // repeatable
+      const res = await fetch(`${BASE_URL}/skills?${params}`, { headers });
+      if (!res.ok) throw new Error(`Search failed: HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function main() {
+      // Whole workspace, or pass e.g. ["Support Team", "Billing"] to scope it.
+      const skills = await searchSkills("finance");
+      for (const skill of skills) {
+        const files = skill.files.map((f) => f.path).join(", ") || "(no bundled files)";
+        console.log(`[${skill.project_name}] ${skill.name} — ${files}`);
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # Every skill tagged "finance" across the whole workspace
+    curl -G "$BASE/skills" -H "$AUTH" --data-urlencode "tag=finance"
+
+    # Scope to a set of projects (names or UUIDs; repeat --data-urlencode)
+    curl -G "$BASE/skills" -H "$AUTH" \
+      --data-urlencode "tag=finance" \
+      --data-urlencode "project=Support Team" \
+      --data-urlencode "project=6f1c0b3e-1e2a-4c9d-8f0a-2b7c5d9e1234"
+    ```
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Sync skills from your repo" icon="rotate" href="/cookbooks/sync-skills">
+    Keep a folder of `SKILL.md` files in version control and push changes to a Caylex project from CI.
+  </Card>
+  <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
+    Create and manage the platform access token these recipes use.
+  </Card>
+</CardGroup>

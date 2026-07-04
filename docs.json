@@ -202,6 +202,7 @@
           "cookbooks/generate-navigator-api-keys",
           "cookbooks/copy-tool-permissions",
           "cookbooks/sync-skills",
+          "cookbooks/search-skills-by-tag",
           "cookbooks/get-session-messages",
           "cookbooks/set-server-base-url-override"
         ]
