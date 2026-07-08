@@ -10,15 +10,26 @@ Anthropic's [MCP connector](https://platform.claude.com/docs/en/agents-and-tools
 
 The Caylex Navigator normally authenticates with two custom headers (`x-api-key` and `x-user-email`). Anthropic's MCP connector, however, only supports a **single** auth field — `authorization_token`, which it sends as `Authorization: Bearer <token>`. It does **not** support custom headers.
 
-To bridge this, the Navigator accepts a **bearer token** that packs both values into one string:
+To bridge this, the Navigator accepts a **bearer token** that packs the values into one string:
 
-- Token = `base64url(JSON{"api_key": "...", "user_email": "..."})` (padding optional)
+- Token = `base64url(JSON{"api_key": "...", "user_email": "...", "session_id": "..."})` (padding optional)
+- `api_key` and `user_email` are **required**
+- `session_id` is **optional but strongly encouraged** — it groups a chat's tool calls into a single session in your history and analytics (see [Group tool calls by chat session](#group-tool-calls-by-chat-session) below)
 - Sent by Claude as `Authorization: Bearer <token>`
 - The Navigator decodes it and authenticates exactly as it would with the two headers
 
 <Note>
 The token is **not** signed or encrypted. Your API key is the real credential — it's validated (and independently revocable) on every request, just like the header-based flows. Treat the token like an API key: build it server-side, never expose it in client code.
 </Note>
+
+## Group tool calls by chat session
+
+Anthropic's MCP connector does not reliably echo the server-assigned `Mcp-Session-Id` back on subsequent requests. Because the Caylex Navigator is stateless, that means **each request is otherwise treated as a brand-new session** — so a single conversation's tool calls end up scattered across many one-off sessions in your history and analytics.
+
+To group them, generate **one UUID per conversation** and include it as `session_id` in the bearer token on **every** request for that conversation. All tool calls sharing that `session_id` are grouped under a single session.
+
+- `session_id` **must be a valid UUID**. A malformed or missing value is simply ignored — the request still succeeds, it just isn't grouped.
+- Reuse the same `session_id` for the whole conversation (including follow-up turns). Start a new UUID when a new conversation begins.
 
 ## Prerequisites
 
@@ -32,20 +43,32 @@ The token is **not** signed or encrypted. Your API key is the real credential �
 import base64
 import json
 import os
+import uuid
 
 import anthropic
 
 
-def build_caylex_bearer_token(api_key: str, user_email: str) -> str:
-    """Pack the Caylex credentials into a single bearer token."""
-    payload = json.dumps({"api_key": api_key, "user_email": user_email}).encode("utf-8")
-    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+def build_caylex_bearer_token(
+    api_key: str, user_email: str, session_id: str | None = None
+) -> str:
+    """Pack the Caylex credentials (and an optional per-conversation session id)
+    into a single bearer token."""
+    payload = {"api_key": api_key, "user_email": user_email}
+    if session_id:
+        payload["session_id"] = session_id
+    data = json.dumps(payload).encode("utf-8")
+    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
 
 
 def main() -> None:
+    # Generate ONE session id when the conversation starts, then reuse it for
+    # every request in that conversation so all tool calls are grouped together.
+    conversation_session_id = str(uuid.uuid4())
+
     token = build_caylex_bearer_token(
         api_key=os.environ["CAYLEX_API_KEY"],
         user_email=os.environ["CAYLEX_USER_EMAIL"],
+        session_id=conversation_session_id,
     )
 
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -94,10 +117,17 @@ main()
     Pack your Caylex API key and the end user's email into a base64url-encoded JSON token. Build it server-side, per user.
 
     ```python
-    def build_caylex_bearer_token(api_key: str, user_email: str) -> str:
-        payload = json.dumps({"api_key": api_key, "user_email": user_email}).encode("utf-8")
-        return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    def build_caylex_bearer_token(
+        api_key: str, user_email: str, session_id: str | None = None
+    ) -> str:
+        payload = {"api_key": api_key, "user_email": user_email}
+        if session_id:
+            payload["session_id"] = session_id  # groups a conversation's tool calls
+        data = json.dumps(payload).encode("utf-8")
+        return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
     ```
+
+    Generate the `session_id` once per conversation (a UUID) and pass the same value on every request in that conversation. Keep the API key constant and set `user_email` per end user, as before.
   </Step>
   <Step title="Configure the MCP connector">
     Add the Caylex Navigator to `mcp_servers` and pass the token as `authorization_token`. Reference the server from the `tools` array with an `mcp_toolset`.
@@ -146,6 +176,12 @@ Build a fresh token per request from your app's authenticated user: the API key 
   </Accordion>
   <Accordion title="Tool calls to a server fail with an auth error">
     The `x-user-email` packed into the token must exactly match the email the user authenticated with via an [Auth Link](/auth/auth-links). If it doesn't match, tool calls to servers requiring authentication will fail.
+  </Accordion>
+  <Accordion title="Tool calls from one conversation show up as separate sessions">
+    The connector isn't reusing a session id across requests. Add a `session_id` (a UUID you generate once per conversation) to the bearer token and send it on every request — see [Group tool calls by chat session](#group-tool-calls-by-chat-session).
+  </Accordion>
+  <Accordion title="An extra argument I sent was ignored">
+    The Navigator ignores unknown top-level arguments on a tool call rather than failing the whole call. When it does, it reports them back in the response `_meta` under `caylex/ignored_arguments` (with the field names and reason), so you can spot and remove stray parameters your framework may be injecting.
   </Accordion>
 </AccordionGroup>
 
