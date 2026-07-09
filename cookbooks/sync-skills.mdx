@@ -1,12 +1,16 @@
 ---
 title: "Sync Skills from Your Repository"
-description: "Keep a folder of SKILL.md files in version control and push changes to a Caylex project automatically from CI."
+description: "Keep a folder of SKILL.md files in version control and push changes to a Caylex project — or to a navigator's global skills — automatically from CI."
 icon: "rotate"
 ---
 
 [Skills](/platform/projects) are versioned instructions you author as `SKILL.md` files. A common pattern is to keep them in a git repository and sync them to a Caylex project from CI on every merge, so the project's skills always match `main`.
 
 The skill endpoints address your project **by name** and each skill by its `SKILL.md` frontmatter `name`, so your tooling never has to track Caylex UUIDs.
+
+<Note>
+Want to sync **global skills** — the ones attached to a [Navigator](/platform/navigators) in the Navigator Library so they're shared across every project that navigator is connected to? Those use a parallel set of endpoints. Jump to [Manage global skills on a navigator](#manage-global-skills-on-a-navigator).
+</Note>
 
 ## Endpoints used
 
@@ -194,9 +198,181 @@ The Python and TypeScript tabs reconcile the whole directory; the cURL tab shows
   </Tab>
 </Tabs>
 
+## Manage global skills on a navigator
+
+**Global skills** are attached to a [Navigator](/platform/navigators) in the Navigator Library rather than to a single project. A navigator's global skills are merged into the skill list of every project that navigator is connected to at runtime, so they're the right home for instructions you want every deployment of a navigator to share.
+
+These endpoints are the direct navigator analogue of the project ones above: same verbs, same name-addressing, same request bodies — the owner is a **navigator** (addressed by its Navigator Library name) instead of a project. They live under the `/navigator-global-skills` prefix.
+
+### Endpoints used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /navigator-global-skills/by-name/{navigator_name}/skills` | List the navigator's global skills. |
+| `POST /navigator-global-skills/by-name/{navigator_name}/skills` | Add a new global skill. Returns `409` if it already exists. |
+| `PUT /navigator-global-skills/by-name/{navigator_name}/skills/{skill_name}` | Replace an existing global skill. Returns `404` if it doesn't exist yet. |
+| `DELETE /navigator-global-skills/by-name/{navigator_name}/skills/{skill_name}` | Remove a global skill. |
+
+<Note>
+Navigator names are matched exactly and are case-sensitive. URL-encode names that contain spaces — `Support Navigator` becomes `Support%20Navigator`. A navigator's display name is unique within your tenant, so it addresses exactly one navigator. As with projects, the skill's `name` comes from its `SKILL.md` frontmatter, and the `{skill_name}` path segment accepts either the display name or its slug.
+</Note>
+
+<Tip>
+This is the same flow as the project sync above — the only change is the base path (`/navigator-global-skills/by-name/{navigator_name}` instead of `/projects/by-name/{project_name}`), so you can reuse the reconciliation script almost verbatim. Upload a **ZIP of the skill directory** in place of the `SKILL.md` for skills with bundled files.
+</Tip>
+
+### Full sync script
+
+This walks a local `global-skills/` directory and reconciles it with one navigator: new skills are added (`POST`), changed skills are replaced (`PUT`), and (optionally) skills deleted from the repo are removed.
+
+<Tabs>
+  <Tab title="Python">
+    ```python sync_global_skills.py
+    import os
+    import re
+    from pathlib import Path
+    from urllib.parse import quote
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    NAVIGATOR = quote(os.environ["CAYLEX_NAVIGATOR"])  # URL-encode names with spaces
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+    SKILLS_DIR = Path("global-skills")
+    PRUNE = True  # delete remote global skills that no longer exist locally
+
+    base = f"{BASE_URL}/navigator-global-skills/by-name/{NAVIGATOR}/skills"
+
+
+    def skill_name(skill_md: Path) -> str:
+        """Read the `name` from a SKILL.md YAML frontmatter block."""
+        match = re.search(r"^name:\s*(.+)$", skill_md.read_text(), re.MULTILINE)
+        if not match:
+            raise ValueError(f"{skill_md} is missing a 'name' in its frontmatter")
+        return match.group(1).strip().strip("\"'")
+
+
+    def list_remote() -> set[str]:
+        resp = requests.get(base, headers=HEADERS)
+        resp.raise_for_status()
+        return {s["name"] for s in resp.json()}
+
+
+    def upsert(skill_md: Path, name: str, exists: bool) -> None:
+        with open(skill_md, "rb") as f:
+            files = {"file": f}
+            if exists:
+                resp = requests.put(f"{base}/{quote(name)}", headers=HEADERS, files=files)
+            else:
+                resp = requests.post(base, headers=HEADERS, files=files)
+        resp.raise_for_status()
+        print(f"{'updated' if exists else 'added'}: {name}")
+
+
+    def main() -> None:
+        local = {skill_name(p): p for p in SKILLS_DIR.glob("*/SKILL.md")}
+        remote = list_remote()
+
+        for name, skill_md in local.items():
+            upsert(skill_md, name, exists=name in remote)
+
+        if PRUNE:
+            for name in remote - local.keys():
+                requests.delete(f"{base}/{quote(name)}", headers=HEADERS).raise_for_status()
+                print(f"removed: {name}")
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript syncGlobalSkills.ts
+    import { readFile } from "node:fs/promises";
+    import { glob } from "node:fs/promises";
+
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const NAVIGATOR = encodeURIComponent(process.env.CAYLEX_NAVIGATOR!); // URL-encode spaces
+    const headers = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+    const base = `${BASE_URL}/navigator-global-skills/by-name/${NAVIGATOR}/skills`;
+    const PRUNE = true; // delete remote global skills that no longer exist locally
+
+    function skillName(md: string): string {
+      const match = md.match(/^name:\s*(.+)$/m);
+      if (!match) throw new Error("SKILL.md is missing a 'name' in its frontmatter");
+      return match[1].trim().replace(/^["']|["']$/g, "");
+    }
+
+    async function listRemote(): Promise<Set<string>> {
+      const res = await fetch(base, { headers });
+      if (!res.ok) throw new Error(`List failed: HTTP ${res.status}`);
+      return new Set((await res.json()).map((s: { name: string }) => s.name));
+    }
+
+    async function upsert(path: string, name: string, exists: boolean) {
+      const md = await readFile(path);
+      const form = new FormData();
+      form.append("file", new File([md], "SKILL.md"));
+      const url = exists ? `${base}/${encodeURIComponent(name)}` : base;
+      const res = await fetch(url, { method: exists ? "PUT" : "POST", headers, body: form });
+      if (!res.ok) throw new Error(`Upsert ${name} failed: HTTP ${res.status}`);
+      console.log(`${exists ? "updated" : "added"}: ${name}`);
+    }
+
+    async function main() {
+      const local = new Map<string, string>();
+      for await (const path of glob("global-skills/*/SKILL.md")) {
+        local.set(skillName(await readFile(path, "utf8")), path);
+      }
+      const remote = await listRemote();
+
+      for (const [name, path] of local) {
+        await upsert(path, name, remote.has(name));
+      }
+
+      if (PRUNE) {
+        for (const name of remote) {
+          if (local.has(name)) continue;
+          const res = await fetch(`${base}/${encodeURIComponent(name)}`, { method: "DELETE", headers });
+          if (!res.ok) throw new Error(`Delete ${name} failed: HTTP ${res.status}`);
+          console.log(`removed: ${name}`);
+        }
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    NAVIGATOR="Support%20Navigator"  # URL-encode names with spaces
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+    BASE_SKILLS="$BASE/navigator-global-skills/by-name/$NAVIGATOR/skills"
+
+    # List every global skill on the navigator
+    curl "$BASE_SKILLS" -H "$AUTH"
+
+    # Add a new global skill (409 if it already exists)
+    curl -X POST "$BASE_SKILLS" -H "$AUTH" \
+      -F "file=@./global-skills/refund-policy/SKILL.md"
+
+    # Replace an existing global skill (404 if it doesn't exist yet)
+    curl -X PUT "$BASE_SKILLS/refund-policy" -H "$AUTH" \
+      -F "file=@./global-skills/refund-policy/SKILL.md"
+
+    # Remove a global skill
+    curl -X DELETE "$BASE_SKILLS/refund-policy" -H "$AUTH"
+    ```
+  </Tab>
+</Tabs>
+
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Search skills by tag" icon="tags" href="/cookbooks/search-skills-by-tag">
+    Find skills — project or global — carrying a given tag across your workspace.
+  </Card>
   <Card title="Platform Authentication" icon="key" href="/auth/platform-authentication">
     Create and manage the platform access token these recipes use.
   </Card>

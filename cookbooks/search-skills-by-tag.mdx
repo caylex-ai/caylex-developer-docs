@@ -1,12 +1,16 @@
 ---
 title: "Search Skills by Tag"
-description: "Find every skill carrying a given tag across all of your projects — or a specific set of them — in a single call."
+description: "Find every skill carrying a given tag across all of your projects — or a specific set of them — in a single call, plus the parallel search for global skills across navigators."
 icon: "tags"
 ---
 
 [Skills](/platform/projects) can carry **tags** in their `SKILL.md` frontmatter (`tags: [finance, onboarding]`). Tags are a great way to group related skills — but skills live inside individual projects, so answering "which skills across my workspace are tagged `finance`?" would normally mean listing every project's skills and filtering client-side.
 
 The `GET /skills` endpoint does this in one call: it searches **across projects** in your tenant and returns every skill that carries the tag, along with each match's project and file manifest.
+
+<Note>
+Looking for **global skills** — the ones attached to a [Navigator](/platform/navigators) in the Navigator Library rather than to a single project? Those live under a parallel endpoint, `GET /navigator-global-skills`. Jump to [Search global skills by tag](#search-global-skills-by-tag).
+</Note>
 
 ## Endpoint used
 
@@ -165,6 +169,156 @@ Find every skill tagged `finance` across the workspace and print where each one 
       --data-urlencode "tag=finance" \
       --data-urlencode "project=Support Team" \
       --data-urlencode "project=6f1c0b3e-1e2a-4c9d-8f0a-2b7c5d9e1234"
+    ```
+  </Tab>
+</Tabs>
+
+## Search global skills by tag
+
+**Global skills** are attached to a [Navigator](/platform/navigators) in the Navigator Library instead of to a single project. A navigator's global skills are shared with every project that navigator is connected to, so they don't belong to any one project — which means the project-scoped `GET /skills` search above intentionally **excludes** them.
+
+To search global skills, use the parallel `GET /navigator-global-skills` endpoint. It works just like `GET /skills`, but the scope is a set of **navigators** instead of projects, and each result carries the owning navigator instead of a project.
+
+### Endpoint used
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /navigator-global-skills?tag={tag}` | Return every global skill tagged `{tag}` in your tenant, optionally scoped to a set of navigators. |
+
+### Query parameters
+
+| Parameter | Required | Default | Description |
+| --- | --- | --- | --- |
+| `tag` | yes | — | The exact tag to match. |
+| `navigator` | no | `all` | Scope of the search. Pass `all` for every navigator in your tenant, or **repeat** the parameter to restrict to a set — each value is a navigator **name**, **api name**, or **UUID** (`navigator=Support&navigator=6f1c…`). |
+| `page` | no | `1` | Page number (1-based). |
+| `size` | no | `50` | Items per page (max `200`). |
+
+<Note>
+Tag matching is identical to the project search: an exact, case-sensitive comparison against the skill's `SKILL.md` frontmatter tags. Passing a navigator name/UUID that doesn't exist in your tenant returns `404`.
+</Note>
+
+### Response shape
+
+Same plain JSON array as the project search, but each item identifies the owning **navigator** (`navigator_identity_id` + `navigator_name`) and sets `source` to `"global"`:
+
+```json
+[
+  {
+    "id": "a1d2…",
+    "navigator_identity_id": "9c4e…",
+    "navigator_name": "Support Navigator",
+    "source": "global",
+    "slug": "refund-policy",
+    "name": "Refund Policy",
+    "description": "How to evaluate and process refund requests.",
+    "tags": ["finance", "support"],
+    "file_count": 2,
+    "total_size_bytes": 8123,
+    "revision": 3,
+    "original_uploader": { "id": "…", "email": "you@acme.com" },
+    "last_uploaded_by": { "id": "…", "email": "you@acme.com" },
+    "created_at": "2026-06-01T12:00:00Z",
+    "last_uploaded_at": "2026-06-20T09:30:00Z",
+    "files": [
+      { "path": "examples.md", "size_bytes": 4096, "content_type": "text/markdown", "kind": "reference" },
+      { "path": "scripts/calc.py", "size_bytes": 4027, "content_type": "text/x-python", "kind": "script" }
+    ]
+  }
+]
+```
+
+<Tip>
+Need the full `SKILL.md` body or a bundled file's contents for a global skill? Use the per-navigator detail endpoints (`GET /navigators/{navigator_id}/skills/{skill_id}` and its file routes) with the `navigator_identity_id`/`id`/`path` values returned here.
+</Tip>
+
+### Example
+
+Find every global skill tagged `finance` across all navigators, and print which navigator owns each one. The `navigator` tab shows how to scope the same search to specific navigators.
+
+<Tabs>
+  <Tab title="Python">
+    ```python search_global_skills.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    HEADERS = {"Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}"}
+
+
+    def search_global_skills(tag: str, navigators: list[str] | None = None) -> list[dict]:
+        # `navigator` defaults to "all"; pass a list of names/UUIDs to scope it.
+        params = [("tag", tag)]
+        params += [("navigator", n) for n in (navigators or ["all"])]
+        resp = requests.get(f"{BASE_URL}/navigator-global-skills", headers=HEADERS, params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+
+    def main() -> None:
+        # Every navigator:
+        skills = search_global_skills("finance")
+
+        # Or scope to a set of navigators (names or UUIDs):
+        # skills = search_global_skills("finance", navigators=["Support Navigator"])
+
+        for skill in skills:
+            files = ", ".join(f["path"] for f in skill["files"]) or "(no bundled files)"
+            print(f"[{skill['navigator_name']}] {skill['name']} — {files}")
+
+
+    if __name__ == "__main__":
+        main()
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript searchGlobalSkills.ts
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const headers = { Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}` };
+
+    interface NavigatorSkillSearchItem {
+      navigator_name: string;
+      name: string;
+      files: { path: string }[];
+    }
+
+    async function searchGlobalSkills(
+      tag: string,
+      navigators: string[] = ["all"],
+    ): Promise<NavigatorSkillSearchItem[]> {
+      const params = new URLSearchParams({ tag });
+      for (const n of navigators) params.append("navigator", n); // repeatable
+      const res = await fetch(`${BASE_URL}/navigator-global-skills?${params}`, { headers });
+      if (!res.ok) throw new Error(`Search failed: HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function main() {
+      // Every navigator, or pass e.g. ["Support Navigator"] to scope it.
+      const skills = await searchGlobalSkills("finance");
+      for (const skill of skills) {
+        const files = skill.files.map((f) => f.path).join(", ") || "(no bundled files)";
+        console.log(`[${skill.navigator_name}] ${skill.name} — ${files}`);
+      }
+    }
+
+    main();
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    BASE="https://api.caylex.ai/api/v1"
+    AUTH="Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+
+    # Every global skill tagged "finance" across all navigators
+    curl -G "$BASE/navigator-global-skills" -H "$AUTH" --data-urlencode "tag=finance"
+
+    # Scope to a set of navigators (names or UUIDs; repeat --data-urlencode)
+    curl -G "$BASE/navigator-global-skills" -H "$AUTH" \
+      --data-urlencode "tag=finance" \
+      --data-urlencode "navigator=Support Navigator" \
+      --data-urlencode "navigator=6f1c0b3e-1e2a-4c9d-8f0a-2b7c5d9e1234"
     ```
   </Tab>
 </Tabs>
