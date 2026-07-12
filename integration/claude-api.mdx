@@ -1,138 +1,362 @@
 ---
 title: "Claude API"
-description: "Connect the Caylex Navigator to Anthropic's Messages API using the native remote MCP connector."
+description: "Connect the Caylex Navigator to Anthropic's Messages API with a customer-managed MCP client or Anthropic's hosted connector."
 icon: "robot"
 ---
 
-Anthropic's [MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector) lets the Messages API connect to a remote MCP server directly — Claude handles tool discovery and execution server-side, with no MCP client code on your end. This guide shows you how to point that connector at the Caylex Navigator.
+The Caylex Navigator is a remote [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes a compact set of meta-tools to Claude. You can connect it to Anthropic's Messages API in three ways:
 
-## Authentication: use a bearer token
+<CardGroup cols={3}>
+  <Card title="FastMCP client" icon="star" href="#fastmcp-client-recommended">
+    **Recommended.** Keep your existing Messages API loop and control exactly when MCP tools are refreshed.
+  </Card>
+  <Card title="Anthropic tool runner" icon="arrows-rotate" href="#anthropic-tool-runner">
+    Let Anthropic's Python SDK run the tool-use loop while your application owns the MCP connection.
+  </Card>
+  <Card title="Hosted MCP connector" icon="cloud" href="#anthropic-hosted-mcp-connector">
+    The shortest integration, but Anthropic may cache MCP tool definitions across requests and chats.
+  </Card>
+</CardGroup>
 
-The Caylex Navigator normally authenticates with two custom headers (`x-api-key` and `x-user-email`). Anthropic's MCP connector, however, only supports a **single** auth field — `authorization_token`, which it sends as `Authorization: Bearer <token>`. It does **not** support custom headers.
+## Which approach should I use?
 
-To bridge this, the Navigator accepts a **bearer token** that packs the values into one string:
-
-- Token = `base64url(JSON{"api_key": "...", "user_email": "...", "session_id": "..."})` (padding optional)
-- `api_key` and `user_email` are **required**
-- `session_id` is **optional but strongly encouraged** — it groups a chat's tool calls into a single session in your history and analytics (see [Group tool calls by chat session](#group-tool-calls-by-chat-session) below)
-- Sent by Claude as `Authorization: Bearer <token>`
-- The Navigator decodes it and authenticates exactly as it would with the two headers
+- Use the **FastMCP client** if you already have a custom agent harness or need fresh tool definitions after users authenticate. This is the recommended production approach.
+- Use the **Anthropic tool runner** if you want a customer-managed MCP connection but do not already have a tool-use loop.
+- Use the **hosted MCP connector** for the smallest proof of concept, when delayed tool-definition refreshes are acceptable.
 
 <Note>
-The token is **not** signed or encrypted. Your API key is the real credential — it's validated (and independently revocable) on every request, just like the header-based flows. Treat the token like an API key: build it server-side, never expose it in client code.
+`anthropic.beta.messages.tool_runner` is part of the regular `anthropic` Python SDK. It is **not** the [Claude Agent SDK](/integration/claude-sdk). The tool runner is a client-side convenience wrapper around repeated Messages API calls; the Agent SDK is a separate, higher-level agent harness with built-in tools, hooks, permissions, and subagents.
 </Note>
 
-## Group tool calls by chat session
+## Common authentication
 
-Anthropic's MCP connector does not reliably echo the server-assigned `Mcp-Session-Id` back on subsequent requests. Because the Caylex Navigator is stateless, that means **each request is otherwise treated as a brand-new session** — so a single conversation's tool calls end up scattered across many one-off sessions in your history and analytics.
+All three approaches below use a bearer token that packs the Caylex Navigator API key, end-user email, and chat session ID into one string:
 
-To group them, generate **one UUID per conversation** and include it as `session_id` in the bearer token on **every** request for that conversation. All tool calls sharing that `session_id` are grouped under a single session.
+- Token = `base64url(JSON{"api_key": "...", "user_email": "...", "session_id": "..."})` (padding optional)
+- `api_key` and `user_email` are required.
+- `session_id` is optional but strongly encouraged. It groups a chat's tool calls into one session in Caylex history and analytics.
+- Send the result as `Authorization: Bearer <token>`.
 
-- `session_id` **must be a valid UUID**. A malformed or missing value is simply ignored — the request still succeeds, it just isn't grouped.
-- Reuse the same `session_id` for the whole conversation (including follow-up turns). Start a new UUID when a new conversation begins.
+```python
+import base64
+import json
+
+
+def build_caylex_bearer_token(
+    api_key: str,
+    user_email: str,
+    session_id: str,
+) -> str:
+    payload = {
+        "api_key": api_key,
+        "user_email": user_email,
+        "session_id": session_id,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+```
+
+<Warning>
+The packed token is not signed or encrypted. Your Navigator API key is the real credential and is validated on every request. Build the token server-side and treat it like an API key.
+</Warning>
+
+### Group tool calls by chat session
+
+Generate one UUID when a chat begins and reuse it for every request in that chat:
+
+```python
+import uuid
+
+chat_session_id = str(uuid.uuid4())
+```
+
+The value must be a valid UUID. Start a new UUID for each new chat.
 
 ## Prerequisites
 
-- Python 3.10+ and the `anthropic` SDK (`pip install anthropic`)
+- Python 3.10+
 - A Caylex Navigator Instance with an API key ([create one here](/platform/navigators))
 - Users authenticated with your project's servers ([set up auth links](/auth/auth-links))
+- These environment variables:
 
-## Full example
+```bash
+export CAYLEX_API_KEY="ck_abc123.your-secret-key"
+export CAYLEX_USER_EMAIL="user@example.com"
+export ANTHROPIC_API_KEY="your-anthropic-key"
+```
+
+## FastMCP client (recommended)
+
+This approach uses FastMCP's lightweight client-only package to call `tools/list` and `tools/call` directly. You pass the freshly discovered tools to the regular Messages API and keep control of your existing agent loop.
+
+Install the dependencies:
+
+```bash
+pip install anthropic "fastmcp-slim[client]"
+```
+
+<Tip>
+`fastmcp-slim[client]` uses the normal `from fastmcp import Client` import while avoiding FastMCP's server framework and other server-side dependencies.
+</Tip>
 
 ```python main.py
-import base64
+import asyncio
 import json
+import os
+import uuid
+
+from anthropic import AsyncAnthropic
+from fastmcp import Client as FastMCPClient
+from fastmcp.client.transports import StreamableHttpTransport
+from mcp.types import TextContent
+
+
+def build_caylex_bearer_token(
+    api_key: str,
+    user_email: str,
+    session_id: str,
+) -> str:
+    import base64
+
+    payload = {
+        "api_key": api_key,
+        "user_email": user_email,
+        "session_id": session_id,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+
+
+def mcp_result_to_text(result) -> str:
+    """Convert an MCP tool result into text for an Anthropic tool_result."""
+    if result.structured_content is not None:
+        return json.dumps(result.structured_content, default=str)
+
+    parts: list[str] = []
+    for block in result.content:
+        if isinstance(block, TextContent):
+            parts.append(block.text)
+        else:
+            parts.append(json.dumps(block.model_dump(mode="json"), default=str))
+    return "\n".join(parts)
+
+
+async def main() -> None:
+    # Create this once per chat and reuse it for every user turn.
+    chat_session_id = str(uuid.uuid4())
+    token = build_caylex_bearer_token(
+        api_key=os.environ["CAYLEX_API_KEY"],
+        user_email=os.environ["CAYLEX_USER_EMAIL"],
+        session_id=chat_session_id,
+    )
+
+    transport = StreamableHttpTransport(
+        "https://navigator.caylex.ai/mcp",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    mcp = FastMCPClient(transport)
+    claude = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    messages = [
+        {
+            "role": "user",
+            "content": "Check which services I can access, then summarize "
+            "my recent research documents.",
+        }
+    ]
+
+    async with mcp:
+        # Fetch a current tools/list response directly from Caylex before this
+        # user turn. In a multi-turn chat, repeat this before each user turn.
+        mcp_tools = await mcp.list_tools()
+        claude_tools = [
+            {
+                "name": tool.name,
+                "description": tool.description or "",
+                "input_schema": tool.inputSchema,
+            }
+            for tool in mcp_tools
+        ]
+
+        while True:
+            response = await claude.messages.create(
+                model="claude-opus-4-8",
+                max_tokens=2048,
+                messages=messages,
+                tools=claude_tools,
+            )
+            messages.append({"role": "assistant", "content": response.content})
+
+            tool_uses = [
+                block for block in response.content if block.type == "tool_use"
+            ]
+            if not tool_uses:
+                for block in response.content:
+                    if block.type == "text":
+                        print(block.text)
+                break
+
+            tool_results = []
+            for tool_use in tool_uses:
+                result = await mcp.call_tool(
+                    tool_use.name,
+                    dict(tool_use.input),
+                    raise_on_error=False,
+                )
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tool_use.id,
+                        "content": mcp_result_to_text(result),
+                        "is_error": bool(result.is_error),
+                    }
+                )
+
+            messages.append({"role": "user", "content": tool_results})
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Refresh after authentication
+
+The tool definitions passed to one Claude tool loop remain fixed for that loop. If `get_authentication_status_and_link` returns a link and the user authenticates:
+
+1. Finish the current agent turn after presenting the link.
+2. Before the user's next turn, call `mcp.list_tools()` again.
+3. Rebuild `claude_tools` from the returned list.
+4. Continue with the same `chat_session_id` and conversation history.
+
+This gives Claude the latest `suggest_tools` description and authenticated-server list without relying on a third-party MCP catalog cache.
+
+## Anthropic tool runner
+
+This option also owns the MCP connection, but uses Anthropic's beta tool runner to execute the tool-use loop automatically. It is convenient if you do not already have a custom loop.
+
+Install:
+
+```bash
+pip install "anthropic[mcp]" httpx
+```
+
+```python main.py
+import asyncio
+import os
+import uuid
+
+import httpx
+from anthropic import AsyncAnthropic
+from anthropic.lib.tools.mcp import async_mcp_tool
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+
+# Reuse build_caylex_bearer_token from Common authentication above.
+
+
+async def main() -> None:
+    chat_session_id = str(uuid.uuid4())
+    token = build_caylex_bearer_token(
+        api_key=os.environ["CAYLEX_API_KEY"],
+        user_email=os.environ["CAYLEX_USER_EMAIL"],
+        session_id=chat_session_id,
+    )
+    claude = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    async with httpx.AsyncClient(
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=httpx.Timeout(30, read=300),
+        follow_redirects=True,
+    ) as http_client:
+        async with streamable_http_client(
+            "https://navigator.caylex.ai/mcp",
+            http_client=http_client,
+        ) as streams:
+            # Compatible with the stable MCP SDK's 3-tuple and the v2 2-tuple.
+            read_stream, write_stream = streams[0], streams[1]
+
+            async with ClientSession(read_stream, write_stream) as mcp:
+                await mcp.initialize()
+                tools_result = await mcp.list_tools()
+
+                runner = claude.beta.messages.tool_runner(
+                    model="claude-opus-4-8",
+                    max_tokens=2048,
+                    max_iterations=20,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": "Check which services I can access, then "
+                            "summarize my recent research documents.",
+                        }
+                    ],
+                    tools=[
+                        async_mcp_tool(tool, mcp)
+                        for tool in tools_result.tools
+                    ],
+                )
+
+                final_message = None
+                async for message in runner:
+                    final_message = message
+
+                if final_message is None:
+                    raise RuntimeError("Claude returned no message")
+
+                for block in final_message.content:
+                    if block.type == "text":
+                        print(block.text)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+`async_mcp_tool` copies each MCP tool's name, description, and input schema into an Anthropic tool, then forwards Claude's calls to `ClientSession.call_tool()`. The tool runner appends results and repeats Messages API calls until Claude returns a final answer.
+
+<Note>
+This still uses Anthropic's regular Python SDK and Messages API. It does not install or invoke the Claude Agent SDK. Because the tool runner owns the inner tool loop, applications with custom retries, streaming, approvals, or persistence may prefer the FastMCP approach above.
+</Note>
+
+## Anthropic hosted MCP connector
+
+Anthropic's hosted [MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector) performs MCP discovery and execution inside Anthropic's infrastructure. It requires the least code because your application does not run an MCP client.
+
+Install:
+
+```bash
+pip install anthropic
+```
+
+```python main.py
 import os
 import uuid
 
 import anthropic
 
 
-def build_caylex_bearer_token(
-    api_key: str, user_email: str, session_id: str | None = None
-) -> str:
-    """Pack the Caylex credentials (and an optional per-conversation session id)
-    into a single bearer token."""
-    payload = {"api_key": api_key, "user_email": user_email}
-    if session_id:
-        payload["session_id"] = session_id
-    data = json.dumps(payload).encode("utf-8")
-    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+# Reuse build_caylex_bearer_token from Common authentication above.
 
 
-def main() -> None:
-    # Generate ONE session id when the conversation starts, then reuse it for
-    # every request in that conversation so all tool calls are grouped together.
-    conversation_session_id = str(uuid.uuid4())
+chat_session_id = str(uuid.uuid4())
+token = build_caylex_bearer_token(
+    api_key=os.environ["CAYLEX_API_KEY"],
+    user_email=os.environ["CAYLEX_USER_EMAIL"],
+    session_id=chat_session_id,
+)
 
-    token = build_caylex_bearer_token(
-        api_key=os.environ["CAYLEX_API_KEY"],
-        user_email=os.environ["CAYLEX_USER_EMAIL"],
-        session_id=conversation_session_id,
-    )
+client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
-    response = client.beta.messages.create(
-        model="claude-opus-4-8",
-        max_tokens=2048,
-        messages=[
-            {
-                "role": "user",
-                "content": "Check my Linear issues, find any blockers, "
-                "and post a summary to the relevant Slack channel.",
-            }
-        ],
-        mcp_servers=[
-            {
-                "type": "url",
-                "url": "https://navigator.caylex.ai/mcp",
-                "name": "caylex",
-                "authorization_token": token,
-            }
-        ],
-        tools=[{"type": "mcp_toolset", "mcp_server_name": "caylex"}],
-        betas=["mcp-client-2025-11-20"],
-    )
-
-    for block in response.content:
-        if block.type == "text":
-            print(block.text)
-
-
-main()
-```
-
-## Step-by-step
-
-<Steps>
-  <Step title="Set environment variables">
-    ```bash
-    export CAYLEX_API_KEY="ck_abc123.your-secret-key"
-    export CAYLEX_USER_EMAIL="user@example.com"
-    export ANTHROPIC_API_KEY="your-anthropic-key"
-    ```
-  </Step>
-  <Step title="Build the bearer token">
-    Pack your Caylex API key and the end user's email into a base64url-encoded JSON token. Build it server-side, per user.
-
-    ```python
-    def build_caylex_bearer_token(
-        api_key: str, user_email: str, session_id: str | None = None
-    ) -> str:
-        payload = {"api_key": api_key, "user_email": user_email}
-        if session_id:
-            payload["session_id"] = session_id  # groups a conversation's tool calls
-        data = json.dumps(payload).encode("utf-8")
-        return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
-    ```
-
-    Generate the `session_id` once per conversation (a UUID) and pass the same value on every request in that conversation. Keep the API key constant and set `user_email` per end user, as before.
-  </Step>
-  <Step title="Configure the MCP connector">
-    Add the Caylex Navigator to `mcp_servers` and pass the token as `authorization_token`. Reference the server from the `tools` array with an `mcp_toolset`.
-
-    ```python
+response = client.beta.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=2048,
+    messages=[
+        {
+            "role": "user",
+            "content": "Check my connected services and summarize my recent documents.",
+        }
+    ],
     mcp_servers=[
         {
             "type": "url",
@@ -143,55 +367,58 @@ main()
     ],
     tools=[{"type": "mcp_toolset", "mcp_server_name": "caylex"}],
     betas=["mcp-client-2025-11-20"],
-    ```
+)
 
-    <Warning>
-    The MCP connector is a beta feature and requires the `mcp-client-2025-11-20` beta header (passed via `betas=[...]`). Use `client.beta.messages.create`, not `client.messages.create`.
-    </Warning>
-  </Step>
-  <Step title="Read the response">
-    Claude executes Caylex tool calls server-side and returns the result in a single response. The `content` array contains `text` blocks plus `mcp_tool_use` / `mcp_tool_result` blocks for each tool call.
+for block in response.content:
+    if block.type == "text":
+        print(block.text)
+    elif block.type == "mcp_tool_use":
+        print(f"called {block.name} with {block.input}")
+    elif block.type == "mcp_tool_result":
+        print(f"result (is_error={block.is_error}): {block.content}")
+```
 
-    ```python
-    for block in response.content:
-        if block.type == "text":
-            print(block.text)
-        elif block.type == "mcp_tool_use":
-            print(f"called {block.name} with {block.input}")
-        elif block.type == "mcp_tool_result":
-            print(f"result (is_error={block.is_error}): {block.content}")
-    ```
-  </Step>
-</Steps>
+<Warning>
+Anthropic's hosted connector may cache the model-facing MCP tool catalog independently of your chat messages. A new chat does not always force a fresh `tools/list` request, and there is currently no supported API option to force a refresh.
 
-<Tip>
-Build a fresh token per request from your app's authenticated user: the API key stays constant (it identifies your navigator instance) while the `user_email` changes per user (it determines whose credentials the Navigator uses). Because the connector calls the Navigator from Anthropic's infrastructure, the endpoint must be publicly reachable (it is) over the MCP Streamable HTTP transport — no extra configuration needed.
-</Tip>
+This matters because Caylex tool descriptions include live, user-specific information such as the authenticated-server list in `suggest_tools`. After a user authenticates, Claude may temporarily see an older server list or an older catalog that omits `get_authentication_status_and_link`.
+
+Use the FastMCP or tool-runner approach when fresh tool definitions are required.
+</Warning>
+
+<Note>
+The hosted connector requires `client.beta.messages.create`, an `mcp_toolset`, and the `mcp-client-2025-11-20` beta header. Its tool events use `mcp_tool_use` / `mcp_tool_result`; customer-managed integrations use ordinary `tool_use` / `tool_result` blocks.
+</Note>
 
 ## Troubleshooting
 
 <AccordionGroup>
+  <Accordion title="The server list or authentication tool is stale">
+    If you use Anthropic's hosted connector, the model-facing MCP catalog may be cached across requests or chats. There is currently no supported force-refresh parameter. Switch to a customer-managed MCP client, or wait for Anthropic's catalog cache to refresh.
+
+    With FastMCP, call `mcp.list_tools()` before each user turn and rebuild the Anthropic tool definitions. With the tool runner, start the next turn with a fresh `list_tools()` result.
+  </Accordion>
   <Accordion title="Invalid request parameters at initialize">
-    If the connector fails during the MCP `initialize` handshake with a generic `-32602 Invalid request parameters`, it almost always means **authentication failed** — a malformed token, or an API key / email that isn't valid for the environment you're hitting. Double-check that the token decodes to the correct `api_key` and `user_email`, and that the key belongs to the same environment as the URL.
+    Authentication likely failed. Confirm that the token decodes to the correct `api_key`, `user_email`, and UUID `session_id`, and that the API key belongs to the same environment as the Navigator URL.
   </Accordion>
   <Accordion title="Tool calls to a server fail with an auth error">
-    The `x-user-email` packed into the token must exactly match the email the user authenticated with via an [Auth Link](/auth/auth-links). If it doesn't match, tool calls to servers requiring authentication will fail.
+    The `user_email` packed into the token must exactly match the email the user authenticated with through an [Auth Link](/auth/auth-links).
   </Accordion>
-  <Accordion title="Tool calls from one conversation show up as separate sessions">
-    The connector isn't reusing a session id across requests. Add a `session_id` (a UUID you generate once per conversation) to the bearer token and send it on every request — see [Group tool calls by chat session](#group-tool-calls-by-chat-session).
+  <Accordion title="Tool calls from one chat appear as separate sessions">
+    Generate one UUID when the chat begins and include it as `session_id` in every bearer token for that chat. Do not generate a new UUID for each MCP request.
   </Accordion>
   <Accordion title="An extra argument I sent was ignored">
-    The Navigator ignores unknown top-level arguments on a tool call rather than failing the whole call. When it does, it reports them back in the response `_meta` under `caylex/ignored_arguments` (with the field names and reason), so you can spot and remove stray parameters your framework may be injecting.
+    The Navigator ignores unknown top-level arguments instead of failing the whole call. It reports them in response `_meta` under `caylex/ignored_arguments`, including the field names and reason.
   </Accordion>
 </AccordionGroup>
 
-## When to use the header-based flows instead
-
-If you control the MCP client yourself — including via the [Claude Agent SDK](/integration/claude-sdk) — you can send the standard `x-api-key` and `x-user-email` headers directly and skip the bearer token. The bearer token is specifically for the **hosted MCP connector** on the Messages API, which can't send custom headers.
-
 ## Further reading
 
-- [Anthropic MCP connector documentation](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
-- [Claude Agent SDK](/integration/claude-sdk) — header-based integration where you control the client
-- [Connecting Your Agent](/integration/connecting) — details on how the Navigator works
-- [Server Authentication](/auth/server-authentication) for user-level vs project-level auth
+- [FastMCP client-only package](https://gofastmcp.com/clients/client-only-package)
+- [FastMCP Client](https://gofastmcp.com/clients/client)
+- [FastMCP client transports](https://gofastmcp.com/clients/transports)
+- [Anthropic tool runner](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-runner)
+- [Anthropic hosted MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
+- [Claude Agent SDK](/integration/claude-sdk)
+- [Connecting Your Agent](/integration/connecting)
+- [Server Authentication](/auth/server-authentication)
