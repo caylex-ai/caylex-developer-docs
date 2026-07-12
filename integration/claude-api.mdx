@@ -85,6 +85,31 @@ export CAYLEX_USER_EMAIL="user@example.com"
 export ANTHROPIC_API_KEY="your-anthropic-key"
 ```
 
+### System prompt and conversation messages
+
+Anthropic accepts the system prompt through the top-level `system` parameter. Do not add a message with `role: "system"` — the `messages` array contains only `user` and `assistant` turns.
+
+```python
+SYSTEM_PROMPT = """
+You are a helpful assistant. Use the available Caylex tools when needed.
+"""
+
+user_message = "..."  # Supplied by your application
+conversation_messages = [
+    {"role": "user", "content": user_message},
+]
+
+response = await client.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=2048,
+    system=SYSTEM_PROMPT,
+    messages=conversation_messages,
+    tools=tools,
+)
+```
+
+For subsequent turns, preserve the existing `conversation_messages` and append the new user message. The examples below show one user turn plus any tool-use iterations it triggers.
+
 ## FastMCP client (recommended)
 
 This approach uses FastMCP's lightweight client-only package to call `tools/list` and `tools/call` directly. You pass the freshly discovered tools to the regular Messages API and keep control of your existing agent loop.
@@ -109,6 +134,10 @@ from anthropic import AsyncAnthropic
 from fastmcp import Client as FastMCPClient
 from fastmcp.client.transports import StreamableHttpTransport
 from mcp.types import TextContent
+
+SYSTEM_PROMPT = """
+You are a helpful assistant. Use the available Caylex tools when needed.
+"""
 
 
 def build_caylex_bearer_token(
@@ -157,11 +186,11 @@ async def main() -> None:
     mcp = FastMCPClient(transport)
     claude = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    messages = [
+    user_message = input("User: ")
+    conversation_messages = [
         {
             "role": "user",
-            "content": "Check which services I can access, then summarize "
-            "my recent research documents.",
+            "content": user_message,
         }
     ]
 
@@ -182,10 +211,13 @@ async def main() -> None:
             response = await claude.messages.create(
                 model="claude-opus-4-8",
                 max_tokens=2048,
-                messages=messages,
+                system=SYSTEM_PROMPT,
+                messages=conversation_messages,
                 tools=claude_tools,
             )
-            messages.append({"role": "assistant", "content": response.content})
+            conversation_messages.append(
+                {"role": "assistant", "content": response.content}
+            )
 
             tool_uses = [
                 block for block in response.content if block.type == "tool_use"
@@ -212,7 +244,9 @@ async def main() -> None:
                     }
                 )
 
-            messages.append({"role": "user", "content": tool_results})
+            conversation_messages.append(
+                {"role": "user", "content": tool_results}
+            )
 
 
 if __name__ == "__main__":
@@ -251,6 +285,10 @@ from anthropic.lib.tools.mcp import async_mcp_tool
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
+SYSTEM_PROMPT = """
+You are a helpful assistant. Use the available Caylex tools when needed.
+"""
+
 
 # Reuse build_caylex_bearer_token from Common authentication above.
 
@@ -263,6 +301,10 @@ async def main() -> None:
         session_id=chat_session_id,
     )
     claude = AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    user_message = input("User: ")
+    conversation_messages = [
+        {"role": "user", "content": user_message},
+    ]
 
     async with httpx.AsyncClient(
         headers={"Authorization": f"Bearer {token}"},
@@ -284,13 +326,8 @@ async def main() -> None:
                     model="claude-opus-4-8",
                     max_tokens=2048,
                     max_iterations=20,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": "Check which services I can access, then "
-                            "summarize my recent research documents.",
-                        }
-                    ],
+                    system=SYSTEM_PROMPT,
+                    messages=conversation_messages,
                     tools=[
                         async_mcp_tool(tool, mcp)
                         for tool in tools_result.tools
@@ -335,6 +372,10 @@ import uuid
 
 import anthropic
 
+SYSTEM_PROMPT = """
+You are a helpful assistant. Use the available Caylex tools when needed.
+"""
+
 
 # Reuse build_caylex_bearer_token from Common authentication above.
 
@@ -347,16 +388,16 @@ token = build_caylex_bearer_token(
 )
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+user_message = input("User: ")
+conversation_messages = [
+    {"role": "user", "content": user_message},
+]
 
 response = client.beta.messages.create(
     model="claude-opus-4-8",
     max_tokens=2048,
-    messages=[
-        {
-            "role": "user",
-            "content": "Check my connected services and summarize my recent documents.",
-        }
-    ],
+    system=SYSTEM_PROMPT,
+    messages=conversation_messages,
     mcp_servers=[
         {
             "type": "url",
