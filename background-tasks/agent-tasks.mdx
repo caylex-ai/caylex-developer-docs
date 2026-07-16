@@ -57,7 +57,7 @@ Authorization: Bearer <platform_access_token>
 | `caylex_api_key` | Yes | Production navigator API key (`ck_…`). |
 | `user_email` | Yes | End-user the task runs as; determines per-user tool authentication. |
 | `prompt` | Yes | The task instructions for the agent. |
-| `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
+| `skill_ref` | No | Name or slug of a skill available to the selected navigator: either a [project skill](/platform/projects) or one of that navigator's global skills. Validated at submit time (404 if unavailable); the agent is required to load it before starting the task. |
 | `model` | No | OpenRouter model id from the [allowed list](/widget/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
 | `background_agent_auto_approve_tools` | No | Defaults to `false`. Controls whether the agent may run tools that require user approval — see [Tool Approval](#tool-approval) below. |
 
@@ -66,11 +66,23 @@ Authorization: Bearer <platform_access_token>
 ```json
 {
   "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
-  "status": "queued",
+  "status": "PENDING",
   "model": "anthropic/claude-opus-4.8",
-  "model_warning": null
+  "model_warning": null,
+  "resolved_skill": {
+    "id": "7783f27a-a6f9-45c7-a801-f1a0ee61091a",
+    "name": "Weekly Report",
+    "slug": "weekly-report",
+    "source": "project"
+  },
+  "skill_warning": null
 }
 ```
+
+When `skill_ref` is provided, `resolved_skill` identifies the exact skill
+selected for the task. If a project skill and one of the navigator's global
+skills share the requested slug, the project skill takes precedence and
+`skill_warning` explains that choice.
 
 ## Poll for Status
 
@@ -84,7 +96,12 @@ Authorization: Bearer <platform_access_token>
   "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
   "status": "COMPLETED",
   "report": "Reviewed 142 tickets. Drafted a summary covering the 3 most common issues...",
-  "result": { "text": "...", "tool_calls_made": 18, "hit_iteration_limit": false },
+  "result": {
+    "text": "...",
+    "tool_calls_made": 18,
+    "hit_iteration_limit": false,
+    "final_report_produced": true
+  },
   "error": null,
   "created_at": "2026-06-18T15:00:00+00:00",
   "started_at": "2026-06-18T15:00:03+00:00",
@@ -102,6 +119,51 @@ Authorization: Bearer <platform_access_token>
 
 Poll on an interval that suits your task length (for example, every few seconds). The `report` field contains the agent's own summary of what it completed versus what it could not.
 
+The report is the agent's final, self-contained assistant message. Text emitted
+alongside earlier tool calls is retained in the transcript but is not included
+in `report`. If the agent stops before producing a final report, the task is
+marked `INCOMPLETE` and `result.final_report_produced` is `false`.
+
+## Fetch the Transcript
+
+Use the paginated transcript endpoint when you need an audit trail or want to
+inspect the agent's intermediate messages and tool activity:
+
+```
+GET https://api.caylex.ai/api/v1/agent-task/{task_id}/transcript?limit=50&cursor=120
+Authorization: Bearer <platform_access_token>
+```
+
+Omit `cursor` for the first page. Pass the returned `next_cursor` on the next
+request. You can fetch the transcript while the task is running; subsequent
+messages have higher cursor values.
+
+```json
+{
+  "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "RUNNING",
+  "messages": [
+    {
+      "id": "9a577550-2dfa-4d0c-9b22-224b63149315",
+      "sequence_number": 121,
+      "role": "assistant",
+      "message_type": "assistant",
+      "content": [
+        { "type": "text", "text": "I found 142 tickets to review." }
+      ],
+      "created_at": "2026-06-18T15:01:12+00:00"
+    }
+  ],
+  "next_cursor": 121,
+  "has_more": false
+}
+```
+
+The transcript includes task messages, assistant messages, tool calls, and tool
+results. System prompts, compaction records, hidden internal messages, and
+internal credential storage are not included. Transcript data may contain
+information read from connected tools, so treat it as sensitive customer data.
+
 ## Tool Approval
 
 Some tools require explicit user approval before they run (for example, anything that sends a message, writes data, or otherwise changes external state). A background task has **no interactive user to grant that approval**, so by default Caylex handles this safely:
@@ -117,7 +179,9 @@ For example, a "send me a morning briefing email" task needs `background_agent_a
 
 ## Skills
 
-To point the agent at a specific [skill](/platform/projects), pass its name or slug as `skill_ref`. The reference is validated against the project when you submit the task (you get a `404` if it doesn't exist), and the agent is given a mandatory instruction to load that skill (by its resolved id) and follow it before doing any work. Omit `skill_ref` to let the agent discover and use skills on its own.
+To point the agent at a specific [skill](/platform/projects), pass its name or slug as `skill_ref`. This can be a project skill or a global skill attached to the navigator identified by `caylex_api_key`. The reference is validated when you submit the task (you get a `404` if it is not available to that navigator), and the agent is given a mandatory instruction to load that skill by its resolved id and follow it before doing any work.
+
+Only one `skill_ref` can be attached to a task. Omit it to let the agent discover and use available skills on its own.
 
 ## Example
 
