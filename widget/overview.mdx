@@ -456,7 +456,12 @@ type NavigablePage = {
   name: string;
   description?: string;
   urlTemplate: string;
-  params?: Record<string, { description: string; required?: boolean }>;
+  templateParams?: Record<string, { description: string; required?: boolean }>;
+  queryParams?: Record<string, {
+    description: string;
+    required?: boolean;
+    defaultValue?: string;
+  }>;
 };
 
 const ALL_NAVIGABLE_PAGES: NavigablePage[] = [
@@ -469,7 +474,7 @@ const ALL_NAVIGABLE_PAGES: NavigablePage[] = [
     name: 'Customer Detail',
     description: 'View a specific customer in the CRM',
     urlTemplate: '/crm/{customer_id}',
-    params: {
+    templateParams: {
       customer_id: {
         description: 'UUID of the customer',
         required: true,
@@ -479,8 +484,8 @@ const ALL_NAVIGABLE_PAGES: NavigablePage[] = [
   {
     name: 'Inventory Filtered',
     description: 'Filter inventory by category and stock status',
-    urlTemplate: '/inventory?category={category}&status={status}',
-    params: {
+    urlTemplate: '/inventory',
+    queryParams: {
       category: {
         description: 'Product category, such as Electronics or Furniture',
         required: false,
@@ -542,8 +547,32 @@ Each page has:
 
 - `name` — the page name the assistant sees and references
 - `description` — optional guidance that helps the assistant know when to navigate there
-- `urlTemplate` — a path with `{param}` placeholders. Supports path params and query params.
-- `params` — optional metadata for each placeholder
+- `urlTemplate` — a base path with optional `{param}` placeholders
+- `templateParams` — optional metadata for placeholders written directly in `urlTemplate`
+- `queryParams` — optional query filters appended to the resolved URL when the agent supplies a value
+
+The legacy `params` field remains supported as a deprecated alias for
+`templateParams`. Do not provide both fields on the same page.
+
+Optional query parameters that the agent does not supply are omitted. Set
+`defaultValue` when the host application requires a value even when the agent
+does not provide one. An empty default intentionally preserves an empty query
+key:
+
+```typescript
+queryParams: {
+  'sales-item': {
+    description: 'Filter by sales item',
+  },
+  'memo-out': {
+    description: 'Memo filter',
+    defaultValue: '', // Produces memo-out= when omitted by the agent
+  },
+}
+```
+
+Query parameter names and values are URL-encoded automatically. Parameters not
+declared in `queryParams` are rejected for pages using this contract.
 
 <Note>
 The site map controls what the assistant can discover for navigation, but it is not a security boundary. Your app should still enforce normal authorization when a user visits a page.
