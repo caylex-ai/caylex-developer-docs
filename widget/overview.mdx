@@ -456,7 +456,7 @@ type NavigablePage = {
   name: string;
   description?: string;
   urlTemplate: string;
-  params?: Record<string, { description: string; required?: boolean }>;
+  templateParams?: Record<string, { description: string; required?: boolean }>;
   queryParams?: Record<string, {
     description: string;
     required?: boolean;
@@ -474,7 +474,7 @@ const ALL_NAVIGABLE_PAGES: NavigablePage[] = [
     name: 'Customer Detail',
     description: 'View a specific customer in the CRM',
     urlTemplate: '/crm/{customer_id}',
-    params: {
+    templateParams: {
       customer_id: {
         description: 'UUID of the customer',
         required: true,
@@ -548,8 +548,11 @@ Each page has:
 - `name` — the page name the assistant sees and references
 - `description` — optional guidance that helps the assistant know when to navigate there
 - `urlTemplate` — a base path with optional `{param}` placeholders
-- `params` — optional metadata for placeholders written directly in `urlTemplate`
+- `templateParams` — optional metadata for placeholders written directly in `urlTemplate`
 - `queryParams` — optional query filters appended to the resolved URL when the agent supplies a value
+
+The legacy `params` field remains supported as a deprecated alias for
+`templateParams`. Do not provide both fields on the same page.
 
 Optional query parameters that the agent does not supply are omitted. Set
 `defaultValue` when the host application requires a value even when the agent
