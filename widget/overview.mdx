@@ -10,7 +10,7 @@ Caylex widgets let you embed AI agents directly inside your SaaS application. Yo
 
 Caylex provides two embeddable frontend components:
 
-- **`<CaylexChatWidget />`** — a chat interface that connects to the Caylex Assistants API. It supports streaming responses, tool calls, saved sessions, connected-service visibility, and optional agent-driven page navigation.
+- **`<CaylexChatWidget />`** — a chat interface that connects to the Caylex Assistants API. It supports streaming responses, tool calls, saved sessions, connected-service visibility, a background-task approval Inbox, and optional agent-driven page navigation.
 - **`<CaylexToolPermissionsWidget />`** — a permissions panel that lets end users control which tools are always allowed, require approval, or are disabled.
 
 Both widgets use **short-lived JWT tokens** minted by your backend. Your platform token and navigator API key stay server-side and never reach the browser.
@@ -88,7 +88,7 @@ For script-tag usage, you do not need to install NPM packages in your frontend. 
 The unversioned URLs always serve the latest widgets. For production stability, you can pin a specific version:
 
 ```html
-<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.17.js"></script>
 <script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
 ```
 
@@ -431,7 +431,7 @@ Use this pattern when you want a chat launcher that opens a fixed popup. Keep th
 To pin a specific widget version, use a versioned script URL:
 
 ```html
-<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.17.js"></script>
 ```
 
 <Note>
@@ -440,6 +440,22 @@ The script-tag bundle includes React and the widget UI dependencies internally. 
 
   </Tab>
 </Tabs>
+
+## Background Task Approval Inbox
+
+The chat widget can act as the human approval surface for [background agent tasks](/background-tasks/agent-tasks). No additional widget prop is required.
+
+When your backend submits a task with `approval_mode: "human"`:
+
+1. The background worker runs independently until it reaches a tool configured as **User Approval**.
+2. The widget shows a notification on its session menu for the matching navigator and `user_email`.
+3. The **Inbox** tab lists pending background approvals. Opening one displays the persisted task transcript and the same approval card used by interactive chat.
+4. The composer stays disabled because the thread belongs to a background task.
+5. After a decision, the task resumes and the open transcript follows its progress. Any later approval card appears inline.
+
+<Note>
+Only pending approvals appear in the Inbox. This keeps background work out of the regular **Chat Sessions** list and surfaces it only when user input is required.
+</Note>
 
 ## Step 3: Enable Agent-Driven Page Navigation
 
@@ -874,7 +890,7 @@ For script-tag usage, the unversioned CDN URLs automatically serve the latest de
 If you want release stability, pin an explicit version and update the URL when you are ready to upgrade:
 
 ```html
-<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.8.js"></script>
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.17.js"></script>
 <script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
 ```
 

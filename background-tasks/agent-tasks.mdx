@@ -4,16 +4,18 @@ description: "Launch the Caylex agent for a long-running task from your backend,
 icon: "robot"
 ---
 
-The chat widget runs the Caylex agent interactively. **Background agent tasks** let your backend hand the same agent a long-running job to complete on its own — no widget, no open connection. You submit a prompt, get a `task_id` back immediately, and poll for the result when it's done.
+The chat widget runs the Caylex agent interactively. **Background agent tasks** let your backend hand the same agent a long-running job to complete on its own, without keeping an HTTP connection open. You submit a prompt, get a `task_id` back immediately, and poll for the result when it's done.
 
 This is ideal for work that takes longer than a request cycle: multi-step research, batch updates across connected tools, scheduled summaries, and similar autonomous jobs.
+
+Background tasks can also pause for human approval before running sensitive tools. When that mode is enabled, the Caylex chat widget surfaces the pending action in its **Inbox**, then the worker resumes after the user approves or rejects it.
 
 ## Overview
 
 A background task is launched server-to-server, authenticated exactly like [agent session init](/widget/model-selection) (a platform access token). Caylex records the task, runs it on a dedicated background worker, and persists progress as it goes so the run is durable: if a worker is interrupted, the task resumes from the last completed step rather than starting over.
 
 <Note>
-Background tasks run autonomously. The agent is instructed that there is no user to answer follow-up questions; it completes as much as it safely can and ends with a report of what it finished and what it could not.
+Background tasks do not ask conversational follow-up questions. Human-in-the-loop mode is limited to deterministic approval cards for tools configured to require approval.
 </Note>
 
 ## How It Works
@@ -23,13 +25,24 @@ sequenceDiagram
     participant Backend as Your Backend
     participant Caylex as Caylex API
     participant Worker as Background Worker
+    participant Widget as Chat Widget
+    participant User as End User
 
-    Backend->>Caylex: POST /agent-task {caylex_api_key, user_email, prompt, ...}
+    Backend->>Caylex: POST /agent-task {prompt, approval_mode, ...}
     Caylex-->>Backend: {task_id, status: "PENDING"}
     Caylex->>Worker: dispatch task
     Worker->>Worker: run agent (durable, resumable)
+    alt A tool requires approval
+        Worker->>Caylex: persist approval and release worker
+        Caylex-->>Backend: status: "AWAITING_APPROVAL"
+        Widget->>Caylex: check approval Inbox
+        Caylex-->>Widget: pending tool approval
+        User->>Widget: approve or reject
+        Widget->>Caylex: submit decision
+        Caylex->>Worker: requeue and resume task
+    end
     Backend->>Caylex: GET /agent-task/{task_id}
-    Caylex-->>Backend: {status: "RUNNING" | "COMPLETED" | "FAILED", report, result}
+    Caylex-->>Backend: {status, report, result}
 ```
 
 The run executes against the same project, tools, and per-user authentication as an interactive session for that `user_email`, so the agent can use every integration the user is connected to.
@@ -48,7 +61,7 @@ Authorization: Bearer <platform_access_token>
   "prompt": "Review last week's support tickets and draft a summary of recurring issues.",
   "skill_ref": "weekly-report",
   "model": "anthropic/claude-opus-4.8",
-  "background_agent_auto_approve_tools": false
+  "approval_mode": "human"
 }
 ```
 
@@ -59,14 +72,15 @@ Authorization: Bearer <platform_access_token>
 | `prompt` | Yes | The task instructions for the agent. |
 | `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
 | `model` | No | OpenRouter model id from the [allowed list](/widget/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
-| `background_agent_auto_approve_tools` | No | Defaults to `false`. Controls whether the agent may run tools that require user approval — see [Tool Approval](#tool-approval) below. |
+| `approval_mode` | No | How tools configured to require approval are handled: `exclude` (default), `human`, or `auto_approve`. See [Tool Approval](#tool-approval). |
+| `background_agent_auto_approve_tools` | No | Deprecated compatibility alias. `true` maps to `approval_mode: "auto_approve"` and `false` maps to `"exclude"`. Do not send both fields with conflicting values. |
 
 ### Response
 
 ```json
 {
   "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
-  "status": "queued",
+  "status": "PENDING",
   "model": "anthropic/claude-opus-4.8",
   "model_warning": null
 }
@@ -96,6 +110,7 @@ Authorization: Bearer <platform_access_token>
 | --- | --- |
 | `PENDING` | Queued, not yet picked up. |
 | `RUNNING` | A worker is actively running (or resuming) the task. |
+| `AWAITING_APPROVAL` | The task released its worker and is waiting for a user to approve or reject a tool call. |
 | `COMPLETED` | The agent finished. `report` holds its final summary. |
 | `INCOMPLETE` | The agent stopped having done partial work; see `report`. |
 | `FAILED` | The task errored after exhausting its retries; see `error`. |
@@ -104,16 +119,31 @@ Poll on an interval that suits your task length (for example, every few seconds)
 
 ## Tool Approval
 
-Some tools require explicit user approval before they run (for example, anything that sends a message, writes data, or otherwise changes external state). A background task has **no interactive user to grant that approval**, so by default Caylex handles this safely:
+Some tools require explicit user approval before they run—for example, tools that send a message, write data, or otherwise change external state. Set `approval_mode` according to the task's trust model:
 
-- **`background_agent_auto_approve_tools: false` (default)** — approval-gated tools are **excluded** from the run entirely. The agent can't see or call them; it completes what it can with the remaining (read/no-approval) tools and notes in its report what it couldn't do. This prevents a background agent from taking a sensitive action no one approved.
-- **`background_agent_auto_approve_tools: true`** — the agent **may run approval-gated tools without a user decision**. Set this only when you intend for the task to perform those actions autonomously (e.g. a scheduled job that sends an email or updates records).
+- **`exclude` (default)** — approval-gated tools are excluded from the run. The agent completes what it can with the remaining tools and explains any limitation in its report.
+- **`human`** — approval-gated tools remain available, but the task pauses before execution. The matching end user can approve or reject the action from the chat widget Inbox.
+- **`auto_approve`** — approval-gated tools execute without a user decision. Use this only when the task is explicitly authorized to perform those actions autonomously.
 
 <Warning>
-Setting `background_agent_auto_approve_tools: true` lets the background agent execute state-changing tools (sending, writing, deleting) with no human in the loop. Use it only for tasks you explicitly want to act on their own.
+`approval_mode: "auto_approve"` lets the background agent execute state-changing tools—including sending, writing, and deleting—with no human in the loop.
 </Warning>
 
-For example, a "send me a morning briefing email" task needs `background_agent_auto_approve_tools: true` — with the default, the agent will compile the briefing but the email-send tool is unavailable, so it will report the briefing instead of sending it.
+### Human approvals in the chat widget
+
+Human approval mode uses the `user_email` and navigator associated with the task to route approvals:
+
+1. The worker reaches a tool configured as **User Approval**, persists the pending action, changes the task to `AWAITING_APPROVAL`, and releases its worker lease.
+2. A chat widget initialized for the same navigator and `user_email` shows a notification on the session menu and an item in the **Inbox** tab.
+3. Opening the item shows the background task transcript and approval card. The message composer is disabled because this remains a background task, not an interactive conversation.
+4. After the user submits decisions, Caylex requeues the task, executes only approved actions, records rejected actions as tool results, and continues the workflow.
+5. If another approval is needed while the transcript is open, the next approval card appears inline. The user does not need to return to the Inbox.
+
+The task does not hold a worker or browser connection while it waits. An unanswered approval expires after seven days, is treated as rejected, and the task resumes so it can finish with an accurate report.
+
+<Note>
+The Inbox is an interruption surface, not a background-task history browser. Pending items disappear after a decision. If the user keeps the transcript open, it continues updating until the task finishes.
+</Note>
 
 ## Skills
 
@@ -142,6 +172,7 @@ To point the agent at a specific [skill](/platform/projects), pass its name or s
                     "caylex_api_key": CAYLEX_API_KEY,
                     "user_email": user_email,
                     "prompt": prompt,
+                    "approval_mode": "human",
                 },
             )
             submit.raise_for_status()
@@ -181,6 +212,7 @@ To point the agent at a specific [skill](/platform/projects), pass its name or s
           caylex_api_key: CAYLEX_API_KEY,
           user_email: userEmail,
           prompt,
+          approval_mode: "human",
         }),
       });
       if (!submit.ok) throw new Error("Failed to submit agent task");
