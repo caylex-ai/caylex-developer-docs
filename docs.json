@@ -59,9 +59,15 @@
               "integration/connecting",
               "integration/openai-agents",
               "integration/langchain",
-              "integration/claude-sdk",
-              "integration/claude-api",
-              "integration/claude-desktop"
+              {
+                "group": "Anthropic",
+                "pages": [
+                  "integration/claude-api",
+                  "integration/claude-api-skill",
+                  "integration/claude-sdk",
+                  "integration/claude-desktop"
+                ]
+              }
             ]
           },
           {

@@ -114,6 +114,10 @@ For subsequent turns, preserve the existing `conversation_messages` and append t
 
 This approach uses FastMCP's lightweight client-only package to call `tools/list` and `tools/call` directly. You pass the freshly discovered tools to the regular Messages API and keep control of your existing agent loop.
 
+<Card title="Using a coding agent? Grab the Agent Skill" icon="wand-magic-sparkles" href="/integration/claude-api-skill">
+  A ready-made SKILL.md for Claude Code, Cursor, and similar coding agents that implements this integration in your existing Messages API harness.
+</Card>
+
 Install the dependencies:
 
 ```bash
@@ -455,6 +459,7 @@ The hosted connector requires `client.beta.messages.create`, an `mcp_toolset`, a
 
 ## Further reading
 
+- [Claude API Agent Skill](/integration/claude-api-skill) — a SKILL.md for coding agents that implements the FastMCP approach
 - [FastMCP client-only package](https://gofastmcp.com/clients/client-only-package)
 - [FastMCP Client](https://gofastmcp.com/clients/client)
 - [FastMCP client transports](https://gofastmcp.com/clients/transports)
