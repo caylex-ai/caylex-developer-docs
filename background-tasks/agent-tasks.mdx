@@ -8,14 +8,14 @@ The chat widget runs the Caylex agent interactively. **Background agent tasks** 
 
 This is ideal for work that takes longer than a request cycle: multi-step research, batch updates across connected tools, scheduled summaries, and similar autonomous jobs.
 
-Background tasks can also pause for human approval before running sensitive tools. When that mode is enabled, the Caylex chat widget surfaces the pending action in its **Inbox**, then the worker resumes after the user approves or rejects it.
+Background tasks can also involve a human before running sensitive tools. A task can pause immediately on the first approval-gated action, or it can defer and batch gated actions while the agent continues independent work. The Caylex chat widget surfaces both workflows under **Background Tasks**.
 
 ## Overview
 
 A background task is launched server-to-server, authenticated exactly like [agent session init](/widget/model-selection) (a platform access token). Caylex records the task, runs it on a dedicated background worker, and persists progress as it goes so the run is durable: if a worker is interrupted, the task resumes from the last completed step rather than starting over.
 
 <Note>
-Background tasks do not ask conversational follow-up questions. Human-in-the-loop mode is limited to deterministic approval cards for tools configured to require approval.
+`approval_mode: "human"` is limited to tool approval decisions. `approval_mode: "deferred_human"` can also request written feedback or a decision on an important draft, schedule, document, or other work product.
 </Note>
 
 ## How It Works
@@ -32,14 +32,23 @@ sequenceDiagram
     Caylex-->>Backend: {task_id, status: "PENDING"}
     Caylex->>Worker: dispatch task
     Worker->>Worker: run agent (durable, resumable)
-    alt A tool requires approval
+    alt approval_mode: "human"
         Worker->>Caylex: persist approval and release worker
         Caylex-->>Backend: status: "AWAITING_APPROVAL"
-        Widget->>Caylex: check approval Inbox
+        Widget->>Caylex: check Background Tasks
         Caylex-->>Widget: pending tool approval
         User->>Widget: approve or reject
         Widget->>Caylex: submit decision
         Caylex->>Worker: requeue and resume task
+    else approval_mode: "deferred_human"
+        Worker->>Caylex: queue approval-gated actions
+        Worker->>Worker: continue independent work
+        Worker->>Caylex: request_human_review
+        Caylex-->>Backend: status: "AWAITING_REVIEW"
+        Caylex-->>Widget: review request and queued actions
+        User->>Widget: submit feedback and decisions
+        Widget->>Caylex: submit consolidated review
+        Caylex->>Worker: apply decisions and resume task
     end
     Backend->>Caylex: GET /agent-task/{task_id}
     Caylex-->>Backend: {status, report, result}
@@ -61,7 +70,7 @@ Authorization: Bearer <platform_access_token>
   "prompt": "Review last week's support tickets and draft a summary of recurring issues.",
   "skill_ref": "weekly-report",
   "model": "anthropic/claude-opus-4.8",
-  "approval_mode": "human"
+  "approval_mode": "deferred_human"
 }
 ```
 
@@ -72,7 +81,7 @@ Authorization: Bearer <platform_access_token>
 | `prompt` | Yes | The task instructions for the agent. |
 | `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
 | `model` | No | OpenRouter model id from the [allowed list](/widget/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
-| `approval_mode` | No | How tools configured to require approval are handled: `exclude` (default), `human`, or `auto_approve`. See [Tool Approval](#tool-approval). |
+| `approval_mode` | No | How tools configured to require approval are handled: `exclude` (default), `human`, `deferred_human`, or `auto_approve`. See [Tool Approval](#tool-approval). |
 | `background_agent_auto_approve_tools` | No | Deprecated compatibility alias. `true` maps to `approval_mode: "auto_approve"` and `false` maps to `"exclude"`. Do not send both fields with conflicting values. |
 
 ### Response
@@ -111,6 +120,7 @@ Authorization: Bearer <platform_access_token>
 | `PENDING` | Queued, not yet picked up. |
 | `RUNNING` | A worker is actively running (or resuming) the task. |
 | `AWAITING_APPROVAL` | The task released its worker and is waiting for a user to approve or reject a tool call. |
+| `AWAITING_REVIEW` | The agent explicitly requested human review. The review may include feedback, decisions on queued tool approvals, or both. |
 | `COMPLETED` | The agent finished. `report` holds its final summary. |
 | `INCOMPLETE` | The agent stopped having done partial work; see `report`. |
 | `FAILED` | The task errored after exhausting its retries; see `error`. |
@@ -122,28 +132,78 @@ Poll on an interval that suits your task length (for example, every few seconds)
 Some tools require explicit user approval before they run—for example, tools that send a message, write data, or otherwise change external state. Set `approval_mode` according to the task's trust model:
 
 - **`exclude` (default)** — approval-gated tools are excluded from the run. The agent completes what it can with the remaining tools and explains any limitation in its report.
-- **`human`** — approval-gated tools remain available, but the task pauses before execution. The matching end user can approve or reject the action from the chat widget Inbox.
+- **`human`** — approval-gated tools remain available, but the task pauses at the first gated action before execution. The matching end user can approve or reject the action from the chat widget.
+- **`deferred_human`** — gated actions are queued durably while the agent continues work that does not depend on their results. At a blocker or meaningful review point, the agent requests one consolidated human review containing its progress, the input it needs, and any queued tool approvals.
 - **`auto_approve`** — approval-gated tools execute without a user decision. Use this only when the task is explicitly authorized to perform those actions autonomously.
 
 <Warning>
 `approval_mode: "auto_approve"` lets the background agent execute state-changing tools—including sending, writing, and deleting—with no human in the loop.
 </Warning>
 
-### Human approvals in the chat widget
+### Immediate human approval
 
-Human approval mode uses the `user_email` and navigator associated with the task to route approvals:
+`approval_mode: "human"` uses the `user_email` and navigator associated with the task to route approvals:
 
 1. The worker reaches a tool configured as **User Approval**, persists the pending action, changes the task to `AWAITING_APPROVAL`, and releases its worker lease.
-2. A chat widget initialized for the same navigator and `user_email` shows a notification on the session menu and an item in the **Inbox** tab.
+2. A chat widget initialized for the same navigator and `user_email` shows a notification and an item under **Background Tasks**.
 3. Opening the item shows the background task transcript and approval card. The message composer is disabled because this remains a background task, not an interactive conversation.
 4. After the user submits decisions, Caylex requeues the task, executes only approved actions, records rejected actions as tool results, and continues the workflow.
-5. If another approval is needed while the transcript is open, the next approval card appears inline. The user does not need to return to the Inbox.
+5. If another approval is needed while the transcript is open, the next approval card appears inline. The user does not need to return to the **Background Tasks** list.
 
 The task does not hold a worker or browser connection while it waits. An unanswered approval expires after seven days, is treated as rejected, and the task resumes so it can finish with an accurate report.
 
 <Note>
-The Inbox is an interruption surface, not a background-task history browser. Pending items disappear after a decision. If the user keeps the transcript open, it continues updating until the task finishes.
+Immediate approvals are an interruption surface. Pending items disappear after a decision. If the user keeps the transcript open, it continues updating until the task finishes.
 </Note>
+
+### Deferred human review
+
+`approval_mode: "deferred_human"` reduces repeated workflow interruptions and supports broader human feedback:
+
+1. When the agent calls an approval-gated tool, Caylex stores the action in PostgreSQL instead of executing it. Safe calls in the same workflow can continue.
+2. The agent may queue multiple gated actions. If it needs one result immediately, or reaches another blocker or quality checkpoint, it calls `request_human_review`.
+3. The task changes to `AWAITING_REVIEW` and releases its worker lease. `GET /agent-task/{task_id}` includes a `pending_review` object.
+4. Under **Background Tasks**, the matching user sees the agent's progress summary, requested input, and queued tool approvals in one review card. The composer is enabled for optional written feedback.
+5. The user can approve or reject any subset of queued actions and submit feedback. Approved actions execute, rejected actions are finalized, and omitted actions remain queued.
+6. Caylex resumes the agent with the feedback and decision outcomes. The agent can revise its work, cancel obsolete queued actions, and request another review later.
+
+Deferred tool approvals are durable for up to 30 days. They are not executed unless explicitly approved. If execution has an ambiguous outcome—for example, a timeout after dispatch—Caylex reports `unknown_outcome` and does not automatically replay the action.
+
+#### Review through the API
+
+Your backend can retrieve and submit the same review shown in the widget:
+
+```text
+GET https://api.caylex.ai/api/v1/agent-task/{task_id}/review
+Authorization: Bearer <platform_access_token>
+```
+
+Submit at least one feedback message or approval decision:
+
+```http
+POST https://api.caylex.ai/api/v1/agent-task/{task_id}/review
+Authorization: Bearer <platform_access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "review_id": "31d04792-dafa-46f9-8d6d-8cb46fbb338e",
+  "message": "Use the shorter draft and proceed with the approved pages.",
+  "decisions": [
+    {
+      "approval_id": "approval-1",
+      "action": "approved"
+    },
+    {
+      "approval_id": "approval-2",
+      "action": "rejected"
+    }
+  ]
+}
+```
+
+Omit a queued approval from `decisions` to leave it pending for a later review.
 
 ## Skills
 
