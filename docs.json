@@ -210,6 +210,7 @@
           "cookbooks/sync-skills",
           "cookbooks/search-skills-by-tag",
           "cookbooks/get-session-messages",
+          "cookbooks/background-agent-file-sync",
           "cookbooks/set-server-base-url-override"
         ]
       }
