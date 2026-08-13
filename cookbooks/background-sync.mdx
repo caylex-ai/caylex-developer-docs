@@ -1,0 +1,55 @@
+---
+title: "Background Sync"
+description: "Use Caylex background agents to collect content from connected services for downstream indexes, data pipelines, and knowledge bases."
+icon: "arrows-rotate"
+---
+
+Background sync recipes use [background agent tasks](/background-tasks/agent-tasks)
+to discover and fetch content from connected services without holding an HTTP
+request open.
+
+The common pattern is:
+
+1. Launch a read-only background task with a focused prompt and optional
+   [skill](/background-tasks/agent-tasks#skills).
+2. Poll the task until it returns a `session_id`.
+3. Fetch the persisted tool trace for that session.
+4. Correlate the agent's resource manifest with successful tool responses.
+5. Transform those responses into records for your index or data pipeline.
+
+Each server exposes different nested-resource identifiers and retrieval tools,
+so the final correlation step is server-specific. Keep the task lifecycle
+generic, then use the appropriate exporter for the source system.
+
+<Warning>
+Background sync traces can contain complete customer documents, database rows,
+comments, and other sensitive content. Keep platform credentials and generated
+files server-side, apply your normal retention controls, and never commit raw
+traces to source control.
+</Warning>
+
+## Available recipes
+
+<CardGroup cols={2}>
+  <Card title="Sync Notion files" icon="file-export" href="/cookbooks/background-agent-file-sync">
+    Discover Notion pages, child pages, databases, rows, and comments, then
+    build resource-centric JSON from the task trace.
+  </Card>
+  <Card title="Public cookbook source" icon="github" href="https://github.com/caylex-ai/caylex-cookbooks/tree/main/background-agent-file-sync">
+    View the reusable task runner, Notion exporter, tests, and full usage guide.
+  </Card>
+</CardGroup>
+
+## Adding another source
+
+Future recipes can reuse the same background-task runner and replace only the
+exporter. A source-specific exporter should define:
+
+- the stable resource identifier used to deduplicate fetches;
+- which tool response contains the canonical content;
+- how nested resources refer to their parent;
+- how pagination and retries appear in the trace; and
+- which ambiguous calls should be reported instead of guessed.
+
+This structure works for other document systems such as Google Drive,
+Confluence, Overleaf, or GitHub, while keeping source-specific parsing isolated.
