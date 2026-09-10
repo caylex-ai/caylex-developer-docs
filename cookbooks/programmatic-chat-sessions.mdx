@@ -1,0 +1,150 @@
+---
+title: "Programmatic Chat Sessions"
+description: "Send normal user turns to an existing embedded chat session from your backend."
+icon: "message-plus"
+---
+
+Use the programmatic session-message API when your backend needs to notify an
+embedded agent about an event or state change. The message behaves exactly like
+a user turn typed in the chat widget: Caylex appends it to the existing
+transcript, runs the agent, stores the assistant response, and returns the
+completed turn.
+
+The current chat widget checks for persisted updates while an interactive
+session is idle, so the new user and assistant messages appear in the open
+thread automatically.
+
+<Warning>
+Call this API from your backend. Platform access tokens and navigator API keys
+must never be exposed to the browser.
+</Warning>
+
+## Endpoint
+
+```http
+POST https://api.caylex.ai/api/v1/assistants/sessions/{session_id}/messages
+Authorization: Bearer <platform_access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "caylex_api_key": "ck_your_navigator_api_key",
+  "user_email": "jane@example.com",
+  "message": "The customer updated the account settings. Review the new state and advise on next steps."
+}
+```
+
+All three identity values must match the existing production session:
+
+- The platform access token must belong to the session's tenant.
+- `caylex_api_key` must identify the session's navigator instance.
+- `user_email` must identify the end user who owns the widget session.
+
+The API returns `404` rather than revealing a session when any scope does not
+match. Playground and background-task sessions cannot receive programmatic
+chat turns.
+
+### Response
+
+This is a synchronous endpoint: it waits for the agent turn to finish.
+
+```json
+{
+  "text": "I reviewed the updated account state. The next recommended step is...",
+  "tool_calls": [],
+  "session_id": "0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34",
+  "model": "anthropic/claude-sonnet-4.6",
+  "usage": null
+}
+```
+
+If another agent run is active in the session, the endpoint returns `409`.
+Retry after that turn finishes; do not submit concurrent turns to the same
+session.
+
+## Capture the Session ID
+
+The preferred approach is to save the ID emitted by the chat widget's
+`onSessionCreated` callback and associate it with the corresponding user in
+your application:
+
+```tsx
+<CaylexChatWidget
+  apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+  widgetToken={widgetToken}
+  onSessionCreated={(sessionId) => {
+    saveCaylexSessionId({ userId: currentUser.id, sessionId });
+  }}
+/>
+```
+
+If you did not capture the ID, list recent sessions from your backend:
+
+```http
+GET https://api.caylex.ai/api/v1/assistants/sessions?is_playground=false&limit=50&offset=0
+Authorization: Bearer <platform_access_token>
+```
+
+Use `navigator_instance_id`, `project_id`, and timestamp filters to narrow the
+results. Session summaries include `session_id`, `session_name`, `created_at`,
+and `last_message_at`. For complete lookup and export examples, see
+[Get All Assistant Session Messages](/cookbooks/get-session-messages).
+
+## Example
+
+<Tabs>
+  <Tab title="Python">
+    ```python send_session_message.py
+    import os
+
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+
+    response = requests.post(
+        f"{BASE_URL}/assistants/sessions/{os.environ['CAYLEX_SESSION_ID']}/messages",
+        headers={
+            "Authorization": f"Bearer {os.environ['CAYLEX_PLATFORM_TOKEN']}",
+        },
+        json={
+            "caylex_api_key": os.environ["CAYLEX_NAVIGATOR_API_KEY"],
+            "user_email": "jane@example.com",
+            "message": "The account settings changed. Review the new state.",
+        },
+        timeout=600,
+    )
+    response.raise_for_status()
+    print(response.json()["text"])
+    ```
+  </Tab>
+
+  <Tab title="TypeScript">
+    ```typescript sendSessionMessage.ts
+    const baseUrl = "https://api.caylex.ai/api/v1";
+
+    const response = await fetch(
+      `${baseUrl}/assistants/sessions/${process.env.CAYLEX_SESSION_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.CAYLEX_PLATFORM_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          caylex_api_key: process.env.CAYLEX_NAVIGATOR_API_KEY,
+          user_email: "jane@example.com",
+          message: "The account settings changed. Review the new state.",
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Caylex chat turn failed: ${response.status}`);
+    }
+
+    const turn = await response.json();
+    console.log(turn.text);
+    ```
+  </Tab>
+</Tabs>

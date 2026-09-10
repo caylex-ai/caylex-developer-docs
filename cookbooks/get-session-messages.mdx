@@ -23,6 +23,7 @@ All endpoints require **admin** access and operate at **tenant** scope: with an 
 | `GET /api/v1/projects` | List projects in your tenant (to resolve a `project_id` by name). |
 | `GET /api/v1/assistants/sessions` | List chat sessions; filter by `project_id`, date range, navigator, and playground flag. |
 | `GET /api/v1/assistants/sessions/{session_id}/messages` | Get a page of a session's message timeline. |
+| `POST /api/v1/assistants/sessions/{session_id}/messages` | Send a normal user turn to an existing production session. See [Programmatic Chat Sessions](/cookbooks/programmatic-chat-sessions). |
 
 ### Resolve the project ID
 
