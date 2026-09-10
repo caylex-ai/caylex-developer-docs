@@ -15,7 +15,10 @@ Background tasks can also involve a human before running sensitive tools. A task
 A background task is launched server-to-server, authenticated exactly like [agent session init](/widget/model-selection) (a platform access token). Caylex records the task, runs it on a dedicated background worker, and persists progress as it goes so the run is durable: if a worker is interrupted, the task resumes from the last completed step rather than starting over.
 
 <Note>
-`approval_mode: "human"` is limited to tool approval decisions. `approval_mode: "deferred_human"` can also request written feedback or a decision on an important draft, schedule, document, or other work product.
+Both approval modes support programmatic decisions from your backend.
+`approval_mode: "human"` is limited to tool approval decisions.
+`approval_mode: "deferred_human"` can also request written feedback or a
+decision on an important draft, schedule, document, or other work product.
 </Note>
 
 ## How It Works
@@ -35,10 +38,8 @@ sequenceDiagram
     alt approval_mode: "human"
         Worker->>Caylex: persist approval and release worker
         Caylex-->>Backend: status: "AWAITING_APPROVAL"
-        Widget->>Caylex: check Background Tasks
-        Caylex-->>Widget: pending tool approval
-        User->>Widget: approve or reject
-        Widget->>Caylex: submit decision
+        Backend->>Caylex: poll pending_approval
+        Backend->>Caylex: approve or reject batch
         Caylex->>Worker: requeue and resume task
     else approval_mode: "deferred_human"
         Worker->>Caylex: queue approval-gated actions
@@ -52,6 +53,10 @@ sequenceDiagram
     end
     Backend->>Caylex: GET /agent-task/{task_id}
     Caylex-->>Backend: {status, report, result}
+    opt continue completed work
+        Backend->>Caylex: POST /agent-task/{task_id}/continue
+        Caylex->>Worker: append feedback and resume same session
+    end
 ```
 
 The run executes against the same project, tools, and per-user authentication as an interactive session for that `user_email`, so the agent can use every integration the user is connected to.
@@ -127,6 +132,43 @@ Authorization: Bearer <platform_access_token>
 
 Poll on an interval that suits your task length (for example, every few seconds). The `report` field contains the agent's own summary of what it completed versus what it could not.
 
+## Continue a Completed Task
+
+After a task reaches `COMPLETED` or `INCOMPLETE`, your backend can provide a
+new user message and continue the same task and chat session:
+
+```http
+POST https://api.caylex.ai/api/v1/agent-task/{task_id}/continue
+Authorization: Bearer <platform_access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "caylex_api_key": "ck_your_navigator_api_key",
+  "user_email": "jane@example.com",
+  "message": "Expand the report with a comparison of the previous quarter."
+}
+```
+
+```json
+{
+  "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "session_id": "0b3c1d52-9f4a-4c7e-bb71-2f1e6a0d9c34",
+  "status": "PENDING"
+}
+```
+
+Continuation is accepted only for `COMPLETED` and `INCOMPLETE` tasks. It
+appends the feedback as a normal user turn, requeues the task, and preserves
+the existing transcript. Continue polling the original `task_id`; approvals
+work exactly as they did during the first run.
+
+You must provide the platform token, navigator API key, and original
+`user_email` again. Caylex deletes the task's temporary navigator credential
+when a run reaches a terminal state, then stores the newly supplied key only
+for the duration of the continuation.
+
 ## Tool Approval
 
 Some tools require explicit user approval before they run—for example, tools that send a message, write data, or otherwise change external state. Set `approval_mode` according to the task's trust model:
@@ -145,9 +187,9 @@ Some tools require explicit user approval before they run—for example, tools t
 `approval_mode: "human"` uses the `user_email` and navigator associated with the task to route approvals:
 
 1. The worker reaches a tool configured as **User Approval**, persists the pending action, changes the task to `AWAITING_APPROVAL`, and releases its worker lease.
-2. A chat widget initialized for the same navigator and `user_email` shows a notification and an item under **Background Tasks**.
-3. Opening the item shows the background task transcript and approval card. The message composer is disabled because this remains a background task, not an interactive conversation.
-4. After the user submits decisions, Caylex requeues the task, executes only approved actions, records rejected actions as tool results, and continues the workflow.
+2. `GET /agent-task/{task_id}` returns the pending batch in `pending_approval`. A chat widget initialized for the same navigator and `user_email` also shows it under **Background Tasks**.
+3. Your backend can submit decisions through the API, or the end user can use the widget approval card.
+4. After decisions are submitted, Caylex requeues the task, executes only approved actions, records rejected actions as tool results, and continues the workflow.
 5. If another approval is needed while the transcript is open, the next approval card appears inline. The user does not need to return to the **Background Tasks** list.
 
 The task does not hold a worker or browser connection while it waits. An unanswered approval expires after seven days, is treated as rejected, and the task resumes so it can finish with an accurate report.
@@ -155,6 +197,54 @@ The task does not hold a worker or browser connection while it waits. An unanswe
 <Note>
 Immediate approvals are an interruption surface. Pending items disappear after a decision. If the user keeps the transcript open, it continues updating until the task finishes.
 </Note>
+
+#### Immediate approval through the API
+
+When the task is waiting, its status response includes the batch and individual
+tool approval IDs:
+
+```json
+{
+  "task_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "AWAITING_APPROVAL",
+  "pending_approval": {
+    "batch_id": "7fb90b23-93c2-45a9-98c4-1572fed2efc9",
+    "expires_at": "2026-09-17T06:32:29Z",
+    "items": [
+      {
+        "approval_id": "71bf58ab-80bd-488b-b85e-5b1e9dc91cc6",
+        "tool_name": "notion-create-pages",
+        "server_name": "Notion",
+        "intent": "Create the researched report",
+        "tool_params": {}
+      }
+    ]
+  }
+}
+```
+
+Submit the decision using the batch ID from the status response:
+
+```http
+POST https://api.caylex.ai/api/v1/agent-task/{task_id}/approvals/{batch_id}/decide
+Authorization: Bearer <platform_access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "decisions": [
+    {
+      "approval_id": "71bf58ab-80bd-488b-b85e-5b1e9dc91cc6",
+      "action": "approved"
+    }
+  ]
+}
+```
+
+Each action is either `approved` or `rejected`. Items omitted from an immediate
+approval submission are rejected. A successful submission returns
+`{"status":"ok"}` and requeues the task.
 
 ### Deferred human review
 

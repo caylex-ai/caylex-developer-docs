@@ -441,6 +441,19 @@ The script-tag bundle includes React and the widget UI dependencies internally. 
   </Tab>
 </Tabs>
 
+## Programmatic Chat Turns
+
+Your backend can send a normal user turn to an existing widget session. This is
+useful when the embedded agent needs to follow application events or state
+changes that happen outside the chat composer. The agent processes the message
+normally, and the persisted user and assistant messages appear in the open
+widget thread.
+
+Capture each new session ID with `onSessionCreated`, then call the
+platform-authenticated session-message API from your backend. See
+[Programmatic Chat Sessions](/cookbooks/programmatic-chat-sessions) for the
+request contract, session lookup options, and complete examples.
+
 ## Background Task Approval Inbox
 
 The chat widget can act as the human approval surface for [background agent tasks](/background-tasks/agent-tasks). No additional widget prop is required.
