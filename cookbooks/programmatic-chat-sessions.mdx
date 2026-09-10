@@ -10,9 +10,11 @@ a user turn typed in the chat widget: Caylex appends it to the existing
 transcript, runs the agent, stores the assistant response, and returns the
 completed turn.
 
-The current chat widget checks for persisted updates while an interactive
-session is idle, so the new user and assistant messages appear in the open
-thread automatically.
+Enable `enableExternalSessionSync` on chat widgets that need to receive these
+turns. While that option is enabled, the widget checks for persisted updates
+only when the tab is visible and the interactive session is idle. The polling
+interval defaults to five seconds and can be changed with
+`externalSessionSyncIntervalMs`.
 
 <Warning>
 Call this API from your backend. Platform access tokens and navigator API keys
@@ -73,6 +75,8 @@ your application:
 <CaylexChatWidget
   apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
   widgetToken={widgetToken}
+  enableExternalSessionSync
+  externalSessionSyncIntervalMs={5000}
   onSessionCreated={(sessionId) => {
     saveCaylexSessionId({ userId: currentUser.id, sessionId });
   }}
