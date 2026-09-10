@@ -447,7 +447,19 @@ Your backend can send a normal user turn to an existing widget session. This is
 useful when the embedded agent needs to follow application events or state
 changes that happen outside the chat composer. The agent processes the message
 normally, and the persisted user and assistant messages appear in the open
-widget thread.
+widget thread when external session synchronization is enabled:
+
+```tsx
+<CaylexChatWidget
+  // ...
+  enableExternalSessionSync
+  externalSessionSyncIntervalMs={5000}
+/>
+```
+
+External synchronization is disabled by default so widgets that do not use
+programmatic turns make no additional polling requests. When enabled, polling
+runs only while the tab is visible and the interactive session is idle.
 
 Capture each new session ID with `onSessionCreated`, then call the
 platform-authenticated session-message API from your backend. See
@@ -831,6 +843,8 @@ Your `/api/caylex/token` endpoint should call the Caylex mint endpoint from your
 | `borderRadius` | `12` | Border radius of the widget card, in pixels |
 | `showToolCallDetails` | `false` | Allow expanding tool call cards to show JSON details |
 | `showServersButton` | `true` | Show a Connected Services button in the header |
+| `enableExternalSessionSync` | `false` | Poll for turns sent through the programmatic session-message API |
+| `externalSessionSyncIntervalMs` | `5000` | External session polling interval in milliseconds; minimum `1000` |
 | `navigablePages` | — | Effective site map, usually fetched from your backend, that enables agent-driven page navigation |
 | `onNavigate` | — | Callback invoked when the assistant triggers page navigation |
 | `sessionName` | `Chat` | Default session name stored on the backend |
