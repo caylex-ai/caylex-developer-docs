@@ -27,7 +27,7 @@ graph LR
 
 ## The Navigator's MCP tools
 
-The Caylex Navigator exposes up to 5 MCP tools to your agent, depending on your [Navigator Instance configuration](/platform/navigators):
+The Caylex Navigator exposes MCP tools to your agent based on your [Navigator Instance configuration](/platform/navigators):
 
 ### `suggest_tools`
 
@@ -74,6 +74,16 @@ This tool is available when **In-Chat Authentication** is enabled on the Navigat
 
 <Card title="In-Chat Authentication" icon="key" href="/navigator/in-chat-authentication">
   Learn how in-chat authentication works.
+</Card>
+
+### `execute_tools_in_code`
+
+Runs agent-generated Python in a restricted sandbox. The program can orchestrate tool calls and process their results before returning a compact output to the model.
+
+This tool is available when **Code Mode** is enabled on the Navigator Instance.
+
+<Card title="Code Mode" icon="code" href="/navigator/code-mode">
+  Learn how Code Mode handles multi-tool workflows and large responses.
 </Card>
 
 ## Automatic authentication
