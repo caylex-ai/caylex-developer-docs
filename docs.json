@@ -74,9 +74,15 @@
           {
             "group": "Embedded AI",
             "pages": [
-              "widget/overview",
-              "widget/auto-authentication",
-              "widget/model-selection"
+              {
+                "group": "Embedded Widgets",
+                "pages": [
+                  "widget/overview",
+                  "widget/session-management",
+                  "widget/auto-authentication",
+                  "widget/model-selection"
+                ]
+              }
             ]
           },
           {

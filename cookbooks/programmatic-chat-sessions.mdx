@@ -69,12 +69,15 @@ session.
 
 The preferred approach is to save the ID emitted by the chat widget's
 `onSessionCreated` callback and associate it with the corresponding user in
-your application:
+your application. If your application already has a mapped session, pass it
+back through `initialSessionId`; otherwise, pass `null` to explicitly create a
+new session:
 
 ```tsx
 <CaylexChatWidget
   apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
   widgetToken={widgetToken}
+  initialSessionId={savedCaylexSessionId ?? null}
   enableExternalSessionSync
   externalSessionSyncIntervalMs={5000}
   onSessionCreated={(sessionId) => {
@@ -82,6 +85,9 @@ your application:
   }}
 />
 ```
+
+See [Session Management](/widget/session-management) for restoration behavior,
+session-change callbacks, and host-managed session examples.
 
 If you did not capture the ID, list recent sessions from your backend:
 
