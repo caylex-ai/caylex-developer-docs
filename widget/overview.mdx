@@ -441,6 +441,66 @@ The script-tag bundle includes React and the widget UI dependencies internally. 
   </Tab>
 </Tabs>
 
+### Supporting Compact Mode In A Floating Wrapper
+
+Compact mode is enabled by default. When a user collapses the widget, the
+widget changes its own width and height, but it cannot resize or hide wrapper
+elements owned by your application. If your floating popup adds a draggable
+header, resize handles, a close button, or a fixed-height panel, update that
+wrapper through `onExpandedChange`.
+
+```tsx
+const [widgetExpanded, setWidgetExpanded] = useState(true);
+
+<div
+  style={{
+    position: 'fixed',
+    right: 24,
+    bottom: 24,
+    width: widgetExpanded ? 420 : 360,
+    height: widgetExpanded ? 600 : 'auto',
+  }}
+>
+  {widgetExpanded && <DraggablePopupHeader />}
+
+  <CaylexChatWidget
+    apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+    widgetToken={token}
+    width="100%"
+    height="100%"
+    compactWidth="100%"
+    onExpandedChange={setWidgetExpanded}
+  />
+</div>
+```
+
+While compact, remove fixed-height shells and any wrapper chrome that should
+not surround the small voice dock. You can keep a host-level close or drag
+control if it is intentionally designed for the compact presentation.
+
+For script-tag integrations, use the same callback in the render options:
+
+```js
+onExpandedChange: (expanded) => {
+  const popup = document.getElementById('caylex-chat-popup');
+  const closeButton = document.getElementById('caylex-chat-close');
+
+  popup.style.width = expanded ? '420px' : '360px';
+  popup.style.height = expanded ? '600px' : 'auto';
+  closeButton.style.display = expanded ? 'block' : 'none';
+}
+```
+
+If your wrapper cannot support compact sizing, disable compact mode explicitly:
+
+```tsx
+<CaylexChatWidget enableCompactMode={false} />
+```
+
+```js
+enableCompactMode: false
+```
+
 ## Programmatic Chat Turns
 
 Your backend can send a normal user turn to an existing widget session. The
@@ -830,6 +890,9 @@ Your `/api/caylex/token` endpoint should call the Caylex mint endpoint from your
 | `height` | `600px` | Widget container height |
 | `width` | `100%` | Widget container width |
 | `borderRadius` | `12` | Border radius of the widget card, in pixels |
+| `presentation` | `full` | Initial presentation (`full` or `compact`) |
+| `enableCompactMode` | `true` | Allow users to switch between full and compact presentations |
+| `compactWidth` | `360px` | Widget width while compact |
 | `showToolCallDetails` | `false` | Allow expanding tool call cards to show JSON details |
 | `showServersButton` | `true` | Show a Connected Services button in the header |
 | `enableExternalSessionSync` | `false` | Poll for turns sent through the programmatic session-message API |
@@ -845,6 +908,7 @@ Your `/api/caylex/token` endpoint should call the Caylex mint endpoint from your
 | `onError` | — | Invoked when an unrecoverable error occurs |
 | `onSessionCreated` | — | Invoked with the session ID when a new chat session is created |
 | `onSessionChanged` | — | Invoked with `{ sessionId, sessionType }` whenever the active session or session view changes |
+| `onExpandedChange` | — | Invoked with `true` for full mode and `false` for compact mode |
 
 <Note>
 The current widget prop is still named `agentInstanceId` for compatibility. It refers to the Caylex navigator instance.
