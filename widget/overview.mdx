@@ -482,7 +482,12 @@ For script-tag integrations, use the same callback in the render options:
 
 ```js
 onExpandedChange: (expanded) => {
-  popup.classList.toggle('compact', !expanded);
+  const popup = document.getElementById('caylex-chat-popup');
+  const closeButton = document.getElementById('caylex-chat-close');
+
+  popup.style.width = expanded ? '420px' : '360px';
+  popup.style.height = expanded ? '600px' : 'auto';
+  closeButton.style.display = expanded ? 'block' : 'none';
 }
 ```
 
