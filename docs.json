@@ -88,7 +88,8 @@
           {
             "group": "Background Tasks",
             "pages": [
-              "background-tasks/agent-tasks"
+              "background-tasks/agent-tasks",
+              "background-tasks/background-sync"
             ]
           },
           {
