@@ -1,0 +1,35 @@
+---
+title: "Get an incident"
+description: "Retrieve one incident from the fictional Incident API."
+---
+
+`GET https://api.example.com/v1/incidents/{incident_id}` returns one incident. It uses the `X-API-Key` header and shared response schemas from [Shared conventions](/api-monitoring-fixture/overview).
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | string (UUID) | The incident's stable `id`. |
+
+## Responses
+
+- `200`: An `Incident` JSON object, as defined on the shared page.
+- `400`: `invalid_incident_id` if the ID is not a UUID.
+- `404`: `incident_not_found` if no incident has that ID.
+
+Error responses use the shared `{ "error": { "code", "message" }, "request_id" }` shape. A missing or invalid API key returns `401` before the incident ID is looked up.
+
+## Example response — HTTP 200
+
+```json
+{
+  "id": "8a65861a-d78e-4330-8763-18e8cb67c190",
+  "title": "Checkout latency is elevated",
+  "severity": "high",
+  "status": "open",
+  "reporter": { "id": "usr_42", "display_name": "Taylor" },
+  "created_at": "2026-10-06T12:00:00Z",
+  "updated_at": "2026-10-06T12:00:00Z",
+  "metadata": { "service": "checkout" }
+}
+```
