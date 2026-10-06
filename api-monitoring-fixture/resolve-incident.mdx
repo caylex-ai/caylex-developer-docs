@@ -1,0 +1,39 @@
+---
+title: "Resolve an incident"
+sidebarTitle: "POST /incidents/{id}/resolve"
+description: "Close an incident with a resolution summary."
+---
+
+`POST /v1/incidents/{incident_id}/resolve`
+
+Resolve an open or acknowledged incident. The incident remains available for reporting and its comments remain visible.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | ID of the incident to resolve. |
+
+## JSON request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resolution` | string, 1–2000 characters | Yes | What fixed the incident. |
+| `resolved_by` | string | Yes | ID of the user who resolved it. |
+
+```json
+{
+  "resolution": "Rolled back the checkout service deployment; latency returned to baseline.",
+  "resolved_by": "usr_17"
+}
+```
+
+## Response
+
+`200` returns the updated [Incident object](/api-monitoring-fixture/overview#incident-object) with `status: "resolved"`, `resolved_at`, and `resolution` set.
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | The resolution or user ID is missing. |
+| `404` | `incident_not_found` | No incident has this ID. |
+| `409` | `already_resolved` | The incident was already resolved. |

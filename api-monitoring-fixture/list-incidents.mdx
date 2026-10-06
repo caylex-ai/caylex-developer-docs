@@ -1,12 +1,12 @@
 ---
 title: "List incidents"
-description: "Filter and page through incidents."
-mode: "center"
+sidebarTitle: "GET /incidents"
+description: "Search and filter incidents in your project."
 ---
 
-[Overview](/api-monitoring-fixture/overview) · [List incidents](/api-monitoring-fixture/list-incidents) · [Get an incident](/api-monitoring-fixture/get-incident) · [Create an incident](/api-monitoring-fixture/create-incident)
+`GET /v1/incidents`
 
-`GET https://incident-api.caylex.run/v1/incidents` lists incidents. This endpoint uses the authentication, `Incident` schema, pagination envelope, and error schema in [Shared conventions](/api-monitoring-fixture/overview).
+Return incidents in the current project, newest first. Use filters to narrow the result set and `cursor` to fetch the next page.
 
 ## Query parameters
 
@@ -32,6 +32,8 @@ Results are ordered by `created_at` descending. Do not parse or modify cursors. 
       "reporter": { "id": "usr_42", "display_name": "Taylor" },
       "created_at": "2026-10-06T12:00:00Z",
       "updated_at": "2026-10-06T12:00:00Z",
+      "resolved_at": null,
+      "resolution": null,
       "metadata": { "service": "checkout" }
     }
   ],

@@ -184,6 +184,32 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Incident API",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["api-monitoring-fixture/overview"]
+          },
+          {
+            "group": "Incidents",
+            "pages": [
+              "api-monitoring-fixture/list-incidents",
+              "api-monitoring-fixture/create-incident",
+              "api-monitoring-fixture/get-incident",
+              "api-monitoring-fixture/update-incident",
+              "api-monitoring-fixture/resolve-incident"
+            ]
+          },
+          {
+            "group": "Comments",
+            "pages": [
+              "api-monitoring-fixture/list-comments",
+              "api-monitoring-fixture/add-comment"
+            ]
+          }
+        ]
       }
     ],
     "global": {

@@ -1,0 +1,44 @@
+---
+title: "Update an incident"
+sidebarTitle: "PATCH /incidents/{id}"
+description: "Change an incident's title, severity, or status."
+---
+
+`PATCH /v1/incidents/{incident_id}`
+
+Update an open or acknowledged incident. Include only the fields you want to change. Use [Resolve an incident](/api-monitoring-fixture/resolve-incident) to close it.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | ID of the incident to update. |
+
+## JSON request body
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `title` | string, 1–200 characters | New incident summary. |
+| `severity` | `low`, `medium`, `high`, `critical` | Current impact. |
+| `status` | `open`, `acknowledged` | Current state. |
+| `metadata` | object of strings | Labels to add or replace. |
+
+At least one field is required. Unspecified fields stay unchanged. Keys sent in `metadata` are merged with existing labels.
+
+```json
+{
+  "severity": "critical",
+  "status": "acknowledged",
+  "metadata": { "on_call_team": "payments" }
+}
+```
+
+## Response
+
+`200` returns the updated [Incident object](/api-monitoring-fixture/overview#incident-object). The server sets `updated_at` to the time of the change.
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | A field is invalid or the body is empty. |
+| `404` | `incident_not_found` | No incident has this ID. |
+| `409` | `incident_resolved` | Resolved incidents cannot be updated. |

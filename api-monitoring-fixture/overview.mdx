@@ -1,22 +1,29 @@
 ---
 title: "Incident API"
-description: "Authentication, shared schemas, and conventions for the Incident API."
-mode: "center"
+description: "API reference for incidents and comments."
 ---
 
-[Overview](/api-monitoring-fixture/overview) · [List incidents](/api-monitoring-fixture/list-incidents) · [Get an incident](/api-monitoring-fixture/get-incident) · [Create an incident](/api-monitoring-fixture/create-incident)
+Create and manage incidents for your project. The base URL is `https://incident-api.caylex.run/v1`. Requests and responses use JSON.
 
-The Incident API lets you create, retrieve, and search operational incidents. Send requests to `https://incident-api.caylex.run/v1`.
+## Get started
 
-## Authentication and shared behavior
+Create an incident:
 
-Every request requires an `X-API-Key` header containing a project API key. Send and receive JSON with `Content-Type: application/json`. Timestamps use RFC 3339 UTC. Clients may retry `GET` requests; for `POST` requests, send an `Idempotency-Key` header containing a unique string so a retry does not create a second incident.
+```bash
+curl -X POST https://incident-api.caylex.run/v1/incidents \
+  -H "X-API-Key: $INCIDENT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: checkout-latency-2026-10-06" \
+  -d '{"title":"Checkout latency is elevated","severity":"high","reporter_id":"usr_42"}'
+```
 
-Successful responses return the resource directly, except list responses, which use the pagination envelope described below. Errors use the shared error schema. A missing or invalid API key returns HTTP `401` with error code `unauthorized`.
+The response includes an `id` you can use to [retrieve the incident](/api-monitoring-fixture/get-incident), [update it](/api-monitoring-fixture/update-incident), or [add a comment](/api-monitoring-fixture/add-comment).
 
-## Shared JSON schemas
+## Authentication
 
-All three endpoint pages use this `Incident` object:
+Send your project API key in the `X-API-Key` header on every request. A missing or invalid key returns `401 unauthorized`; a valid key without access to the incident returns `403 forbidden`. Keep API keys on the server and rotate them if they are exposed.
+
+## Incident object
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -27,9 +34,9 @@ All three endpoint pages use this `Incident` object:
 | `reporter` | object | `{ "id": string, "display_name": string }`. |
 | `created_at` | string (date-time) | Creation time in UTC. |
 | `updated_at` | string (date-time) | Most recent change in UTC. |
+| `resolved_at` | string (date-time) or `null` | Resolution time, if resolved. |
+| `resolution` | string or `null` | Summary of the fix, if resolved. |
 | `metadata` | object | Optional string-to-string labels supplied by the caller. |
-
-Example `Incident`:
 
 ```json
 {
@@ -40,14 +47,25 @@ Example `Incident`:
   "reporter": { "id": "usr_42", "display_name": "Taylor" },
   "created_at": "2026-10-06T12:00:00Z",
   "updated_at": "2026-10-06T12:00:00Z",
+  "resolved_at": null,
+  "resolution": null,
   "metadata": { "service": "checkout" }
 }
 ```
 
-List responses have `{ "data": [Incident], "next_cursor": string | null }`. Pass a non-null `next_cursor` as the next request's `cursor` to continue. An error response has `{ "error": { "code": string, "message": string }, "request_id": string }`.
+Comments have an `id`, `incident_id`, `body`, `visibility` (`public` or `internal`), an `author` with `id` and `display_name`, and a `created_at` timestamp.
 
-## Endpoints
+## Pagination and errors
 
-- [List incidents — `GET /incidents`](/api-monitoring-fixture/list-incidents)
-- [Get an incident — `GET /incidents/{incident_id}`](/api-monitoring-fixture/get-incident)
-- [Create an incident — `POST /incidents`](/api-monitoring-fixture/create-incident)
+List endpoints return `{ "data": [...], "next_cursor": string | null }`. Pass `next_cursor` as the next request's `cursor` until it is `null`. Cursors are opaque and may expire; an expired cursor returns `400 invalid_cursor`.
+
+Errors use the same format across routes:
+
+```json
+{
+  "error": { "code": "invalid_request", "message": "severity must be one of low, medium, high, critical" },
+  "request_id": "req_01J9K7M4XQ"
+}
+```
+
+Include `request_id` when contacting support. Timestamps are UTC. Send an `Idempotency-Key` on create requests so retries do not create duplicates.

@@ -1,12 +1,12 @@
 ---
 title: "Get an incident"
-description: "Retrieve an incident by ID."
-mode: "center"
+sidebarTitle: "GET /incidents/{id}"
+description: "Get the current state of an incident."
 ---
 
-[Overview](/api-monitoring-fixture/overview) · [List incidents](/api-monitoring-fixture/list-incidents) · [Get an incident](/api-monitoring-fixture/get-incident) · [Create an incident](/api-monitoring-fixture/create-incident)
+`GET /v1/incidents/{incident_id}`
 
-`GET https://incident-api.caylex.run/v1/incidents/{incident_id}` returns one incident. It uses the `X-API-Key` header and shared response schemas from [Shared conventions](/api-monitoring-fixture/overview).
+Return an incident by ID. See the [Incident object](/api-monitoring-fixture/overview#incident-object) for the response fields.
 
 ## Path parameter
 
@@ -33,6 +33,8 @@ Error responses use the shared `{ "error": { "code", "message" }, "request_id" }
   "reporter": { "id": "usr_42", "display_name": "Taylor" },
   "created_at": "2026-10-06T12:00:00Z",
   "updated_at": "2026-10-06T12:00:00Z",
+  "resolved_at": null,
+  "resolution": null,
   "metadata": { "service": "checkout" }
 }
 ```
