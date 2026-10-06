@@ -1,0 +1,37 @@
+---
+title: "List incidents"
+description: "Filter and page through incidents in the fictional Incident API."
+---
+
+`GET https://api.example.com/v1/incidents` lists incidents. This endpoint uses the authentication, `Incident` schema, pagination envelope, and error schema in [Shared conventions](/api-monitoring-fixture/overview).
+
+## Query parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `status` | `open` \| `acknowledged` \| `resolved` | No | Return only incidents in this state. |
+| `severity` | `low` \| `medium` \| `high` \| `critical` | No | Return only incidents of this severity. |
+| `limit` | integer, 1–100 | No | Maximum results; defaults to `25`. |
+| `cursor` | string | No | Opaque cursor from a previous response. |
+
+Results are ordered by `created_at` descending. Do not parse or modify cursors. A `400` response with error code `invalid_cursor` means the cursor is invalid or expired.
+
+## Example response — HTTP 200
+
+```json
+{
+  "data": [
+    {
+      "id": "8a65861a-d78e-4330-8763-18e8cb67c190",
+      "title": "Checkout latency is elevated",
+      "severity": "high",
+      "status": "open",
+      "reporter": { "id": "usr_42", "display_name": "Taylor" },
+      "created_at": "2026-10-06T12:00:00Z",
+      "updated_at": "2026-10-06T12:00:00Z",
+      "metadata": { "service": "checkout" }
+    }
+  ],
+  "next_cursor": "eyJvZmZzZXQiOjI1fQ"
+}
+```
