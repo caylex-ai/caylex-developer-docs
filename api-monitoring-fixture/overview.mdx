@@ -7,7 +7,7 @@ Create and manage incidents for your project. The base URL is `https://incident-
 
 ## Get started
 
-Create an incident:
+Create an incident using a [project API key](/api-monitoring-fixture/authentication):
 
 ```bash
 curl -X POST https://incident-api.caylex.run/v1/incidents \
@@ -18,10 +18,6 @@ curl -X POST https://incident-api.caylex.run/v1/incidents \
 ```
 
 The response includes an `id` you can use to [retrieve the incident](/api-monitoring-fixture/get-incident), [update it](/api-monitoring-fixture/update-incident), or [add a comment](/api-monitoring-fixture/add-comment).
-
-## Authentication
-
-Send your project API key in the `X-API-Key` header on every request. A missing or invalid key returns `401 unauthorized`; a valid key without access to the incident returns `403 forbidden`. Keep API keys on the server and rotate them if they are exposed.
 
 ## Incident object
 

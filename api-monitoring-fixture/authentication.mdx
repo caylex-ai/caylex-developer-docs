@@ -1,0 +1,26 @@
+---
+title: "Authentication"
+description: "Create a project API key and use it in requests."
+---
+
+Create an API key in your project settings. Send it in the `X-API-Key` header:
+
+```bash
+curl https://incident-api.caylex.run/v1/incidents \
+  -H "X-API-Key: $INCIDENT_API_KEY"
+```
+
+Keys belong to a project. The project determines which incidents a key can access. Store keys in a secret manager or environment variable, not in client-side code or a repository.
+
+## Errors
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `401` | `unauthorized` | The key is missing, invalid, or revoked. |
+| `403` | `forbidden` | The key is valid but cannot access this resource. |
+
+The error body includes a `request_id`; see [Pagination and errors](/api-monitoring-fixture/overview#pagination-and-errors) for its format.
+
+## Rotate a key
+
+Create a replacement key, update your services to use it, then revoke the old key. Requests using a revoked key return `401 unauthorized`.

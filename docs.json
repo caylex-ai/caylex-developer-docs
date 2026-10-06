@@ -190,7 +190,10 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["api-monitoring-fixture/overview"]
+            "pages": [
+              "api-monitoring-fixture/overview",
+              "api-monitoring-fixture/authentication"
+            ]
           },
           {
             "group": "Incidents",
@@ -211,21 +214,7 @@
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Platform",
-          "href": "https://app.caylex.ai",
-          "icon": "browser"
-        },
-        {
-          "anchor": "Website",
-          "href": "https://caylex.ai",
-          "icon": "globe"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
