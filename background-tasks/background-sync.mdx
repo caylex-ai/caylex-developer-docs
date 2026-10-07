@@ -64,7 +64,7 @@ Call [`GET /sync-configs/sources`](#1-find-the-servers-you-can-sync) to see whic
 While it crawls, the agent records a decision for every resource it reads. You'll see these decisions in the run's [transcript](#read-a-transcript):
 
 - **Include** a resource that matches your instructions. Including a container, such as a folder, parent page, or database, with its descendants covers everything under it that the run fetched.
-- **Exclude** a resource that doesn't match, with a reason. Excluding a container also excludes what's only reachable through it.
+- **Exclude** a resource that doesn't match, with a reason. Excluding a container also excludes what's only reachable through it, except resources under it that the agent includes itself.
 - **Unresolved** marks a request it couldn't fulfil, for example because the service needs authentication.
 
 Only included resources are exported. Anything the agent read but didn't decide on is listed in the export's `undecided` array instead.
@@ -556,7 +556,7 @@ Each entry in `sources` summarizes one source. Its `status`:
 | `resources_seen` | Resources the agent found. |
 | `included` | Resources the agent included. |
 | `exported` | Included resources in the export, after the `since` filter. |
-| `excluded` | Resources the agent excluded, including those only reachable through an excluded container. |
+| `excluded` | Resources the agent excluded, including those only reachable through an excluded container that it didn't include itself. |
 | `undecided` | Resources the agent read without recording a decision. |
 | `unresolved` | Requests the agent couldn't fulfil. |
 | `unmatched_tool_calls` | Tool calls Caylex couldn't attribute to a resource. |
@@ -575,7 +575,7 @@ Pass `since` when you trigger to collect only what changed:
 2. On the next trigger, pass the previous trigger's time as `since`.
 3. Upsert each exported resource by `key`, skipping those whose `content_hash` matches your stored copy.
 
-With `since` set, the export drops included resources modified before it and resources that have no modified time, and counts them in `skipped_unchanged`. The export's top-level `since` is the cutoff that was applied. It's `null` only when no source was date-filtered, so you can treat a `null` export as a full snapshot.
+With `since` set, the export drops included resources modified before it and resources that have no modified time, and counts them in `skipped_unchanged`. Each resource is judged by its own modified time, so an older parent page doesn't keep newer pages under it out of the export. The export's top-level `since` is the cutoff that was applied. It's `null` only when no source was date-filtered, so you can treat a `null` export as a full snapshot.
 
 An export lists what the run collected; it doesn't report deletions. To find resources that were deleted or that a user lost access to, run a periodic full sync without `since` and compare its keys with your store.
 
