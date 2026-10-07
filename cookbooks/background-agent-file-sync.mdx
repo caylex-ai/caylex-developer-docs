@@ -381,13 +381,16 @@ When you load records from several users, merge them by `id` and union
 ## Incremental syncs
 
 Pass `since` to keep only pages Notion reports as modified after that time.
-Notion doesn't report a last-edited time for every page, though, so many
-resources have `modified_at: null`. With `since` set, those resources are
-dropped and counted in the source's `skipped_unchanged`, even if they changed.
+Each page is judged by its own last-edited time, so an older parent page
+doesn't keep newer sub-pages out of the export.
 
-For Notion, run full syncs on a schedule and use `content_hash` to skip
-unchanged pages. If you do use `since`, check `skipped_unchanged` against the
-number of pages you expected, and run a full sync periodically to catch up.
+A page the agent fetched has its exact last-edited time. A page it only saw in
+search results has just the date, read as midnight UTC, so one edited on the
+cutoff day itself can be dropped. Pages with no last-edited time are dropped
+too, even if they changed. Both are counted in the source's `skipped_unchanged`.
+
+Use `content_hash` to skip pages you already have, and run a full sync without
+`since` periodically to catch up.
 
 ## Troubleshooting
 
@@ -398,4 +401,4 @@ number of pages you expected, and run a full sync periodically to catch up.
 | Source status `no_results` | The agent found nothing your instructions cover. [Read the transcript](/background-tasks/background-sync#read-a-transcript) to see what it searched for, then name a clearer starting page. |
 | Run status `incomplete` | The agent ran out of iterations or didn't finish deciding. [Continue the run](/background-tasks/background-sync#continue-a-run) with a message such as "Continue with the remaining sub-pages." |
 | Entries in `undecided` | The agent read pages without deciding whether they belong. Tighten the instructions so every page it reads clearly falls in or out. |
-| `skipped_unchanged` is high with `since` | Pages without a last-edited time were dropped. See [Incremental syncs](#incremental-syncs). |
+| `skipped_unchanged` is high with `since` | Those pages were last edited before `since`, or Notion gave no edit time for them. See [Incremental syncs](#incremental-syncs). |
