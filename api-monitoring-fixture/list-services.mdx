@@ -1,0 +1,39 @@
+---
+title: "List services"
+sidebarTitle: "GET /services"
+description: "Find the services tracked by your project."
+---
+
+`GET /v1/services`
+
+List services in the current project, ordered by name. Use a service ID when [creating an incident](/api-monitoring-fixture/create-incident) or filtering [incidents](/api-monitoring-fixture/list-incidents).
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Query parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `status` | `active` \| `archived` | No | Filter by lifecycle state; omitted returns both. |
+| `limit` | integer, 1–100 | No | Maximum results; defaults to `25`. |
+| `cursor` | string | No | Opaque cursor from a previous page. |
+
+## Example response — HTTP 200
+
+```json
+{
+  "data": [
+    {
+      "id": "svc_checkout",
+      "name": "Checkout",
+      "description": "Customer checkout and payment authorization",
+      "status": "active",
+      "created_at": "2026-09-18T10:00:00Z",
+      "updated_at": "2026-09-18T10:00:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+Follow the [pagination convention](/api-monitoring-fixture/overview#pagination-and-errors) for subsequent pages. `400 invalid_cursor` means the cursor is invalid or expired.

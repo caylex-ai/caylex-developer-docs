@@ -1,0 +1,37 @@
+---
+title: "List responders"
+sidebarTitle: "GET /responders"
+description: "Find responders who can own incidents."
+---
+
+`GET /v1/responders`
+
+List responders in the current project, ordered by display name. Use an active responder's ID to [assign](/api-monitoring-fixture/assign-incident) or [acknowledge](/api-monitoring-fixture/acknowledge-incident) an incident. Manage responder membership in project settings, not through this API.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Query parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `active` | boolean | No | Filter by active state; omitted returns both. |
+| `limit` | integer, 1–100 | No | Maximum results; defaults to `25`. |
+| `cursor` | string | No | Opaque cursor from a previous page. |
+
+## Example response — HTTP 200
+
+```json
+{
+  "data": [
+    {
+      "id": "usr_17",
+      "display_name": "Morgan",
+      "email": "morgan@example.com",
+      "active": true
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+Follow the [pagination convention](/api-monitoring-fixture/overview#pagination-and-errors) for subsequent pages. `400 invalid_cursor` means the cursor is invalid or expired.

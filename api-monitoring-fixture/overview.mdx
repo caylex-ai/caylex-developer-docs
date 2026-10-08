@@ -27,11 +27,14 @@ The response includes an `id` you can use to [retrieve the incident](/api-monito
 | `title` | string | Human-readable summary. |
 | `severity` | `low` \| `medium` \| `high` \| `critical` | Operational impact. |
 | `status` | `open` \| `acknowledged` \| `resolved` | Current lifecycle state. |
+| `service_id` | string or `null` | Service affected by the incident. |
+| `assignee` | object or `null` | Assigned responder: `{ "id": string, "display_name": string }`. |
 | `reporter` | object | `{ "id": string, "display_name": string }`. |
 | `created_at` | string (date-time) | Creation time in UTC. |
 | `updated_at` | string (date-time) | Most recent change in UTC. |
 | `resolved_at` | string (date-time) or `null` | Resolution time, if resolved. |
 | `resolution` | string or `null` | Summary of the fix, if resolved. |
+| `resolution_code` | `fixed` \| `mitigated` \| `duplicate` \| `not_reproducible` \| `null` | How the incident was resolved. |
 | `metadata` | object | Optional string-to-string labels supplied by the caller. |
 
 ```json
@@ -40,16 +43,40 @@ The response includes an `id` you can use to [retrieve the incident](/api-monito
   "title": "Checkout latency is elevated",
   "severity": "high",
   "status": "open",
+  "service_id": "svc_checkout",
+  "assignee": null,
   "reporter": { "id": "usr_42", "display_name": "Taylor" },
   "created_at": "2026-10-06T12:00:00Z",
   "updated_at": "2026-10-06T12:00:00Z",
   "resolved_at": null,
   "resolution": null,
+  "resolution_code": null,
   "metadata": { "service": "checkout" }
 }
 ```
 
 Comments have an `id`, `incident_id`, `body`, `visibility` (`public` or `internal`), an `author` with `id` and `display_name`, and a `created_at` timestamp.
+
+## Services and responders
+
+A service groups incidents for one product or system. Its `id` is stable; `name` is unique within a project. The `status` is `active` or `archived`. Archived services remain on existing incidents but cannot be assigned to new ones.
+
+```json
+{
+  "id": "svc_checkout",
+  "name": "Checkout",
+  "description": "Customer checkout and payment authorization",
+  "status": "active",
+  "created_at": "2026-09-18T10:00:00Z",
+  "updated_at": "2026-09-18T10:00:00Z"
+}
+```
+
+A responder has an `id`, `display_name`, `email`, and `active` flag. Only active responders can be assigned to incidents. The [responder directory](/api-monitoring-fixture/list-responders) is read-only; manage membership in project settings.
+
+## Incident events
+
+The [incident timeline](/api-monitoring-fixture/list-incident-events) records changes to status, severity, assignee, and service. Each event has an `id`, `incident_id`, `type`, `actor` (`id` and `display_name`), `created_at`, and a `details` object containing the changed values. Events are immutable.
 
 ## Pagination and errors
 

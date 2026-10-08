@@ -1,0 +1,42 @@
+---
+title: "Reopen an incident"
+sidebarTitle: "POST /incidents/{id}/reopen"
+description: "Return a resolved incident to the open state."
+---
+
+`POST /v1/incidents/{incident_id}/reopen`
+
+Reopen a resolved incident when the problem recurs. Its prior resolution remains in the [incident timeline](/api-monitoring-fixture/list-incident-events), but the current incident's `resolved_at`, `resolution`, and `resolution_code` become `null`. The assignee is cleared so the team can triage it again.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | Resolved incident to reopen. |
+
+## JSON request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `reopened_by` | string | Yes | ID of the active responder reopening it. |
+| `reason` | string, 1–1000 characters | Yes | Why the incident is active again. |
+
+```json
+{
+  "reopened_by": "usr_17",
+  "reason": "Checkout errors returned after the rollback."
+}
+```
+
+## Response
+
+`200` returns the updated [Incident object](/api-monitoring-fixture/overview#incident-object) with `status: "open"`.
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | A required field is missing or invalid. |
+| `404` | `incident_not_found` | The incident does not exist. |
+| `404` | `responder_not_found` | The responder is unknown or inactive. |
+| `409` | `invalid_state` | Only a resolved incident can be reopened. |

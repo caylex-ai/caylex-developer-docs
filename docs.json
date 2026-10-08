@@ -202,7 +202,12 @@
               "api-monitoring-fixture/create-incident",
               "api-monitoring-fixture/get-incident",
               "api-monitoring-fixture/update-incident",
-              "api-monitoring-fixture/resolve-incident"
+              "api-monitoring-fixture/acknowledge-incident",
+              "api-monitoring-fixture/assign-incident",
+              "api-monitoring-fixture/unassign-incident",
+              "api-monitoring-fixture/resolve-incident",
+              "api-monitoring-fixture/reopen-incident",
+              "api-monitoring-fixture/list-incident-events"
             ]
           },
           {
@@ -210,6 +215,22 @@
             "pages": [
               "api-monitoring-fixture/list-comments",
               "api-monitoring-fixture/add-comment"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api-monitoring-fixture/list-services",
+              "api-monitoring-fixture/create-service",
+              "api-monitoring-fixture/get-service",
+              "api-monitoring-fixture/update-service"
+            ]
+          },
+          {
+            "group": "Responders",
+            "pages": [
+              "api-monitoring-fixture/list-responders",
+              "api-monitoring-fixture/get-responder"
             ]
           }
         ]

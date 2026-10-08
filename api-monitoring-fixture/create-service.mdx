@@ -1,0 +1,37 @@
+---
+title: "Create a service"
+sidebarTitle: "POST /services"
+description: "Add a service to your project's incident catalog."
+---
+
+`POST /v1/services`
+
+Create an active service. Service names are unique within a project, ignoring case. Send an `Idempotency-Key` header if the request may be retried.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header and the [Service object](/api-monitoring-fixture/overview#services-and-responders) for response fields.
+
+## JSON request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | string, 1–100 characters | Yes | Unique display name. |
+| `description` | string, up to 1000 characters | No | What the service does; defaults to an empty string. |
+
+```json
+{
+  "name": "Checkout",
+  "description": "Customer checkout and payment authorization"
+}
+```
+
+## Response
+
+`201` returns the new Service object. The server assigns `id`, `created_at`, and `updated_at`, and sets `status: "active"`. The `Location` header contains `/v1/services/{service_id}`.
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | Name or description is invalid. |
+| `409` | `name_taken` | Another service in this project has the same name. |
+| `409` | `idempotency_conflict` | The same key was used with a different body. |
+
+Retrying with the same idempotency key and body returns the original `201` response.

@@ -1,0 +1,41 @@
+---
+title: "Update a service"
+sidebarTitle: "PATCH /services/{id}"
+description: "Rename, describe, archive, or reactivate a service."
+---
+
+`PATCH /v1/services/{service_id}`
+
+Change one or more service fields. Archiving prevents the service from being selected for new incidents, but preserves existing incident associations. Reactivate an archived service by setting `status` to `active`.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `service_id` | string | ID of the service to update. |
+
+## JSON request body
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | string, 1–100 characters | New unique name. |
+| `description` | string, up to 1000 characters | New description. |
+| `status` | `active` \| `archived` | New lifecycle state. |
+
+At least one field is required. Unspecified fields stay unchanged.
+
+```json
+{ "description": "Checkout, payments, and order confirmation" }
+```
+
+## Response
+
+`200` returns the updated [Service object](/api-monitoring-fixture/overview#services-and-responders) with a new `updated_at` value.
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | The body is empty or a field is invalid. |
+| `404` | `service_not_found` | The service does not exist. |
+| `409` | `name_taken` | Another service has the requested name. |

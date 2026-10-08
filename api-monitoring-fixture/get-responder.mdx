@@ -1,0 +1,30 @@
+---
+title: "Get a responder"
+sidebarTitle: "GET /responders/{id}"
+description: "Retrieve one responder's directory record."
+---
+
+`GET /v1/responders/{responder_id}`
+
+Retrieve a responder in the current project, including inactive responders who appear on historical incidents. An inactive responder cannot be assigned to a new incident.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `responder_id` | string | Responder ID, such as `usr_17`. |
+
+## Example response — HTTP 200
+
+```json
+{
+  "id": "usr_17",
+  "display_name": "Morgan",
+  "email": "morgan@example.com",
+  "active": true
+}
+```
+
+`404 responder_not_found` means no responder with this ID exists in the project. Error bodies use the [shared format](/api-monitoring-fixture/overview#pagination-and-errors).

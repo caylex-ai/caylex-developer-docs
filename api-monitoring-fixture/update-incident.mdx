@@ -23,6 +23,7 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 | `title` | string, 1–200 characters | New incident summary. |
 | `severity` | `low`, `medium`, `high`, `critical` | Current impact. |
 | `status` | `open`, `acknowledged` | Current state. |
+| `service_id` | string or `null` | Active service to associate, or `null` to clear the association. |
 | `metadata` | object of strings | Labels to add or replace. |
 
 At least one field is required. Unspecified fields stay unchanged. Keys sent in `metadata` are merged with existing labels.
@@ -43,4 +44,5 @@ At least one field is required. Unspecified fields stay unchanged. Keys sent in 
 | --- | --- | --- |
 | `400` | `invalid_request` | A field is invalid or the body is empty. |
 | `404` | `incident_not_found` | No incident has this ID. |
+| `404` | `service_not_found` | The new service does not exist or is archived. |
 | `409` | `incident_resolved` | Resolved incidents cannot be updated. |

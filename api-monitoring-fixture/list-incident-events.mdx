@@ -1,0 +1,41 @@
+---
+title: "List incident events"
+sidebarTitle: "GET /incidents/{id}/events"
+description: "Read the audit timeline for an incident."
+---
+
+`GET /v1/incidents/{incident_id}/events`
+
+Return status, severity, service, and assignment changes for an incident, oldest first. Events cannot be edited or deleted. Comments are listed separately under [List comments](/api-monitoring-fixture/list-comments).
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Parameters
+
+| Name | Location | Type | Description |
+| --- | --- | --- | --- |
+| `incident_id` | path | UUID | Incident whose timeline to read. |
+| `limit` | query | integer, 1–100 | Maximum results; defaults to `25`. |
+| `cursor` | query | string | Opaque cursor from a previous page. |
+
+## Example response — HTTP 200
+
+```json
+{
+  "data": [
+    {
+      "id": "evt_01J9K80NQH",
+      "incident_id": "8a65861a-d78e-4330-8763-18e8cb67c190",
+      "type": "assignee_changed",
+      "actor": { "id": "usr_17", "display_name": "Morgan" },
+      "created_at": "2026-10-06T12:12:00Z",
+      "details": { "previous_assignee_id": null, "assignee_id": "usr_17" }
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+Event `type` is one of `created`, `status_changed`, `severity_changed`, `service_changed`, `assignee_changed`, or `reopened`. The `details` keys depend on the event type. Follow the [pagination convention](/api-monitoring-fixture/overview#pagination-and-errors) for subsequent pages.
+
+`404 incident_not_found` means the incident does not exist. `400 invalid_cursor` means the cursor is invalid or expired.

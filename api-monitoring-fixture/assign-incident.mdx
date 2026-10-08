@@ -1,0 +1,38 @@
+---
+title: "Assign an incident"
+sidebarTitle: "PUT /incidents/{id}/assignee"
+description: "Set the responder responsible for an incident."
+---
+
+`PUT /v1/incidents/{incident_id}/assignee`
+
+Assign an open or acknowledged incident to one active responder. Sending the same responder again leaves the assignment unchanged. Assigning an incident does not acknowledge it.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header and [List responders](/api-monitoring-fixture/list-responders) to find a responder ID.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | Incident to assign. |
+
+## JSON request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `responder_id` | string | Yes | ID of the active responder. |
+
+```json
+{ "responder_id": "usr_17" }
+```
+
+## Response
+
+`200` returns the [Incident object](/api-monitoring-fixture/overview#incident-object) with `assignee` set to the responder's `id` and `display_name`. A changed assignment appears in the [incident timeline](/api-monitoring-fixture/list-incident-events).
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | `responder_id` is missing. |
+| `404` | `incident_not_found` | The incident does not exist. |
+| `404` | `responder_not_found` | The responder is unknown or inactive. |
+| `409` | `incident_resolved` | Resolved incidents cannot be assigned. |

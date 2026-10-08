@@ -1,0 +1,32 @@
+---
+title: "Get a service"
+sidebarTitle: "GET /services/{id}"
+description: "Retrieve one service and its lifecycle state."
+---
+
+`GET /v1/services/{service_id}`
+
+Retrieve an active or archived service in the current project. Archived services remain available here and on historical incidents.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `service_id` | string | Stable service ID, such as `svc_checkout`. |
+
+## Example response — HTTP 200
+
+```json
+{
+  "id": "svc_checkout",
+  "name": "Checkout",
+  "description": "Customer checkout and payment authorization",
+  "status": "active",
+  "created_at": "2026-09-18T10:00:00Z",
+  "updated_at": "2026-09-18T10:00:00Z"
+}
+```
+
+`404 service_not_found` means no service with this ID exists in the project. Error bodies use the [shared format](/api-monitoring-fixture/overview#pagination-and-errors).

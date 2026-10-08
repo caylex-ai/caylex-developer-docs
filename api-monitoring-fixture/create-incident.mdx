@@ -17,6 +17,7 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 | `title` | string, 1–200 characters | Yes | Incident summary. |
 | `severity` | `low` \| `medium` \| `high` \| `critical` | Yes | Initial operational impact. |
 | `reporter_id` | string | Yes | ID of the user reporting the incident. |
+| `service_id` | string | No | Active service affected by the incident. |
 | `metadata` | object of string values | No | Labels for routing or reporting. |
 
 The new incident starts with `status: "open"`. The server sets `id`, `reporter.display_name`, `created_at`, and `updated_at`.
@@ -26,6 +27,7 @@ The new incident starts with `status: "open"`. The server sets `id`, `reporter.d
   "title": "Checkout latency is elevated",
   "severity": "high",
   "reporter_id": "usr_42",
+  "service_id": "svc_checkout",
   "metadata": { "service": "checkout" }
 }
 ```
@@ -35,5 +37,6 @@ The new incident starts with `status: "open"`. The server sets `id`, `reporter.d
 - `201`: The created `Incident` object defined on the shared page. The `Location` header contains `/v1/incidents/{incident_id}`.
 - `400`: `invalid_request` for a missing or malformed field.
 - `409`: `idempotency_conflict` when the same key is reused with a different request body.
+- `404`: `service_not_found` when `service_id` does not identify an active service in this project.
 
 All error bodies use the shared error schema. Retrying the same request with the same idempotency key returns the original `201` response rather than creating another incident.

@@ -1,0 +1,26 @@
+---
+title: "Unassign an incident"
+sidebarTitle: "DELETE /incidents/{id}/assignee"
+description: "Clear an incident's current assignee."
+---
+
+`DELETE /v1/incidents/{incident_id}/assignee`
+
+Remove the assignee from an open or acknowledged incident. This does not change its status. An incident with no assignee returns `204` as well, so the request is safe to retry.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | Incident to unassign. |
+
+## Response
+
+`204 No Content` has no response body. A subsequent [Get an incident](/api-monitoring-fixture/get-incident) request returns `assignee: null`. A changed assignment appears in the [incident timeline](/api-monitoring-fixture/list-incident-events).
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `404` | `incident_not_found` | The incident does not exist. |
+| `409` | `incident_resolved` | Resolved incidents cannot be unassigned. |

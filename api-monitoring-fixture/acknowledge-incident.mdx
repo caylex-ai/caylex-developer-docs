@@ -1,0 +1,38 @@
+---
+title: "Acknowledge an incident"
+sidebarTitle: "POST /incidents/{id}/acknowledge"
+description: "Record that a responder has taken ownership of an open incident."
+---
+
+`POST /v1/incidents/{incident_id}/acknowledge`
+
+Move an incident from `open` to `acknowledged`. This records who acknowledged it; it does not assign the incident. Use [Assign an incident](/api-monitoring-fixture/assign-incident) to set the assignee.
+
+See [Authentication](/api-monitoring-fixture/authentication) for the API key header.
+
+## Path parameter
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `incident_id` | UUID | Incident to acknowledge. |
+
+## JSON request body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `acknowledged_by` | string | Yes | ID of the active responder acknowledging the incident. |
+
+```json
+{ "acknowledged_by": "usr_17" }
+```
+
+## Response
+
+`200` returns the updated [Incident object](/api-monitoring-fixture/overview#incident-object) with `status: "acknowledged"` and a new `updated_at` value. The change also appears in the [incident timeline](/api-monitoring-fixture/list-incident-events).
+
+| Status | Error code | Meaning |
+| --- | --- | --- |
+| `400` | `invalid_request` | `acknowledged_by` is missing. |
+| `404` | `incident_not_found` | The incident does not exist in this project. |
+| `404` | `responder_not_found` | The responder is unknown or inactive. |
+| `409` | `invalid_state` | Only an open incident can be acknowledged. |
