@@ -1,7 +1,7 @@
 ---
 title: "Resolve an incident"
 sidebarTitle: "POST /incidents/{id}/resolve"
-description: "Close an incident with a resolution summary."
+description: "Close an incident with a resolution summary and code."
 ---
 
 `POST /v1/incidents/{incident_id}/resolve`
@@ -21,11 +21,13 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `resolution` | string, 1–2000 characters | Yes | What fixed the incident. |
+| `resolution_code` | `fixed` \| `mitigated` \| `duplicate` \| `not_reproducible` | Yes | How the incident was resolved. This field is required for every resolve request. |
 | `resolved_by` | string | Yes | ID of the user who resolved it. |
 
 ```json
 {
   "resolution": "Rolled back the checkout service deployment; latency returned to baseline.",
+  "resolution_code": "fixed",
   "resolved_by": "usr_17"
 }
 ```
@@ -36,6 +38,6 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 
 | Status | Error code | Meaning |
 | --- | --- | --- |
-| `400` | `invalid_request` | The resolution or user ID is missing. |
+| `400` | `invalid_request` | The resolution, resolution code, or user ID is missing, or the resolution code is invalid. |
 | `404` | `incident_not_found` | No incident has this ID. |
 | `409` | `already_resolved` | The incident was already resolved. |
