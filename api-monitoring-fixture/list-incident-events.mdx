@@ -15,8 +15,12 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 | Name | Location | Type | Description |
 | --- | --- | --- | --- |
 | `incident_id` | path | UUID | Incident whose timeline to read. |
+| `type` | query | `created` \| `status_changed` \| `severity_changed` \| `service_changed` \| `assignee_changed` \| `reopened` | Return only events of this type. |
+| `actor_id` | query | string | Return only changes made by this responder. |
 | `limit` | query | integer, 1–100 | Maximum results; defaults to `25`. |
 | `cursor` | query | string | Opaque cursor from a previous page. |
+
+Filters are applied before pagination. Keep the same filters when requesting the next page with a cursor. For example, `GET /v1/incidents/{incident_id}/events?type=assignee_changed&actor_id=usr_17` returns assignment changes made by `usr_17`.
 
 ## Example response — HTTP 200
 
