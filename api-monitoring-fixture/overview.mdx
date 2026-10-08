@@ -92,3 +92,5 @@ Errors use the same format across routes:
 ```
 
 Include `request_id` when contacting support. Timestamps are UTC. Send an `Idempotency-Key` on create requests so retries do not create duplicates.
+
+Every endpoint is subject to a project-wide limit of 120 requests per minute. When the limit is reached, the API returns `429` with the shared error code `rate_limited` and a `Retry-After` header containing the number of seconds to wait before retrying. Requests that return `429` do not count against the limit.
