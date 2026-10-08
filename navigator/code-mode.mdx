@@ -1,0 +1,124 @@
+---
+title: "Code Mode"
+description: "Give your agents sandboxed Python to orchestrate tools and process their results efficiently."
+icon: "code"
+---
+
+Code Mode gives your navigator a sandboxed Python runtime for tool-heavy workflows.
+
+## What it does
+
+When enabled, the Navigator exposes `execute_tools_in_code` alongside its standard discovery and execution tools. The agent can use it to coordinate tool calls, process large or paginated responses, and perform calculations before returning an answer. Intermediate tool outputs stay inside the sandbox, so only the program's printed result enters the model's context.
+
+## How to enable
+
+<Steps>
+  <Step title="Open the Navigator Instance">
+    In the Caylex dashboard, open a project, select its navigator, and go to **Caylex Capabilities**.
+  </Step>
+  <Step title="Enable Code Mode">
+    Turn on **Code Mode** for the Navigator Instance.
+  </Step>
+</Steps>
+
+## How it works
+
+When the agent decides to use Code Mode, the following steps occur:
+
+1. **Program generation** — the agent generates a fresh Python program and passes it to `execute_tools_in_code`.
+
+2. **Sandbox execution** — the Navigator runs the program in a restricted sandbox with access to the async `invoke_tools` function.
+   - Whenever `invoke_tools` is called, the Navigator executes the requested connected tools and returns their responses to the program.
+
+3. **Result delivery** — the Navigator returns only the program's printed output to the model.
+
+Tool calls still use the same Navigator execution path as regular calls. Authentication, permissions, approval requirements, analytics, and error handling continue to apply.
+
+## The `execute_tools_in_code` interface
+
+Your agent calls `execute_tools_in_code` with a generated Python program:
+
+```json
+{
+  "code": "print('hello from Code Mode')"
+}
+```
+
+The request includes:
+
+- **code** — the Python source to run in the restricted sandbox
+
+The response contains an `output` string with everything the program printed to standard output. Inside the program, the agent can use `invoke_tools` to call connected tools.
+
+## The `invoke_tools` function
+
+Code Mode exposes an async `invoke_tools` function inside the sandbox. The generated program calls it with a list of tool calls:
+
+```python
+responses = await invoke_tools([
+    {
+        "server_name": "Billing",
+        "tool_name": "list_invoices",
+        "intent": "Retrieve invoices",
+        "tool_params": {"limit": 100},
+    }
+])
+```
+
+Each tool call includes:
+
+- **server_name** — the connected server to use
+- **tool_name** — the tool to invoke
+- **intent** — a short description of why the tool is being called
+- **tool_params** — the parameters defined by the tool's input schema
+
+The function returns an ordered `list[str]` containing each tool's raw response. JSON responses remain encoded as strings and can be parsed with `json.loads`.
+
+## Processing large results
+
+Code Mode can transform tool responses before they enter the model's context. Suppose a user asks for the total value of every invoice from a paginated billing endpoint. The generated program could retrieve each page and return only the final sum:
+
+```python
+import json
+
+cursor = None
+total = 0
+
+while True:
+    params = {"limit": 100}
+    if cursor:
+        params["cursor"] = cursor
+
+    responses = await invoke_tools([{
+        "server_name": "Billing",
+        "tool_name": "list_invoices",
+        "intent": "Retrieve a page of invoices",
+        "tool_params": params,
+    }])
+
+    page = json.loads(responses[0])
+    total += sum(invoice["amount"] for invoice in page["invoices"])
+    cursor = page.get("next_cursor")
+    if not cursor:
+        break
+
+print(json.dumps({"total_invoice_value": total}))
+```
+
+The model receives one small result instead of every invoice. The same approach can filter, sort, group, deduplicate, join, or otherwise process tool responses inside the sandbox.
+
+## Important notes
+
+- **Tool output discovery** — Before writing code, the agent should check each tool's output schema. If the shape is still unclear, it should make a representative tool call and inspect the response first.
+
+- **Failure handling** — Code Mode stops the program when a tool call fails. The error identifies the failed line, the tool calls in submission order, and the error message for each failed tool, so the agent can avoid repeating successful state-changing tool calls.
+
+- **Restricted Python environment** — Code runs in [Monty](https://pydantic.dev/docs/monty/get-started/), a restricted Python interpreter that supports common Python syntax and a limited standard library. It cannot directly access the network, filesystem, environment variables, subprocesses, or third-party packages.
+
+## When to use Code Mode
+
+| Scenario | Recommendation |
+| --- | --- |
+| Agent handles large datasets, reporting, or analytical workflows | **Enable** — Code Mode can paginate, filter, and aggregate results efficiently |
+| Agent uses tools that return large outputs | **Enable** — Code Mode can filter the output before it enters model context |
+| Agent primarily performs simple, targeted tool calls | **Optional** — regular tool calls are usually sufficient |
