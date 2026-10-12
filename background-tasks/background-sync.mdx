@@ -134,7 +134,8 @@ POST https://api.caylex.ai/api/v1/sync-configs
     "6b9e2d4f-3c80-4fa1-b7d5-0e2f4a6c8b39"
   ],
   "all_users": false,
-  "user_emails": ["alex@example.com", "sam@example.com"]
+  "user_emails": ["alex@example.com", "sam@example.com"],
+  "model": "anthropic/claude-sonnet-4.6"
 }
 ```
 
@@ -146,10 +147,11 @@ POST https://api.caylex.ai/api/v1/sync-configs
 | `server_instance_ids` | Yes | One to ten server instances from `GET /sync-configs/sources`. |
 | `all_users` | No | `true` syncs every user of the project, resolved each time you trigger. Defaults to `false`. Playground users are never included. |
 | `user_emails` | When `all_users` is `false` | Users to sync. Each must already be a user of the project. Leave it empty when `all_users` is `true`. |
+| `model` | No | A model id from [`GET /agent-models`](/widget/agent/model-selection#allowed-models). Every task a trigger starts runs on it, and so do the subassistants those tasks delegate to. Omit it to use the agent's default model. |
 
 The response is the saved config, with each server's `source_type` and an `available` flag. `available` turns `false` if a server is later paused or stops supporting Background Sync, and triggers skip that server.
 
-Creating a config returns `400` for an invalid server or user list, `404` when the project doesn't exist, and `409` when the project already has a config with that name.
+Creating a config returns `400` for an invalid server or user list, `404` when the project doesn't exist, `409` when the project already has a config with that name, and `422` for an unsupported `model`.
 
 ### Writing good instructions
 
@@ -230,7 +232,7 @@ POST https://api.caylex.ai/api/v1/sync-task
 | `since` | No | ISO 8601 timestamp. The agent looks only for content created or modified after it, and the export drops anything older. See [Incremental syncs](#incremental-syncs). |
 | `skill_ref` | No | Name or slug of a [project skill](/platform/projects) the agent loads before it starts. Returns `404` if the skill doesn't exist. |
 
-The request accepts only these fields. Every run uses the config's saved instructions.
+The request accepts only these fields. Every run uses the config's saved instructions and model.
 
 The trigger starts every run, or none of them:
 
@@ -268,9 +270,12 @@ The trigger starts every run, or none of them:
   ],
   "skipped_count": 1,
   "resolved_skill": null,
-  "skill_warning": null
+  "skill_warning": null,
+  "model_warning": null
 }
 ```
+
+`model_warning` is set when the config's saved model is no longer supported. The trigger still runs, and its tasks use the agent's default model until you pick another.
 
 Each source's `source` label is unique within its run. It's the source type, qualified by the server name when a config includes two servers of the same type, for example `notion-team-wiki`. Use it to address one source in the status, export, transcript, and continue endpoints. `config_warnings` lists changes to the server's tools that may affect what the sync can collect; the source still runs.
 
@@ -635,7 +640,7 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}/transcript?source=notion&li
 | --- | --- |
 | `GET /sync-configs` | The tenant's configs, newest first. Filter with `project_id`; page with `size` and `cursor`. |
 | `GET /sync-configs/{id}` | One config. |
-| `PUT /sync-configs/{id}` | Replace the config's `name`, `instructions`, `server_instance_ids`, `all_users`, and `user_emails`. Send every field; the same rules as create apply. |
+| `PUT /sync-configs/{id}` | Replace the config's `name`, `instructions`, `server_instance_ids`, `all_users`, `user_emails`, and `model`. Send every field; the same rules as create apply, and leaving out `model` clears it. |
 | `DELETE /sync-configs/{id}` | Delete the config. Its runs, transcripts, and exports stay readable and continuable. |
 
 Editing a config affects only future triggers. Runs that already started keep the settings they were triggered with.

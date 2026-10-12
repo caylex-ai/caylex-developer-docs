@@ -8,11 +8,13 @@ By default, the Caylex agent runs on its configured model. **Model selection** l
 
 ## Overview
 
-The model is chosen server-side, at the same place you already start a session: the `POST /widget/agent-session-init` call. Caylex validates the requested model against a curated allowlist, embeds the resolved model in the short-lived widget token, and the agent uses it for every turn of that session.
+The model is chosen server-side, at the same place you already start a session: the `POST /widget/agent-session-init` call. Caylex validates the requested model against a curated allowlist, signs the resolved model into the short-lived widget token, and the agent uses it for every turn of the session the widget starts with that token.
 
 <Note>
-The model is selected by **your backend** when it mints the session token. The widget package (browser) does not choose the model. This keeps model choice under your control and out of the browser.
+The model is selected by **your backend** when it mints the session token. The widget package (browser) does not choose the model, and there is no widget prop for it. This keeps model choice under your control and out of the browser.
 </Note>
+
+Each token is minted for one `user_email`, so you can give different users different models, for example a larger model for users on a premium plan.
 
 ## How It Works
 
@@ -29,7 +31,11 @@ sequenceDiagram
     Widget->>Caylex: Open session -> agent runs on the selected model
 ```
 
-The selected model is recorded on the chat session at initialization, so every subsequent turn in that session uses it. To change the model, start a new session with a different `model`.
+The selected model is recorded on the chat session when the widget starts it, so every later turn in that session uses it. To change the model, start a new session with a token minted for a different `model`.
+
+Send the same `model` every time you mint a token for a user, including the call your backend makes when the widget's `refreshToken` callback asks for a new token. A refreshed token with a different `model` doesn't change a session that has already started; it applies only to sessions started after it.
+
+When a session runs on a model you chose, any subassistants its agent delegates work to run on that model too. When you don't pass `model`, each subassistant keeps its own configured model.
 
 ## Request
 
@@ -45,7 +51,7 @@ Add an optional `model` to the session-init body:
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `model` | No | OpenRouter model id (`provider/model`) from the allowed list below. Omit to use the Caylex agent's configured model. Unsupported values are ignored (the agent keeps its configured model) and return a `model_warning`. |
+| `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#allowed-models). Omit to use the Caylex agent's configured model. Unsupported values are ignored (the agent keeps its configured model) and return a `model_warning`. |
 
 ## Response
 
@@ -67,15 +73,42 @@ Add an optional `model` to the session-init body:
 
 Model selection is restricted to a curated set of capable models across providers and sizes. This prevents accidentally selecting an under-powered model.
 
-| OpenRouter id | Notes |
+`GET /agent-models` returns the current list, in display order. Authenticate it with your platform access token, like the session-init call:
+
+```
+GET https://api.caylex.ai/api/v1/agent-models
+```
+
+```json
+{
+  "models": [
+    { "id": "anthropic/claude-opus-4.8", "label": "Claude Opus 4.8" },
+    { "id": "anthropic/claude-sonnet-5", "label": "Claude Sonnet 5" },
+    { "id": "anthropic/claude-sonnet-4.6", "label": "Claude Sonnet 4.6" }
+  ]
+}
+```
+
+Pass an `id` as `model`. At the time of writing, the list is:
+
+| OpenRouter id | Name |
 | --- | --- |
-| `anthropic/claude-opus-4.8` | Largest Anthropic model |
-| `anthropic/claude-sonnet-4.6` | Balanced — **default** |
-| `anthropic/claude-haiku-4.5` | Fast, cost-efficient |
-| `openai/gpt-5.5` | OpenAI frontier model |
-| `openai/gpt-5.4-mini` | Smaller, cost-efficient |
-| `google/gemini-3-pro-preview` | Largest Gemini model |
-| `google/gemini-3.5-flash` | Fast, cost-efficient |
+| `anthropic/claude-opus-4.8` | Claude Opus 4.8 |
+| `anthropic/claude-sonnet-5` | Claude Sonnet 5 |
+| `anthropic/claude-sonnet-4.6` | Claude Sonnet 4.6 (**default**) |
+| `anthropic/claude-fable-5` | Claude Fable 5 |
+| `anthropic/claude-haiku-4.5` | Claude Haiku 4.5 |
+| `openai/gpt-5.6-luna` | GPT-5.6 Luna |
+| `openai/gpt-5.6-luna-pro` | GPT-5.6 Luna Pro |
+| `openai/gpt-5.6-sol` | GPT-5.6 Sol |
+| `openai/gpt-5.6-sol-pro` | GPT-5.6 Sol Pro |
+| `openai/gpt-5.6-terra` | GPT-5.6 Terra |
+| `openai/gpt-5.6-terra-pro` | GPT-5.6 Terra Pro |
+| `openai/gpt-5.5` | GPT-5.5 |
+| `openai/gpt-5.4-mini` | GPT-5.4 Mini |
+| `google/gemini-3.1-pro-preview` | Gemini 3.1 Pro |
+| `google/gemini-3.5-flash` | Gemini 3.5 Flash |
+| `google/gemini-3.1-flash-lite` | Gemini 3.1 Flash Lite |
 
 If `model` is omitted, the session uses the **Caylex agent's configured model**, falling back to the platform default **`anthropic/claude-sonnet-4.6`** when none is set. Passing `model` only overrides that for the session when you explicitly request a supported one.
 
@@ -91,7 +124,7 @@ This makes it safe to pass a model id without pre-validating it: a typo never si
 
 ## Example
 
-Add the optional `model` to your existing backend token call.
+Add the optional `model` to your existing backend token call, and use the same call whenever the widget refreshes its token.
 
 <Tabs>
   <Tab title="Python">
@@ -162,4 +195,27 @@ Add the optional `model` to your existing backend token call.
   </Tab>
 </Tabs>
 
+To choose per user, decide the model in the route your frontend calls for tokens. The widget calls the same route for its first token and from `refreshToken`, so every token for a user carries the same model:
+
+```typescript
+app.get("/api/caylex/token", requireAuth, async (req, res) => {
+  // Omit model to use the agent's configured model.
+  const model = req.user.plan === "premium" ? "anthropic/claude-opus-4.8" : undefined;
+  res.json({ token: await mintWidgetToken(req.user.email, model) });
+});
+```
+
 The frontend integration is unchanged — pass the returned `token` to the widget as described in [Embed The Chat Widget](/widget/agent/embed).
+
+## Widget Design Space
+
+The chat widget's design space in the Caylex app has a **Model** picker. Its preview sessions run on the model you pick, the generated backend snippet includes it as `model` in the `POST /widget/agent-session-init` body, and saved designs remember it.
+
+## Background Tasks and Syncs
+
+The same models work outside the widget:
+
+- **[Background tasks](/background-tasks/agent-tasks)**: pass `model` on `POST /agent-task`.
+- **[Background Sync](/background-tasks/background-sync)**: save `model` on the sync config. Every task a trigger starts runs on it.
+
+In both cases, subassistants follow the chosen model, as they do in widget sessions.

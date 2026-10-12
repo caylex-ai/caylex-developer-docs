@@ -85,7 +85,7 @@ Authorization: Bearer <platform_access_token>
 | `user_email` | Yes | End-user the task runs as; determines per-user tool authentication. |
 | `prompt` | Yes | The task instructions for the agent. |
 | `skill_ref` | No | Name or slug of an existing [project skill](/platform/projects). Validated against the project at submit time (404 if not found); the agent is required to load it before starting the task. |
-| `model` | No | OpenRouter model id from the [allowed list](/widget/agent/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. |
+| `model` | No | OpenRouter model id from [`GET /agent-models`](/widget/agent/model-selection#allowed-models). Unsupported values are ignored (the agent's configured model is used) and return a `model_warning`. Subassistants the agent delegates to run on this model too. |
 | `approval_mode` | No | How tools configured to require approval are handled: `exclude` (default), `human`, `deferred_human`, or `auto_approve`. See [Tool Approval](#tool-approval). |
 | `background_agent_auto_approve_tools` | No | Deprecated compatibility alias. `true` maps to `approval_mode: "auto_approve"` and `false` maps to `"exclude"`. Do not send both fields with conflicting values. |
 
