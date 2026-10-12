@@ -79,6 +79,7 @@
                 "group": "Agent Widget",
                 "pages": [
                   "widget/agent/embed",
+                  "widget/agent/ios",
                   "widget/agent/programmatic-chat-turns",
                   "widget/agent/background-task-inbox",
                   "widget/agent/page-navigation",
