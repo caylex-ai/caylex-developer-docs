@@ -1,0 +1,23 @@
+---
+title: "Background Task Approval Inbox"
+description: "Review and approve background agent task actions from the chat widget."
+icon: "inbox"
+---
+
+The chat widget can act as the human approval surface for [background agent tasks](/background-tasks/agent-tasks). No additional widget prop is required.
+
+When your backend submits a task with `approval_mode: "human"`:
+
+1. The background worker runs independently until it reaches a tool configured as **User Approval**.
+2. The widget shows a notification on its session menu for the matching navigator and `user_email`.
+3. The **Inbox** tab lists pending background approvals. Opening one displays the persisted task transcript and the same approval card used by interactive chat.
+4. The composer stays disabled because the thread belongs to a background task.
+5. After a decision, the task resumes and the open transcript follows its progress. Any later approval card appears inline.
+
+<Note>
+Only pending approvals appear in the Inbox. This keeps background work out of the regular **Chat Sessions** list and surfaces it only when user input is required.
+</Note>
+
+Use `onSessionChanged` to detect when the user enters or leaves a background
+task view. See [Session Management](/widget/agent/session-management) for the callback
+contract.

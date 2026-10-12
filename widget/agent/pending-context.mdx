@@ -6,7 +6,7 @@ icon: "layer-group"
 
 Pending context lets your backend tell the agent what is happening in your application without starting an agent turn. Queue an update whenever something changes, such as a document being saved, a filter being applied, or a record being edited, and Caylex delivers every queued update to the agent the next time the user sends a message.
 
-Use pending context when the agent should be aware of app activity but should only act when the user asks for help. If you need the agent to respond to an event right away, send a [programmatic chat turn](/cookbooks/programmatic-chat-sessions) instead.
+Use pending context when the agent should be aware of app activity but should only act when the user asks for help. If you need the agent to respond to an event right away, send a [programmatic chat turn](/widget/agent/programmatic-chat-turns) instead.
 
 | | Pending context | Programmatic chat turn |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ sequenceDiagram
 Adding an update returns immediately, with no agent run. The queue is delivered at the start of the next agent run that begins from a user message:
 
 - A message typed in the chat widget.
-- A [programmatic chat turn](/cookbooks/programmatic-chat-sessions), unless it sets `include_pending_context` to `false`.
+- A [programmatic chat turn](/widget/agent/programmatic-chat-turns), unless it sets `include_pending_context` to `false`.
 - A voice request that the voice agent hands off to the Caylex agent.
 
 The queue is not delivered by a voice reply the voice agent answers on its own, by resuming an interrupted run, by an approval decision, or by background tasks. Delivered updates are removed from the queue and saved in the session transcript, so the agent can still refer to them on later turns.
@@ -271,4 +271,4 @@ The following backend helper records an event and the latest document state as t
   </Tab>
 </Tabs>
 
-Capture the session ID with the widget's `onSessionCreated` callback, as described in [Session Management](/widget/session-management).
+Capture the session ID with the widget's `onSessionCreated` callback, as described in [Session Management](/widget/agent/session-management).

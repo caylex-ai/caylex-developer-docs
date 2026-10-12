@@ -1,0 +1,51 @@
+---
+title: "Programmatic Chat Turns"
+description: "Send user turns to an existing chat widget session from your backend."
+icon: "message-plus"
+---
+
+Your backend can send a normal user turn to an existing widget session. The message behaves like a turn typed in the composer: Caylex appends it to the transcript, runs the agent, stores the response, and returns the completed turn.
+
+To inform the agent about app activity without running it, queue [Pending Context](/widget/agent/pending-context) updates instead. They are delivered with the user's next message.
+
+## Show Programmatic Turns In The Widget
+
+Enable external synchronization on widgets that need to display these turns:
+
+```tsx
+<CaylexChatWidget
+  // ...
+  enableExternalSessionSync
+  externalSessionSyncIntervalMs={5000}
+/>
+```
+
+External synchronization is disabled by default. When enabled, the widget checks for persisted updates only while the tab is visible and the interactive session is idle.
+
+## Send A Turn
+
+Capture new session IDs with `onSessionCreated` (see [Session Management](/widget/agent/session-management)), store them in your backend, and call the platform-authenticated session-message API from your backend:
+
+```http
+POST https://api.caylex.ai/api/v1/assistants/sessions/{session_id}/messages
+Authorization: Bearer <platform_access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "caylex_api_key": "ck_your_navigator_api_key",
+  "user_email": "jane@example.com",
+  "message": "The customer updated the account settings. Review the new state and advise on next steps."
+}
+```
+
+All three identity values must match the existing production session: the platform access token must belong to the session's tenant, `caylex_api_key` must identify the session's navigator instance, and `user_email` must identify the end user who owns the widget session.
+
+The endpoint waits for the agent turn to finish and returns the response. Queued [pending context](/widget/agent/pending-context) is delivered with the message unless you set `"include_pending_context": false`.
+
+<Warning>
+Call the programmatic session API from your backend. Platform access tokens and navigator API keys must never be exposed to the browser.
+</Warning>
+
+See [Programmatic Chat Sessions](/cookbooks/programmatic-chat-sessions) for the full request and response contract, session lookup options, and Python and TypeScript examples.

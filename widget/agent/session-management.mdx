@@ -106,35 +106,7 @@ Do not temporarily pass `null` while that lookup is still loading, because
 
 ## Programmatic Chat Turns
 
-Your backend can send a normal user turn to an existing widget session. The message behaves like a turn typed in the composer: Caylex appends it to the transcript, runs the agent, stores the response, and returns the completed turn.
-
-Enable external synchronization on widgets that need to display these turns:
-
-```tsx
-<CaylexChatWidget
-  // ...
-  enableExternalSessionSync
-  externalSessionSyncIntervalMs={5000}
-/>
-```
-
-External synchronization is disabled by default. When enabled, the widget checks for persisted updates only while the tab is visible and the interactive session is idle.
-
-Capture new IDs with `onSessionCreated`, store them in your backend, and call the platform-authenticated session-message API from your backend:
-
-```http
-POST https://api.caylex.ai/api/v1/assistants/sessions/{session_id}/messages
-Authorization: Bearer <platform_access_token>
-Content-Type: application/json
-```
-
-<Warning>
-Call the programmatic session API from your backend. Platform access tokens and navigator API keys must never be exposed to the browser.
-</Warning>
-
-See [Programmatic Chat Sessions](/cookbooks/programmatic-chat-sessions) for the request contract, identity checks, session lookup options, and complete examples.
-
-To inform the agent about app activity without running it, queue [Pending Context](/widget/pending-context) updates instead. They are delivered with the user's next message.
+Your backend can send user turns to an existing widget session. See [Programmatic Chat Turns](/widget/agent/programmatic-chat-turns) to enable external synchronization and send turns from your backend.
 
 ## Background Task Sessions
 

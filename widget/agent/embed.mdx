@@ -1,0 +1,339 @@
+---
+title: "Embed The Chat Widget"
+description: "Render the Caylex chat widget as a full page or a floating popup."
+icon: "window-maximize"
+---
+
+Render the chat widget after your frontend receives a widget token. See [Embedded Widgets](/widget/overview) to install the packages and mint a token from your backend.
+
+<Tabs>
+  <Tab title="React">
+
+### Full-Page Widget
+
+Use this pattern when the assistant is a dedicated page in your app.
+
+```tsx AIAgentPage.tsx
+import { useCallback, useEffect, useState } from 'react';
+import { CaylexChatWidget } from '@caylex/chat-widget';
+
+async function fetchToken(): Promise<string> {
+  const res = await fetch('/api/caylex/token');
+  if (!res.ok) throw new Error('Failed to fetch widget token');
+  const { token } = await res.json();
+  return token;
+}
+
+export function AIAgentPage() {
+  const [token, setToken] = useState<string | null>(null);
+
+  const refreshToken = useCallback(async () => {
+    const nextToken = await fetchToken();
+    setToken(nextToken);
+    return nextToken;
+  }, []);
+
+  useEffect(() => {
+    fetchToken().then(setToken).catch(console.error);
+  }, []);
+
+  if (!token) return <p>Loading...</p>;
+
+  return (
+    <CaylexChatWidget
+      apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+      widgetToken={token}
+      refreshToken={refreshToken}
+      userName="Jane"
+      sampleQueries={[
+        'Show me recent orders',
+        "Summarize this week's activity",
+      ]}
+      primaryColor="#3F58CF"
+      backgroundColor="#FFFFFF"
+      height="100%"
+      width="100%"
+      borderRadius={12}
+      showToolCallDetails
+      showServersButton
+    />
+  );
+}
+```
+
+### Floating Popup Widget
+
+Use this pattern when you want a chat bubble in the bottom-right corner that persists across pages. Render it in your root layout so it does not unmount during navigation.
+
+```tsx Layout.tsx
+import { useState } from 'react';
+import { CaylexChatWidget } from '@caylex/chat-widget';
+
+export function Layout({ children }) {
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [token, setToken] = useState(null);
+  // Fetch token on mount and define refreshToken...
+
+  return (
+    <div>
+      <main>{children}</main>
+
+      {token && !popupOpen && (
+        <button
+          onClick={() => setPopupOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: '#3F58CF',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            zIndex: 1000,
+          }}
+        >
+          AI Agent
+        </button>
+      )}
+
+      {token && popupOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            width: 420,
+            height: 600,
+            borderRadius: 16,
+            background: '#fff',
+            zIndex: 1000,
+            overflow: 'hidden',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #eee',
+              display: 'flex',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span>AI Assistant</span>
+            <button onClick={() => setPopupOpen(false)}>Close</button>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <CaylexChatWidget
+              apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+              widgetToken={token}
+              refreshToken={refreshToken}
+              primaryColor="#3F58CF"
+              backgroundColor="#FFFFFF"
+              height="100%"
+              width="100%"
+              borderRadius={0}
+              showToolCallDetails
+              showServersButton
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+Because the widget is in the root layout, it stays mounted across page navigations. Chat state, sessions, and server connections are preserved.
+
+  </Tab>
+
+  <Tab title="Script Tag">
+
+Use this pattern when your frontend is not a React app. The script bundle exposes `window.CaylexChat.render()`.
+
+### Full-Page Widget
+
+```html chat-widget.html
+<!-- Caylex Chat Widget -->
+<div id="caylex-chat" style="width: 100%; height: 600px;"></div>
+
+<script src="https://assets.caylex.ai/widgets/chat-widget.js"></script>
+<script>
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    if (!res.ok) throw new Error('Failed to fetch widget token');
+    const { token } = await res.json();
+    return token;
+  }
+
+  async function mountCaylexChat() {
+    const token = await fetchWidgetToken();
+
+    CaylexChat.render(document.getElementById('caylex-chat'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/assistants/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      userName: 'Jane',
+      sampleQueries: [
+        'Show me recent orders',
+        "Summarize this week's activity",
+      ],
+      primaryColor: '#3F58CF',
+      backgroundColor: '#FFFFFF',
+      height: '100%',
+      width: '100%',
+      borderRadius: 12,
+      showToolCallDetails: true,
+      showServersButton: true,
+    });
+  }
+
+  mountCaylexChat().catch(console.error);
+</script>
+```
+
+### Floating Popup Widget
+
+Use this pattern when you want a chat launcher that opens a fixed popup. Keep the launcher markup in your root layout so the widget is available across pages.
+
+```html floating-chat-widget.html
+<button
+  id="caylex-chat-launcher"
+  style="position: fixed; right: 24px; bottom: 24px; z-index: 1000;"
+>
+  AI Agent
+</button>
+
+<div
+  id="caylex-chat-popup"
+  style="display: none; position: fixed; right: 24px; bottom: 24px; width: 420px; height: 600px; z-index: 1000; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);"
+>
+  <button
+    id="caylex-chat-close"
+    style="position: absolute; top: 12px; right: 12px; z-index: 1;"
+  >
+    Close
+  </button>
+  <div id="caylex-chat" style="width: 100%; height: 100%;"></div>
+</div>
+
+<script src="https://assets.caylex.ai/widgets/chat-widget.js"></script>
+<script>
+  let caylexChatInstance = null;
+
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    if (!res.ok) throw new Error('Failed to fetch widget token');
+    const { token } = await res.json();
+    return token;
+  }
+
+  async function openCaylexChat() {
+    document.getElementById('caylex-chat-launcher').style.display = 'none';
+    document.getElementById('caylex-chat-popup').style.display = 'block';
+
+    if (caylexChatInstance) return;
+
+    const token = await fetchWidgetToken();
+    caylexChatInstance = CaylexChat.render(document.getElementById('caylex-chat'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/assistants/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      height: '100%',
+      width: '100%',
+      borderRadius: 0,
+      showToolCallDetails: true,
+      showServersButton: true,
+    });
+  }
+
+  function closeCaylexChat() {
+    document.getElementById('caylex-chat-popup').style.display = 'none';
+    document.getElementById('caylex-chat-launcher').style.display = 'block';
+  }
+
+  document.getElementById('caylex-chat-launcher').addEventListener('click', () => {
+    openCaylexChat().catch(console.error);
+  });
+  document.getElementById('caylex-chat-close').addEventListener('click', closeCaylexChat);
+</script>
+```
+
+To pin a specific widget version, use a versioned script URL:
+
+```html
+<script src="https://assets.caylex.ai/widgets/chat-widget@0.1.17.js"></script>
+```
+
+<Note>
+The script-tag bundle includes React and the widget UI dependencies internally. Your app does not need to install or provide those packages.
+</Note>
+
+  </Tab>
+</Tabs>
+
+## Supporting Compact Mode In A Floating Wrapper
+
+Compact mode is enabled by default. When a user collapses the widget, the
+widget changes its own width and height, but it cannot resize or hide wrapper
+elements owned by your application. If your floating popup adds a draggable
+header, resize handles, a close button, or a fixed-height panel, update that
+wrapper through `onExpandedChange`.
+
+```tsx
+const [widgetExpanded, setWidgetExpanded] = useState(true);
+
+<div
+  style={{
+    position: 'fixed',
+    right: 24,
+    bottom: 24,
+    width: widgetExpanded ? 420 : 360,
+    height: widgetExpanded ? 600 : 'auto',
+  }}
+>
+  {widgetExpanded && <DraggablePopupHeader />}
+
+  <CaylexChatWidget
+    apiBaseUrl="https://api.caylex.ai/api/v1/assistants/"
+    widgetToken={token}
+    width="100%"
+    height="100%"
+    compactWidth="100%"
+    onExpandedChange={setWidgetExpanded}
+  />
+</div>
+```
+
+While compact, remove fixed-height shells and any wrapper chrome that should
+not surround the small voice dock. You can keep a host-level close or drag
+control if it is intentionally designed for the compact presentation.
+
+For script-tag integrations, use the same callback in the render options:
+
+```js
+onExpandedChange: (expanded) => {
+  const popup = document.getElementById('caylex-chat-popup');
+  const closeButton = document.getElementById('caylex-chat-close');
+
+  popup.style.width = expanded ? '420px' : '360px';
+  popup.style.height = expanded ? '600px' : 'auto';
+  closeButton.style.display = expanded ? 'block' : 'none';
+}
+```
+
+If your wrapper cannot support compact sizing, disable compact mode explicitly:
+
+```tsx
+<CaylexChatWidget enableCompactMode={false} />
+```
+
+```js
+enableCompactMode: false
+```
