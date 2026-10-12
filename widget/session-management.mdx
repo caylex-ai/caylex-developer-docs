@@ -134,6 +134,8 @@ Call the programmatic session API from your backend. Platform access tokens and 
 
 See [Programmatic Chat Sessions](/cookbooks/programmatic-chat-sessions) for the request contract, identity checks, session lookup options, and complete examples.
 
+To inform the agent about app activity without running it, queue [Pending Context](/widget/pending-context) updates instead. They are delivered with the user's next message.
+
 ## Background Task Sessions
 
 The chat widget can also display [background agent tasks](/background-tasks/agent-tasks). When a user opens a background task or approval, `onSessionChanged` reports `sessionType: "background_task"`. When the user returns to an interactive chat, it reports `sessionType: "chat"`.
