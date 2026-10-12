@@ -1,0 +1,243 @@
+---
+title: "Embed in iOS"
+description: "Add the Caylex Agent Widget to an iOS app with Swift Package Manager and SwiftUI."
+icon: "apple"
+---
+
+Embed the Agent Widget in your iOS app with `CaylexChatView`. The Swift package bundles the chat UI and renders it in a `WKWebView`, with a native controller for sessions, token refresh, and app navigation. Your app does not need React, Node.js, or a script-tag installation.
+
+## Requirements
+
+- iOS 16.4 or later
+- Xcode with Swift tools 6.0 or later
+- A Caylex navigator and an authenticated backend that can [mint widget tokens](/widget/overview#mint-a-widget-token)
+
+## Add the Swift package
+
+1. In Xcode, open **File → Add Package Dependencies**.
+2. Enter `https://github.com/caylex-ai/caylex-ios`.
+3. Select the **main** branch dependency rule.
+4. Add the **CaylexChat** library product to your app target.
+
+<Note>
+The package repository is public, so you do not need a GitHub invitation or access to the private frontend repository. No version tags are published yet. Once the first release is published, use a version dependency rule to pin a tested release for production apps instead of tracking `main`.
+</Note>
+
+The package includes the widget bundle. You do not need access to the frontend repository or an npm package to build your app.
+
+## Configure your app
+
+Add local networking support to your app target's `Info.plist`. The package serves its bundled UI through a loopback listener bound to `127.0.0.1`.
+
+```xml Info.plist
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+```
+
+If your app already defines `NSAppTransportSecurity`, add `NSAllowsLocalNetworking` to that dictionary.
+
+For dictation or live voice, also add a microphone usage description:
+
+```xml Info.plist
+<key>NSMicrophoneUsageDescription</key>
+<string>Use your microphone to talk to your assistant.</string>
+```
+
+Microphone access is requested when the user activates a voice control.
+
+## Obtain a widget token
+
+Use the same [backend token-minting flow](/widget/overview#mint-a-widget-token) as the web widget:
+
+1. Your iOS app requests a token from your authenticated backend.
+2. Your backend calls Caylex's `POST /api/v1/widget/agent-session-init` with the platform token, navigator API key, and the signed-in user's email.
+3. Your backend returns the short-lived widget JWT to the app.
+
+Only the widget token belongs in the app. Keep the platform token and navigator API key on your backend, and derive the user identity from the authenticated request.
+
+Supply a `refreshToken` closure that requests another token for the same user. The widget invokes it when an API request needs fresh credentials.
+
+## Embed the chat view
+
+Fetch the initial widget token before presenting this screen. Pass a token-refresh function that calls your app's backend; that function is provided by your app, not by the Caylex package.
+
+```swift ChatScreen.swift
+import SwiftUI
+import CaylexChat
+
+@MainActor
+struct ChatScreen: View {
+    @StateObject private var chat: CaylexChatController
+    private let configuration: CaylexChatConfiguration
+
+    init(
+        widgetToken: String,
+        refreshToken: @escaping () async throws -> String
+    ) {
+        let controller = CaylexChatController()
+        controller.refreshToken = refreshToken
+        controller.onError = { error in
+            // Route errors to your app's error handling.
+            print(error.localizedDescription)
+        }
+        _chat = StateObject(wrappedValue: controller)
+
+        var config = CaylexChatConfiguration(
+            apiBaseURL: URL(
+                string: "https://api.caylex.ai/api/v1/assistants/"
+            )!,
+            widgetToken: widgetToken
+        )
+        config.userName = "Jane"
+        config.sampleQueries = ["Show me recent orders"]
+        configuration = config
+    }
+
+    var body: some View {
+        CaylexChatView(
+            configuration: configuration,
+            controller: chat
+        )
+        .ignoresSafeArea(.container)
+    }
+}
+```
+
+Keep one `CaylexChatController` per mounted chat view. Configure callbacks before mounting the view and preserve the controller with `@StateObject`.
+
+For development, use `https://api.caylex.dev/api/v1/assistants/` with tokens minted in that environment. The API URL must use HTTPS; localhost HTTP is supported for development fixtures.
+
+## Fit the widget to your layout
+
+The chat view fills the space its parent provides. Your app controls its outer shape, navigation bars, and docks with SwiftUI.
+
+### Full screen
+
+Use `.ignoresSafeArea(.container)` as in the example above. Widget controls respect the status bar and home indicator while backgrounds extend to the screen edges. Leave the keyboard safe area enabled so the composer moves above the keyboard.
+
+### Above an app dock
+
+Use a `VStack` to reserve space for your app's controls. Keep the chat view's default safe-area behavior in this layout.
+
+```swift
+VStack(spacing: 0) {
+    CaylexChatView(configuration: configuration, controller: chat)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+    Divider()
+    HStack {
+        Button("Home") { /* Open your home screen. */ }
+        Spacer()
+        Button("Account") { /* Open your account screen. */ }
+    }
+    .padding()
+}
+```
+
+### Rounded card with a top bar and dock
+
+Use a bounded height and clip the view to the desired shape. Clipping also contains the widget's drawers and popovers.
+
+```swift
+VStack(spacing: 16) {
+    Text("Your assistant")
+        .font(.headline)
+
+    CaylexChatView(configuration: configuration, controller: chat)
+        .frame(maxWidth: .infinity)
+        .frame(height: 500)
+        .clipShape(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.gray.opacity(0.2), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+
+    HStack {
+        Button("Home") { /* Open your home screen. */ }
+        Spacer()
+        Button("Account") { /* Open your account screen. */ }
+    }
+}
+.padding(16)
+```
+
+Use a bounded height when embedding the chat inside a scrolling page. For a card that fills the remaining screen space, replace the fixed height with a flexible frame.
+
+## Customize appearance
+
+Set appearance options on the configuration before passing it to the view:
+
+```swift
+config.theme = .dark
+config.primaryColor = "#3F58CF"
+config.backgroundColor = "#FFFFFF"
+config.darkPrimaryColor = "#8A9BFF"
+config.darkBackgroundColor = "#15151C"
+config.showServersButton = true
+config.showToolCallDetails = false
+```
+
+The theme is explicit: set `.light` or `.dark` to match your app. SwiftUI clipping controls the outer shape; `config.borderRadius` controls rounding within the widget.
+
+## Manage sessions and commands
+
+Choose the initial session in your configuration:
+
+```swift
+config.initialSession = .existing(savedSessionID)
+// .new starts a new session.
+// .automatic restores the web view's stored session when available.
+```
+
+`initialSession` applies when the widget first mounts. Use the controller to switch sessions later:
+
+```swift
+try await chat.openSession(savedSessionID)
+try await chat.sendMessage("Show me recent orders")
+try await chat.startNewChat()
+try await chat.stopGeneration()
+try await chat.resume()
+try await chat.refresh()
+```
+
+Call commands from a Swift task and handle thrown errors. Commands can wait up to 30 seconds while an attached widget is loading. A detached or failed widget is not ready; sending a message is also rejected while the chat is streaming, restoring, recording, in live voice, or displaying a background-task view.
+
+Configure session callbacks before mounting to store session IDs or observe changes:
+
+```swift
+chat.onSessionCreated = { sessionID in
+    // Persist the session ID for this user or app resource.
+}
+chat.onSessionChanged = { session in
+    // session.id identifies the conversation.
+    // session.kind is .chat or .backgroundTask.
+}
+```
+
+Persist session IDs in your app or backend to restore conversations across app launches. The widget's web storage is ephemeral. Use a separate controller and a new view identity, such as `.id(userID)`, when switching accounts.
+
+### Push notifications
+
+Your app owns APNs registration and notification delivery. Send the device token to your backend, then route a notification tap to `chat.openSession(sessionID)` after the chat view mounts. The package does not register for or send push notifications.
+
+Background agent work must run on your backend independently of the app's connection. App suspension can interrupt streams; restore the session or call `resume()` when appropriate.
+
+## Handle links and navigation
+
+External links and authentication flows open in the system browser by default. Set `chat.onOpenURL` if your app needs to handle them itself. The widget refreshes connected services when the app becomes active again.
+
+For [agent-driven navigation](/widget/agent/page-navigation), supply `config.navigablePages` and `config.navigationBaseUrl`, then handle `chat.onNavigate`. The callback receives a resolved URL and page name; your app maps these to its own navigation.
+
+## Test on a device
+
+Use the simulator to test layout, keyboard behavior, streaming replies, and session commands. Validate dictation, live voice, audio routing, and attachments on a physical iPhone.
+
+Simulator WebKit may provide mock audio devices even when microphone access succeeds. A connected voice session in the simulator does not prove that your Mac microphone is being captured. Voice capture stops when the app enters the background and does not restart automatically.
+
+See the [Swift package repository](https://github.com/caylex-ai/caylex-ios) for the demo app, full API, and package development instructions.
