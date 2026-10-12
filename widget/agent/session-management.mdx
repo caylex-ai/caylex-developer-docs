@@ -108,6 +108,8 @@ Do not temporarily pass `null` while that lookup is still loading, because
 
 Your backend can send user turns to an existing widget session. See [Programmatic Chat Turns](/widget/agent/programmatic-chat-turns) to enable external synchronization and send turns from your backend.
 
+To inform the agent about app activity without running it, queue [Pending Context](/widget/agent/pending-context) updates instead. They are delivered with the user's next message.
+
 ## Background Task Sessions
 
 The chat widget can also display [background agent tasks](/background-tasks/agent-tasks). When a user opens a background task or approval, `onSessionChanged` reports `sessionType: "background_task"`. When the user returns to an interactive chat, it reports `sessionType: "chat"`.
