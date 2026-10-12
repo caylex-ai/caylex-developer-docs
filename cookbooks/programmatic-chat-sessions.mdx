@@ -37,6 +37,10 @@ Content-Type: application/json
 }
 ```
 
+Any queued [pending context](/widget/pending-context) is delivered to the agent
+immediately before this message. Add `"include_pending_context": false` to the
+body to leave it queued.
+
 All three identity values must match the existing production session:
 
 - The platform access token must belong to the session's tenant.

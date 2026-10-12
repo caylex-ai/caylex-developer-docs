@@ -79,6 +79,7 @@
                 "pages": [
                   "widget/overview",
                   "widget/session-management",
+                  "widget/pending-context",
                   "widget/auto-authentication",
                   "widget/model-selection"
                 ]
