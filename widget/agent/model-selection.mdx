@@ -8,7 +8,7 @@ By default, the Caylex agent runs on its configured model. **Model selection** l
 
 ## Overview
 
-The model is chosen server-side, at the same place you already start a session: the `POST /widget/agent-session-init` call. Caylex checks the requested model against [OpenRouter's model catalog](#available-models), signs it into the short-lived widget token, and the agent uses it for every turn of the session the widget starts with that token.
+The model is chosen server-side, at the same place you already start a session: the `POST /widget/agent-session-init` call. Caylex checks the requested model against [OpenRouter's model catalog](#available-models), signs it into the short-lived widget token, and the agent uses it for the turns the widget sends with that token.
 
 <Note>
 The model is selected by **your backend** when it mints the session token. The widget package (browser) does not choose the model, and there is no widget prop for it. This keeps model choice under your control and out of the browser.
@@ -31,9 +31,19 @@ sequenceDiagram
     Widget->>Caylex: Open session -> agent runs on the selected model
 ```
 
-The selected model is recorded on the chat session when the widget starts it, along with the model's context window and output limit, so every later turn in that session uses the same model and the same limits. To change the model, start a new session with a token minted for a different `model`.
+The selected model is recorded on the chat session, along with the model's context window and output limit, and later turns reuse them until the model changes.
 
-Send the same `model` every time you mint a token for a user, including the call your backend makes when the widget's `refreshToken` callback asks for a new token. A refreshed token with a different `model` doesn't change a session that has already started; it applies only to sessions started after it.
+Send the same `model` every time you mint a token for a user, including the call your backend makes when the widget's `refreshToken` callback asks for a new token, unless you want the session to switch models.
+
+### Changing the Model Mid-Session
+
+Each turn runs on the model in the token the widget sends with it. When the widget picks up a token minted for a different `model`, the session's next turn switches to that model and the conversation carries on. A turn that's already running finishes on the model it started with.
+
+- If a later token has no `model`, a session on a model you chose goes back to the agent's configured model.
+- If the later token's `model` was ignored (the response had a `model_warning`), the session keeps the model it's on.
+- Switching to a model with a smaller context window can compact the conversation on the next turn. Caylex summarizes older turns to fit, and in very long sessions the oldest detail can be dropped from the summary.
+- Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
+- [Agent tasks](/background-tasks/agent-tasks) and [background sync](/background-tasks/background-sync) runs keep the model they started with.
 
 When a session runs on a model you chose, any subassistants its agent delegates work to run on that model too. When you don't pass `model`, each subassistant keeps its own configured model.
 
@@ -66,7 +76,7 @@ Add an optional `model` to the session-init body:
 
 | Field | Description |
 | --- | --- |
-| `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases the agent's configured model is used. |
+| `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's configured model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
 | `model_warning` | `null` on success. Set to a message when the requested model was ignored: it says why and points to `GET /agent-models` and this page. |
 
 ## Available Models
@@ -153,7 +163,7 @@ Caylex caches the catalog and refreshes it every hour, so a short OpenRouter out
 - Saving a sync config with a new `model` returns `503`. Try again shortly.
 - `GET /agent-models` returns `503`.
 
-Choices Caylex already accepted are kept: a session started from a token with a model, a sync config's saved model, and the model saved in a widget design all keep working during an outage.
+Choices Caylex already accepted are kept: a session already on a model you chose (a refreshed token whose model was ignored doesn't move it), a sync config's saved model, and the model saved in a widget design all keep working during an outage.
 
 ## Example
 
