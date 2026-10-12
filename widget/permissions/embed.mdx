@@ -1,0 +1,84 @@
+---
+title: "Embed The Permissions Widget"
+description: "Let admins control which tools the agent can use."
+icon: "shield-check"
+---
+
+The permissions widget lets users control which tools the assistant can access through the navigator instance. Each tool can be set to:
+
+- **Always Allow** — run without user confirmation
+- **User Approval** — require confirmation before each use
+- **Disabled** — block the tool
+
+This widget mirrors the **Tool Permissions** tab in the navigator drawer on the Caylex platform. Changes made in either place are reflected in both.
+
+<Tabs>
+  <Tab title="React">
+
+```tsx
+import { CaylexToolPermissionsWidget } from '@caylex/permissions-widget';
+
+<CaylexToolPermissionsWidget
+  apiBaseUrl="https://api.caylex.ai/api/v1/"
+  widgetToken={token}
+  refreshToken={refreshToken}
+  primaryColor="#3F58CF"
+  backgroundColor="#FFFFFF"
+  borderRadius={8}
+  height="100%"
+  width="100%"
+  persistPermissions
+/>
+```
+
+  </Tab>
+
+  <Tab title="Script Tag">
+
+```html permissions-widget.html
+<!-- Caylex Permissions Widget -->
+<div id="caylex-permissions" style="width: 100%; height: 600px;"></div>
+
+<script src="https://assets.caylex.ai/widgets/permissions-widget.js"></script>
+<script>
+  async function fetchWidgetToken() {
+    const res = await fetch('/api/caylex/token');
+    if (!res.ok) throw new Error('Failed to fetch widget token');
+    const { token } = await res.json();
+    return token;
+  }
+
+  async function mountCaylexPermissions() {
+    const token = await fetchWidgetToken();
+
+    CaylexPermissions.render(document.getElementById('caylex-permissions'), {
+      apiBaseUrl: 'https://api.caylex.ai/api/v1/',
+      widgetToken: token,
+      refreshToken: fetchWidgetToken,
+      primaryColor: '#3F58CF',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+      height: '100%',
+      width: '100%',
+      persistPermissions: true,
+    });
+  }
+
+  mountCaylexPermissions().catch(console.error);
+</script>
+```
+
+To pin a specific permissions widget version, use a versioned script URL:
+
+```html
+<script src="https://assets.caylex.ai/widgets/permissions-widget@0.1.4.js"></script>
+```
+
+  </Tab>
+</Tabs>
+
+<Warning>
+Set `persistPermissions` to `true` for production. When `false` or omitted, changes are local-only and are not saved.
+</Warning>
+
+The permissions widget uses the same token pattern as the chat widget, but the token does not require `user_email` because permissions are scoped to the navigator instance, not an individual user.

@@ -74,14 +74,26 @@
           {
             "group": "Embedded AI",
             "pages": [
+              "widget/overview",
               {
-                "group": "Embedded Widgets",
+                "group": "Agent Widget",
                 "pages": [
-                  "widget/overview",
-                  "widget/session-management",
-                  "widget/pending-context",
-                  "widget/auto-authentication",
-                  "widget/model-selection"
+                  "widget/agent/embed",
+                  "widget/agent/programmatic-chat-turns",
+                  "widget/agent/background-task-inbox",
+                  "widget/agent/page-navigation",
+                  "widget/agent/props",
+                  "widget/agent/session-management",
+                  "widget/agent/pending-context",
+                  "widget/agent/auto-authentication",
+                  "widget/agent/model-selection"
+                ]
+              },
+              {
+                "group": "Permissions Widget",
+                "pages": [
+                  "widget/permissions/embed",
+                  "widget/permissions/props"
                 ]
               }
             ]
@@ -277,5 +289,23 @@
     "socials": {
       "linkedin": "https://linkedin.com/company/caylex"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/widget/session-management",
+      "destination": "/widget/agent/session-management"
+    },
+    {
+      "source": "/widget/pending-context",
+      "destination": "/widget/agent/pending-context"
+    },
+    {
+      "source": "/widget/auto-authentication",
+      "destination": "/widget/agent/auto-authentication"
+    },
+    {
+      "source": "/widget/model-selection",
+      "destination": "/widget/agent/model-selection"
+    }
+  ]
 }

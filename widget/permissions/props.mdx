@@ -1,0 +1,22 @@
+---
+title: "Permissions Widget Props"
+description: "Configuration options for the Caylex permissions widget."
+icon: "sliders"
+---
+
+| Prop | Default | Description |
+| --- | --- | --- |
+| `apiBaseUrl` | — | Caylex Analytics API base URL, usually `https://api.caylex.ai/api/v1/` |
+| `widgetToken` | — | Short-lived widget JWT minted by your backend |
+| `primaryColor` | `#3F58CF` | Accent color |
+| `backgroundColor` | `#FFFFFF` | Widget background |
+| `theme` | `light` | Active color scheme |
+| `darkPrimaryColor` | — | Primary color override for dark mode |
+| `darkBackgroundColor` | — | Background override for dark mode |
+| `height` | `600px` | Widget container height |
+| `width` | `100%` | Widget container width |
+| `borderRadius` | `8` | Border radius, in pixels |
+| `persistPermissions` | `false` | Save changes to Caylex when users edit permissions |
+| `defaultExpandServers` | `false` | Start with server panels expanded |
+| `refreshToken` | — | Async function returning a fresh widget token |
+| `onError` | — | Invoked when an unrecoverable error occurs |

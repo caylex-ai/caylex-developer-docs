@@ -37,7 +37,7 @@ Content-Type: application/json
 }
 ```
 
-Any queued [pending context](/widget/pending-context) is delivered to the agent
+Any queued [pending context](/widget/agent/pending-context) is delivered to the agent
 immediately before this message. Add `"include_pending_context": false` to the
 body to leave it queued.
 
@@ -100,7 +100,7 @@ After the lookup completes, `savedCaylexSessionId` should be the mapped session
 ID or `null` when no mapping exists. Do not render the widget while the lookup
 is still pending: `null` intentionally creates a new session.
 
-See [Session Management](/widget/session-management) for restoration behavior,
+See [Session Management](/widget/agent/session-management) for restoration behavior,
 session-change callbacks, and host-managed session examples.
 
 If you did not capture the ID, list recent sessions from your backend:

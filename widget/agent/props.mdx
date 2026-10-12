@@ -1,0 +1,45 @@
+---
+title: "Chat Widget Props"
+description: "Configuration options for the Caylex chat widget."
+icon: "sliders"
+---
+
+All props are optional unless noted. `apiBaseUrl` and `widgetToken` are required.
+
+| Prop | Default | Description |
+| --- | --- | --- |
+| `apiBaseUrl` | — | Caylex Assistants API base URL, usually `https://api.caylex.ai/api/v1/assistants/` |
+| `widgetToken` | — | Short-lived widget JWT minted by your backend |
+| `userName` | — | Display name shown in the welcome greeting |
+| `sampleQueries` | `[]` | Starter queries displayed on the welcome screen |
+| `primaryColor` | `#3F58CF` | Accent color for buttons, links, and highlights |
+| `backgroundColor` | `#FFFFFF` | Chat window background |
+| `theme` | `light` | Active color scheme (`light` or `dark`) |
+| `darkPrimaryColor` | — | Primary color override for dark mode |
+| `darkBackgroundColor` | — | Background override for dark mode |
+| `height` | `600px` | Widget container height |
+| `width` | `100%` | Widget container width |
+| `borderRadius` | `12` | Border radius of the widget card, in pixels |
+| `presentation` | `full` | Initial presentation (`full` or `compact`) |
+| `enableCompactMode` | `true` | Allow users to switch between full and compact presentations |
+| `compactWidth` | `360px` | Widget width while compact |
+| `showToolCallDetails` | `false` | Allow expanding tool call cards to show JSON details |
+| `showServersButton` | `true` | Show a Connected Services button in the header |
+| `enableExternalSessionSync` | `false` | Poll for turns sent through the programmatic session-message API. See [Programmatic Chat Turns](/widget/agent/programmatic-chat-turns). |
+| `externalSessionSyncIntervalMs` | `5000` | External session polling interval in milliseconds; minimum `1000` |
+| `navigablePages` | — | Effective site map, usually fetched from your backend, that enables agent-driven page navigation |
+| `onNavigate` | — | Callback invoked when the assistant triggers page navigation |
+| `sessionName` | `Chat` | Default session name stored on the backend |
+| `embedMessages` | `true` | Whether to embed messages for RAG memory |
+| `agentInstanceId` | — | Explicit navigator instance ID override. Normally inferred from the API key. |
+| `tenantUserId` | — | Your application's user ID, stored on the session for tenant-level user scoping |
+| `initialSessionId` | — | Session to restore during initialization. Pass `null` to create a new session; omit to preserve browser restoration. |
+| `refreshToken` | — | Async function returning a fresh widget token |
+| `onError` | — | Invoked when an unrecoverable error occurs |
+| `onSessionCreated` | — | Invoked with the session ID when a new chat session is created |
+| `onSessionChanged` | — | Invoked with `{ sessionId, sessionType }` whenever the active session or session view changes |
+| `onExpandedChange` | — | Invoked with `true` for full mode and `false` for compact mode |
+
+<Note>
+The current widget prop is still named `agentInstanceId` for compatibility. It refers to the Caylex navigator instance.
+</Note>
