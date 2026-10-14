@@ -4,7 +4,7 @@ description: "Choose which LLM powers the agent for a chat session at session-in
 icon: "robot"
 ---
 
-By default, the Caylex agent runs on its configured model. **Model selection** lets your backend override that on a per-session basis by passing an optional `model` when it starts an agent session, so you can match the model to the use case (for example, a faster, cheaper model for lightweight chat, or a larger model for complex work).
+The Caylex agent runs on its default model. **Model selection** lets your backend override that on a per-session basis by passing an optional `model` when it starts an agent session, so you can match the model to the use case (for example, a faster, cheaper model for lightweight chat, or a larger model for complex work).
 
 ## Overview
 
@@ -39,13 +39,13 @@ Send the same `model` every time you mint a token for a user, including the call
 
 Each turn runs on the model in the token the widget sends with it. When the widget picks up a token minted for a different `model`, the session's next turn switches to that model and the conversation carries on. A turn that's already running finishes on the model it started with.
 
-- If a later token has no `model`, a session on a model you chose goes back to the agent's configured model.
+- If a later token has no `model`, a session on a model you chose goes back to the agent's default model.
 - If the later token's `model` was ignored (the response had a `model_warning`), the session keeps the model it's on.
 - Switching to a model with a smaller context window can compact the conversation on the next turn. Caylex summarizes older turns to fit, and in very long sessions the oldest detail can be dropped from the summary.
 - Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
 - [Agent tasks](/background-tasks/agent-tasks) and [background sync](/background-tasks/background-sync) runs keep the model they started with.
 
-When a session runs on a model you chose, any subassistants its agent delegates work to run on that model too. When you don't pass `model`, each subassistant keeps its own configured model.
+When a session runs on a model you chose, any subassistants its agent delegates work to run on that model too. When you don't pass `model`, each subassistant keeps its own default model.
 
 ## Request
 
@@ -61,7 +61,7 @@ Add an optional `model` to the session-init body:
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models). Omit to use the Caylex agent's configured model. Unsupported values are ignored (the agent keeps its configured model) and return a `model_warning`. |
+| `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models). Omit to use the Caylex agent's default model. Unsupported values are ignored (the agent keeps its default model) and return a `model_warning`. |
 
 ## Response
 
@@ -76,7 +76,7 @@ Add an optional `model` to the session-init body:
 
 | Field | Description |
 | --- | --- |
-| `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's configured model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
+| `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's default model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
 | `model_warning` | `null` on success. Set to a message when the requested model was ignored: it says why and points to `GET /agent-models` and this page. |
 
 ## Available Models
@@ -89,7 +89,11 @@ Caylex reads the model list from [OpenRouter's catalog](https://openrouter.ai/mo
 - allows at least **16,000 completion tokens** per response;
 - publishes its context window, output limit and pricing.
 
-`:free` variants are excluded. Models with a context window of **1M tokens or more** are marked `recommended`, since long agent sessions with many tool results fit in them without compaction.
+`:free` variants are excluded.
+
+<Info>
+Models with a context window of **1M tokens or more** are marked `recommended`, since long agent sessions with many tool results fit in them without compaction.
+</Info>
 
 `GET /agent-models` returns the models you can pick right now, recommended first. Authenticate it with your platform access token, like the session-init call:
 
@@ -139,7 +143,7 @@ GET https://api.caylex.ai/api/v1/agent-models
 
 The list follows OpenRouter: new models appear when OpenRouter lists them, and models OpenRouter retires or changes so they no longer qualify drop out. Read the list when you build a picker rather than hard-coding ids.
 
-If `model` is omitted, the session uses the **Caylex agent's configured model**, falling back to the platform default **`anthropic/claude-sonnet-4.6`** when none is set. Passing `model` only overrides that for the session when you explicitly request a model from the list.
+If `model` is omitted, the session uses the **Caylex agent's default model**, falling back to the platform default **`anthropic/claude-sonnet-4.6`** when none is set. Passing `model` only overrides that for the session when you explicitly request a model from the list.
 
 ### Choosing a Model
 
@@ -149,17 +153,17 @@ Every model on the list can run the Caylex agent, but they don't all run it equa
 
 Model selection never fails the session for an unsupported model. If you pass a model that isn't on the list:
 
-- The requested model is **ignored** — it does not override the agent's configured model.
-- The session is created using the agent's configured model (the same as if no `model` were passed).
+- The requested model is **ignored** — it does not override the agent's default model.
+- The session is created using the agent's default model (the same as if no `model` were passed).
 - The response `model` is `null` and `model_warning` explains why.
 
-This makes it safe to pass a model id without pre-validating it: a typo never silently downgrades the agent's configured model, and the warning surfaces the problem to your backend.
+This makes it safe to pass a model id without pre-validating it: a typo never silently downgrades the agent's default model, and the warning surfaces the problem to your backend.
 
 ### When OpenRouter's Catalog Is Unavailable
 
 Caylex caches the catalog and refreshes it every hour, so a short OpenRouter outage usually goes unnoticed. If the catalog can't be read and nothing is cached, Caylex can't check a new model, so it doesn't accept one:
 
-- `POST /widget/agent-session-init` and `POST /agent-task` ignore the requested model and return a `model_warning` saying the catalog is unavailable. The session or task runs on the agent's configured model.
+- `POST /widget/agent-session-init` and `POST /agent-task` ignore the requested model and return a `model_warning` saying the catalog is unavailable. The session or task runs on the agent's default model.
 - Saving a sync config with a new `model` returns `503`. Try again shortly.
 - `GET /agent-models` returns `503`.
 
@@ -184,7 +188,7 @@ Add the optional `model` to your existing backend token call, and use the same c
             "user_email": user_email,
         }
         if model:
-            # Optional; omit to use the agent's configured model.
+            # Optional; omit to use the agent's default model.
             payload["model"] = model
 
         async with httpx.AsyncClient() as client:
@@ -220,7 +224,7 @@ Add the optional `model` to your existing backend token call, and use the same c
         body: JSON.stringify({
           caylex_api_key: CAYLEX_API_KEY,
           user_email: userEmail,
-          model, // optional; omit to use the agent's configured model
+          model, // optional; omit to use the agent's default model
         }),
       });
 
@@ -242,7 +246,7 @@ To choose per user, decide the model in the route your frontend calls for tokens
 
 ```typescript
 app.get("/api/caylex/token", requireAuth, async (req, res) => {
-  // Omit model to use the agent's configured model.
+  // Omit model to use the agent's default model.
   const model = req.user.plan === "premium" ? "anthropic/claude-opus-4.8" : undefined;
   res.json({ token: await mintWidgetToken(req.user.email, model) });
 });

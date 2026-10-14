@@ -310,6 +310,7 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}
       "source": "notion",
       "task_id": "be4c6b8d-a0c5-4e39-b17d-4c6e8a0f2b73",
       "session_id": "d06e8daf-c2e7-405b-939f-6e8a0c2b4d95",
+      "model": "anthropic/claude-sonnet-4.6",
       "status": "COMPLETED",
       "started_at": "2026-09-28T09:20:04+00:00",
       "completed_at": "2026-09-28T09:26:41+00:00",
@@ -323,6 +324,7 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}
       "source": "google_drive",
       "task_id": "cf5d7c9e-b1d6-4f4a-828e-5d7f9b1a3c84",
       "session_id": "f2809fb0-e4a9-4b7d-a5b1-8a0c2e4d6f17",
+      "model": "anthropic/claude-sonnet-4.6",
       "status": "INCOMPLETE",
       "started_at": "2026-09-28T09:20:05+00:00",
       "completed_at": "2026-09-28T09:31:12+00:00",
@@ -334,6 +336,8 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}
 ```
 
 The response above is trimmed. Each source also repeats its `source_type`, `server_name`, `server_instance_id`, `resolved_by`, and `config_warnings`, and `summary` carries the full `counts` and `diagnostics` described in [Export format](#export-format). `summary` is set once the source finishes.
+
+Each source's `model` is the model its task ran on. Before the task starts, it's the config's model as of the trigger, or `null` when the task will use the agent's default model.
 
 A run's status summarizes its sources:
 
@@ -369,7 +373,7 @@ GET https://api.caylex.ai/api/v1/sync-task?trigger_id={trigger_id}&size=100
       "user_email": "sam@example.com",
       "status": "running",
       "sources": [
-        { "source": "notion", "source_type": "notion", "server_name": "Notion", "server_instance_id": "5a8d1c3e-...", "task_id": "e17f9eaf-...", "status": "RUNNING" }
+        { "source": "notion", "source_type": "notion", "server_name": "Notion", "server_instance_id": "5a8d1c3e-...", "task_id": "e17f9eaf-...", "model": "anthropic/claude-sonnet-4.6", "status": "RUNNING" }
       ]
     },
     {
@@ -379,8 +383,8 @@ GET https://api.caylex.ai/api/v1/sync-task?trigger_id={trigger_id}&size=100
       "user_email": "alex@example.com",
       "status": "incomplete",
       "sources": [
-        { "source": "notion", "source_type": "notion", "server_name": "Notion", "server_instance_id": "5a8d1c3e-...", "task_id": "be4c6b8d-...", "status": "COMPLETED" },
-        { "source": "google_drive", "source_type": "google_drive", "server_name": "Google Drive", "server_instance_id": "6b9e2d4f-...", "task_id": "cf5d7c9e-...", "status": "INCOMPLETE" }
+        { "source": "notion", "source_type": "notion", "server_name": "Notion", "server_instance_id": "5a8d1c3e-...", "task_id": "be4c6b8d-...", "model": "anthropic/claude-sonnet-4.6", "status": "COMPLETED" },
+        { "source": "google_drive", "source_type": "google_drive", "server_name": "Google Drive", "server_instance_id": "6b9e2d4f-...", "task_id": "cf5d7c9e-...", "model": "anthropic/claude-sonnet-4.6", "status": "INCOMPLETE" }
       ]
     }
   ],
