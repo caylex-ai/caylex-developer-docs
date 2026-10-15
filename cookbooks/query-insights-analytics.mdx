@@ -1,0 +1,322 @@
+---
+title: "Query Analytics with the Insights API"
+description: "Pull tool-call volume, errors, latency, and user activity for any date range, scoped to projects, navigators, servers, tools, or users."
+icon: "chart-line"
+---
+
+Every analytics view in the Caylex Platform UI is backed by the **Insights API**. Use it to feed your own dashboards, export monthly reports, or alert on error spikes from a script. All endpoints live under `/insights` and share the same time and filter parameters.
+
+<Note>
+The analytics endpoints moved from `/analytics` to `/insights`, and the old paths no longer return analytics data. Most return `404`. The old `/projects/{project_id}/users/summary` returns `422`, because it now matches the project user details route and `summary` isn't a user ID. Update any existing integrations:
+
+| Old path | New path |
+| --- | --- |
+| `/analytics/{endpoint}` | `/insights/{endpoint}` (for example `/insights/top-tools`) |
+| `/analytics/users` | `/insights/users/top` |
+| `/navigator-analytics/{navigator_id}/info` and `/breakdown` | `/insights/navigators/{navigator_id}/info` and `/breakdown` |
+| `/projects/{project_id}/users/summary` | `/insights/projects/{project_id}/users/summary` |
+| `/projects/{project_id}/users/{user_id}/analytics` | `/insights/projects/{project_id}/users/{user_id}` |
+</Note>
+
+## Endpoints
+
+All endpoints are `GET` requests authenticated with a [platform access token](/auth/platform-authentication). In these paths, "queries" means **sessions**: one session is one task your agent ran through the Navigator.
+
+| Area | Endpoints |
+| --- | --- |
+| **Overview** | `/insights/heroes/global/stats`: sessions and tool calls for the current and previous period |
+| **Volume** | `/insights/queries-processed`, `/insights/tool-calls-processed`, and their `-graph` time series |
+| **Errors** | `/insights/error-rate-graph`, `/insights/error-types-graph`, `/insights/reliability`, `/insights/reliability-breakdown` |
+| **Performance** | `/insights/average-tool-call-latency` (latency), `/insights/average-tool-call-runtime` (MCP server time), `/insights/average-tool-calls-per-query`, and their `-graph` time series |
+| **Rankings** | `/insights/top-tools`, `/insights/top-servers`, `/insights/top-server-instances`, `/insights/top-projects`, `/insights/top-navigators`, `/insights/top-navigator-instances`, `/insights/tools`, `/insights/servers`, `/insights/users/top`, `/insights/navigator-tool-connections` |
+| **Users** | `/insights/active-users`, `/insights/projects/{project_id}/users/summary`, `/insights/projects/{project_id}/users/{user_id}` |
+| **Navigators** | `/insights/navigators/{navigator_id}/info`, `/insights/navigators/{navigator_id}/breakdown` |
+| **Tool discovery** | `/insights/proxy-tools` (counts of `suggest_tools`, `get_tool_info`, and `invoke_tools` calls), `/insights/proxy-tools/suggest-tools` |
+| **Code Mode** | `/insights/code-mode`, `/insights/code-mode-graph`: Code Mode runs, the tool calls made from code, run success and duration, and tool output kept out of context |
+
+See the [REST API Reference](https://developers.caylex.ai/) for each endpoint's exact parameters and response schema.
+
+## What the numbers mean
+
+### Tool calls
+
+A **tool call** is one call your agent makes, through the Navigator, to a tool on an MCP server. Tool call counts include every attempt, successful or not. A call fails when the tool returns an error, the MCP server can't be reached, the user's credentials for the server can't be resolved, or the call is cancelled before it finishes (for example, because the client disconnected). The volume and overview totals, their time series, tool calls per session, the navigator breakdown, the per-user endpoint, and every ranking except `/insights/users/top` count tool calls this way.
+
+To tell successful and failed calls apart, use these fields:
+
+| Endpoint | Fields |
+| --- | --- |
+| `/insights/heroes/global/stats` | `total_tool_calls` and `successful_tool_calls`, plus `previous_total_tool_calls` and `previous_successful_tool_calls` for the previous period |
+| `/insights/tool-calls-processed` | `total_tool_calls`, `successful_tool_calls`, and `failed_tool_calls` |
+| `/insights/tool-calls-processed-graph` | `value` (all tool calls), `successful`, and `failed` on each point |
+| `/insights/projects/{project_id}/users/{user_id}` | `total_tool_calls` and `successful_tool_calls` |
+
+A failed count is the total minus the successful calls, and is never negative. The error graphs and reliability endpoints count failures from their own sources (tool call traces and stored tool call records), so their numbers can differ slightly from these.
+
+### Navigator requests
+
+`/insights/users/top`, `/insights/active-users`, and the users summary count **navigator requests**, not tool calls. A navigator request is one call your agent makes to one of the [Navigator's own MCP tools](/navigator/overview), such as `suggest_tools`, `get_tool_schemas`, `invoke_tools`, `execute_tools_in_code`, or `get_context_map`. One `invoke_tools` or `execute_tools_in_code` request can run several tool calls, so a user's `tool_count` won't match tool call counts elsewhere. An active user is a person who made at least one navigator request in the period.
+
+### Latency and MCP server time
+
+The performance endpoints report two different durations. Both are in seconds and include failed calls.
+
+| Metric | Endpoints | What it measures |
+| --- | --- | --- |
+| **Latency** | `/insights/average-tool-call-latency` and its `-graph` | Each tool call end to end, measured from tool call traces: resolving the user's credentials, security checks, the call to the MCP server, and processing the result. |
+| **MCP server time** | `/insights/average-tool-call-runtime` and its `-graph` | Only the time spent with the MCP server: connecting to it and running the call. Calls that never reach the server, such as credential failures, aren't timed here. |
+
+Latency includes MCP server time, so the gap between the two is the time the Navigator adds around each call.
+
+`/insights/average-tool-call-latency` returns `average_latency`, `p50_latency` (the median), `p95_latency`, and `total_calls`, the number of tool calls measured. With no calls in the range, `average_latency` is `0` and both percentiles are `null`. Each point from `/insights/average-tool-call-latency-graph` has `average_latency`, `p95_latency`, and `total_calls`. A bucket with no calls has `null` latencies, so an idle bucket doesn't look like a fast one.
+
+`/insights/average-tool-call-runtime` returns `average_runtime` and `total_executions`, the number of tool calls timed. Points from `/insights/average-tool-call-runtime-graph` have the same two fields, and a bucket with no calls shows `0`.
+
+### Lists and their totals
+
+`/insights/users/top` and `/insights/servers` return up to `limit` rows (100 by default), sorted by `tool_count` in the order set by `sort_order` (`desc` by default). Two fields describe everything in the range, not just the rows returned:
+
+- `total_count` is the number of people or server instances with activity in the range, including any past the limit. On `/insights/users/top` it equals `active_count` from `/insights/active-users` for the same range and filters.
+- `total_tool_count` is the sum of `tool_count` across all of them, so `tool_count / total_tool_count` gives a row's share of the range.
+
+`/insights/servers` returns one row per **server instance**, so a server you use in several projects appears once for each. Each row has `server_instance_id`, `server_id`, `project_id`, `server_name`, and `tool_count`. Pass a row's `server_instance_id` as a filter to drill into that instance. An ID is `null` when Caylex didn't record it, which for `server_id` means activity before March 2026. If a server is renamed during the range, its instance can appear once under each name. Items from `/insights/top-server-instances` also carry `server_name` and `project_id` next to `server_instance_id`.
+
+## Choose a time range
+
+Every endpoint that reports on a period accepts either a **relative window** ending now or an **absolute range**. The one exception is `/insights/projects/{project_id}/users/summary`, which always reports fixed periods: weekly active users over the last 7 days, monthly active users over the last 30 days, and a timeline of the 8 most recent weeks.
+
+| Parameter | Description |
+| --- | --- |
+| `window` | A relative window ending now: a positive number followed by `h` (hours), `d` (days), `w` (weeks), or `mon` (30-day months), for example `24h`, `7d`, `1w`, `1mon`. A bare `m` means minutes for values up to 59 (`15m`). Defaults to `1w` on most endpoints and `1mon` on `/insights/active-users`. |
+| `start` | The start of an absolute range, in ISO 8601 (`2026-09-01T00:00:00Z`). A value without a UTC offset is read as UTC. When you pass `start`, `window` is ignored. |
+| `end` | The end of an absolute range, exclusive. Defaults to now. Requires `start`. |
+
+A range can be at most **366 days** long, relative or absolute. Most responses echo the period you asked for in `data.window`: the window string (`"1w"`) for relative windows, or an ISO 8601 interval (`"2026-09-01T00:00:00+00:00/2026-10-01T00:00:00+00:00"`) for absolute ranges. See [Response shape](#response-shape) for the endpoints that don't.
+
+<Tip>
+Use an absolute range for reports that must be reproducible, such as "all of September". A relative window moves every time you call it.
+</Tip>
+
+Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/active-users`, `/insights/reliability`) compare against the period of equal length immediately before the one you asked for. `/insights/heroes/global/stats` takes `comparison_period` (`rolling_hour`, `rolling_day`, `rolling_week`, `rolling_month`) instead of `window`, and also accepts `start`/`end`, which take precedence.
+
+## Choose a bucket size
+
+Time-series endpoints (the `-graph` endpoints and the per-user timelines) group data into buckets set by `frequency`. `/insights/average-tool-calls-per-query` also takes `frequency` and follows the same rules.
+
+- **A fixed size:** a positive number followed by `m` (minutes), `h`, `d`, `w`, or `mo` (30-day months), for example `15m`, `1h`, `1d`.
+- **`auto`:** Caylex picks the finest of `1m`, `5m`, `15m`, `1h`, `4h`, `1d`, or `1w` that keeps the series at 100 points or fewer.
+- **Omitted:** absolute ranges use `auto`. Relative windows use the endpoint's default: `1d` on the `-graph` endpoints and the per-user timelines, and `1h` on `/insights/average-tool-calls-per-query` (which switches to `auto` when `1h` would give more than 500 buckets).
+
+A bucket can't be longer than the range, and a series can have at most **500 buckets**. For example, a `1mon` window works with `frequency=1d` (30 buckets) but not with `frequency=1h` (720 buckets).
+
+<Warning>
+The default bucket still has to fit inside the window. On a `-graph` endpoint, a window shorter than a day (for example `window=1h`) with no `frequency` returns `400`; pass `frequency=auto` or a smaller size such as `15m`. The same applies to windows shorter than an hour on `/insights/average-tool-calls-per-query`.
+
+The per-user endpoint, `/insights/projects/{project_id}/users/{user_id}`, is the exception: with a relative window it accepts a bucket longer than the window (for example `window=1h&frequency=1d`) and returns a single bucket. The 500-bucket limit still applies there.
+</Warning>
+
+## Filter the data
+
+Narrow any query with these parameters. Combine them to drill down: results must match every filter the endpoint accepts.
+
+| Parameter | Description |
+| --- | --- |
+| `project_id` | One or more project UUIDs. Repeat the parameter for several: `project_id=…&project_id=…`. |
+| `navigator_id` | A navigator from your Navigator Library. Covers its instances in every project. |
+| `navigator_instance_id` | One or more navigator instance UUIDs. Repeatable. |
+| `server_instance_id` | One or more server instance UUIDs. Repeatable. |
+| `tool_name` | A single tool name. |
+| `user_email` | A single end user's email address. Matched case-insensitively across every project the user belongs to. |
+
+Every ID must belong to your workspace. Not every endpoint accepts every filter: each one only offers the filters its data supports, and the [REST API Reference](https://developers.caylex.ai/) lists them per endpoint.
+
+<Warning>
+An endpoint **silently ignores** a filter it doesn't accept, and returns unfiltered results with no error. For example, `/insights/reliability` ignores `tool_name` and `user_email`, and `/insights/top-tools` ignores `server_instance_id`. Check the reference before relying on a filter.
+</Warning>
+
+User counts (`/insights/active-users`, `/insights/users/top`, and the users summary) count **people**, so a user who works in several of your projects counts once.
+
+<Note>
+Some data only reaches back to when Caylex started recording it. How far depends on where the endpoint reads from:
+
+- **Usage metrics** back the overview, volume, MCP server time, tool calls per session, ranking, user, and tool-discovery endpoints. On these, user filters cover activity from July 2026 onward, and navigator filters from late April 2026 onward. A `navigator_id` filter matches the navigator recorded with each call, so it includes activity from instances you've since removed.
+- **Tool call traces** back latency and the error graphs (`/insights/error-rate-graph` and `/insights/error-types-graph`). Traces start in June 2026, so these endpoints have no earlier data, filtered or not, and user and navigator filters reach back that far too. A navigator filter matches the navigator's current instances, so activity from instances you've since removed isn't included.
+- On the **reliability and Code Mode** endpoints, a navigator filter also matches the navigator's current instances.
+
+The per-user endpoint, `/insights/projects/{project_id}/users/{user_id}`, always filters by user, so its error data starts in June 2026 and the rest in July 2026.
+</Note>
+
+## Response shape
+
+Most endpoints wrap their result in the same envelope (`success`, `data`, `error`, `timestamp`), with the metric in `data`. Time-series and ranking endpoints also echo the period (`window`) and the filters Caylex applied. For example, `/insights/tool-calls-processed-graph` returns:
+
+```json
+{
+  "success": true,
+  "data": {
+    "data_points": [
+      { "timestamp": "2026-09-01T00:00:00+00:00", "value": 1284, "successful": 1251, "failed": 33 },
+      { "timestamp": "2026-09-02T00:00:00+00:00", "value": 1312, "successful": 1290, "failed": 22 }
+    ],
+    "view": "timeseries",
+    "frequency": "1d",
+    "window": "2026-09-01T00:00:00+00:00/2026-10-01T00:00:00+00:00",
+    "filters": { "project_id": "6f1c…" },
+    "timestamp": "2026-10-14T18:22:05.482913Z"
+  },
+  "error": null,
+  "timestamp": "2026-10-14T18:22:05.483120Z"
+}
+```
+
+Bucket timestamps (`data_points[].timestamp`) mark the start of each bucket. The generation `timestamp` fields include microseconds. Parse both with an ISO 8601 parser rather than a fixed format string.
+
+Some endpoints differ from this shape:
+
+- `/insights/navigators/{navigator_id}/info` and `/breakdown` return their fields at the top level, without the envelope.
+- `/insights/heroes/global/stats`, `/insights/error-rate-graph`, and `/insights/error-types-graph` don't echo `window` or `filters`. The error graphs return `view_type` and `time_series_data` instead of `view` and `data_points`.
+- `/insights/projects/{project_id}/users/summary` always reports `window: "8w"`, and neither per-user endpoint echoes `filters`.
+- The echoed `filters` show the filters as Caylex applied them, which can differ from what you sent. On most endpoints a `user_email` filter comes back as `user_id` (the IDs of that user's project memberships, or an empty list if the email matches no one). On the latency endpoints, a `navigator_id` filter comes back as `navigator_instance_id`: the navigator's current instances.
+
+### Errors
+
+| Status | When |
+| --- | --- |
+| `400` | A `window`, range, or `frequency` the API can't use (for example an unknown window unit, a range over 366 days, `end` without `start`, `start` after `end`, a bucket longer than the range, or more than 500 buckets), or a `project_id`, `navigator_id`, `navigator_instance_id`, or `server_instance_id` filter that isn't a UUID. The response explains which parameter is wrong. |
+| `401` | The token is missing, invalid, or expired, or its workspace no longer exists. |
+| `404` | A project, navigator, navigator instance, or server instance that isn't in your workspace. |
+| `422` | A parameter that fails request validation: a `start` or `end` that isn't an ISO 8601 datetime, a malformed UUID in the path (such as `{navigator_id}`), a `limit` outside its allowed range, or an unknown `view` or `comparison_period`. The `detail` array names the parameter. |
+
+## Worked example: daily tool calls for a month
+
+This example pulls daily tool-call counts for one project for September 2026, with how many of them failed, then totals them.
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -G https://api.caylex.ai/api/v1/insights/tool-calls-processed-graph \
+      -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+      --data-urlencode "start=2026-09-01T00:00:00Z" \
+      --data-urlencode "end=2026-10-01T00:00:00Z" \
+      --data-urlencode "frequency=1d" \
+      --data-urlencode "project_id=$PROJECT_ID"
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import os
+    import requests
+
+    BASE_URL = "https://api.caylex.ai/api/v1"
+    TOKEN = os.environ["CAYLEX_PLATFORM_TOKEN"]
+
+    response = requests.get(
+        f"{BASE_URL}/insights/tool-calls-processed-graph",
+        headers={"Authorization": f"Bearer {TOKEN}"},
+        params={
+            "start": "2026-09-01T00:00:00Z",
+            "end": "2026-10-01T00:00:00Z",
+            "frequency": "1d",
+            # A list sends the parameter once per value.
+            "project_id": [os.environ["PROJECT_ID"]],
+        },
+    )
+    response.raise_for_status()
+    points = response.json()["data"]["data_points"]
+
+    for point in points:
+        print(point["timestamp"][:10], point["value"], f"({point['failed']} failed)")
+    print("Total:", sum(point["value"] for point in points))
+    print("Failed:", sum(point["failed"] for point in points))
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const BASE_URL = "https://api.caylex.ai/api/v1";
+    const TOKEN = process.env.CAYLEX_PLATFORM_TOKEN;
+
+    async function main() {
+      const params = new URLSearchParams({
+        start: "2026-09-01T00:00:00Z",
+        end: "2026-10-01T00:00:00Z",
+        frequency: "1d",
+      });
+      // Append once per project to filter by several.
+      params.append("project_id", process.env.PROJECT_ID!);
+
+      const response = await fetch(
+        `${BASE_URL}/insights/tool-calls-processed-graph?${params}`,
+        { headers: { Authorization: `Bearer ${TOKEN}` } },
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const { data } = await response.json();
+
+      for (const point of data.data_points) {
+        console.log(point.timestamp.slice(0, 10), point.value, `(${point.failed} failed)`);
+      }
+      const total = data.data_points.reduce((sum, p) => sum + p.value, 0);
+      const failed = data.data_points.reduce((sum, p) => sum + p.failed, 0);
+      console.log("Total:", total);
+      console.log("Failed:", failed);
+    }
+
+    main();
+    ```
+  </Tab>
+</Tabs>
+
+## More examples
+
+**Monthly active users, compared with the previous month:**
+
+```bash
+curl -G https://api.caylex.ai/api/v1/insights/active-users \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  --data-urlencode "window=1mon"
+```
+
+The response's `data` holds `active_count`, `previous_count`, and `percent_change`.
+
+**A navigator's ten most used tools this week, across every project it runs in:**
+
+```bash
+curl -G https://api.caylex.ai/api/v1/insights/top-tools \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  --data-urlencode "navigator_id=$NAVIGATOR_ID" \
+  --data-urlencode "window=1w" \
+  --data-urlencode "limit=10"
+```
+
+Each item in `data.tools` has `tool_name`, `server_name`, and `call_count`.
+
+**This month's ten busiest server instances, with each one's share of tool calls:**
+
+```bash
+curl -G https://api.caylex.ai/api/v1/insights/servers \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  --data-urlencode "window=1mon" \
+  --data-urlencode "limit=10"
+```
+
+Each item in `data.servers` has `server_instance_id`, `server_id`, `project_id`, `server_name`, and `tool_count`. For an instance's share, divide its `tool_count` by `data.total_tool_count`, which sums every instance in the range and not only the ten returned. `data.total_count` is the number of instances in all.
+
+**Hourly error rate for one user over the last day:**
+
+```bash
+curl -G https://api.caylex.ai/api/v1/insights/error-rate-graph \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  --data-urlencode "user_email=jane@acme.com" \
+  --data-urlencode "window=1d" \
+  --data-urlencode "frequency=1h"
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Analytics & Session Logs" icon="chart-line" href="/analytics/overview">
+    What each metric means and how to read it in the Caylex Platform UI.
+  </Card>
+  <Card title="REST API Reference" icon="book" href="https://developers.caylex.ai/">
+    Every Insights endpoint with its parameters and response schema.
+  </Card>
+</CardGroup>

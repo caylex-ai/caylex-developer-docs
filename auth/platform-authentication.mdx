@@ -92,7 +92,7 @@ A platform access token works across the workspace management endpoints. Some of
 | **Projects** | `GET /projects`, `POST /projects`, `PATCH /projects/{project_id}` |
 | **Skills** | `GET /projects/by-name/{project_name}/skills` and the [skill sync](/cookbooks/sync-skills) endpoints |
 | **Usage & billing** | `GET /usage/summary`, `GET /usage/timeseries`, `GET /usage/credits` |
-| **Analytics** | `GET /analytics/queries-processed`, `GET /analytics/top-tools` |
+| **Analytics** | `GET /insights/queries-processed`, `GET /insights/top-tools` (see [Query analytics with the Insights API](/cookbooks/query-insights-analytics)) |
 | **Tool security** | `GET /projects/{project_id}/tool-security/findings`, `GET /projects/{project_id}/tool-security/summary` |
 | **Navigators & servers** | `GET /navigators`, `GET /navigator-instances`, `GET /server-instances` |
 | **Widget tokens** | `POST /widget/mint-token` (see [Agent Widget](/widget/overview)) |
@@ -103,7 +103,7 @@ For the full REST API reference (every endpoint with its parameters, request bod
 
 ### Worked examples
 
-For complete, copy-pasteable workflows built on the Platform API — syncing skills from CI, provisioning a project per customer, and replicating tool permissions across projects — see the [Cookbooks](/cookbooks/overview).
+For complete, copy-pasteable workflows built on the Platform API — syncing skills from CI, provisioning a project per customer, replicating tool permissions across projects, and pulling analytics — see the [Cookbooks](/cookbooks/overview).
 
 ### Security best practices
 

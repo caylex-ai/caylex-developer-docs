@@ -232,6 +232,7 @@
           "cookbooks/sync-skills",
           "cookbooks/search-skills-by-tag",
           "cookbooks/get-session-messages",
+          "cookbooks/query-insights-analytics",
           "cookbooks/programmatic-chat-sessions",
           "cookbooks/set-server-base-url-override",
           {
