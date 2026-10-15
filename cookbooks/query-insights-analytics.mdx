@@ -33,6 +33,7 @@ All endpoints are `GET` requests authenticated with a [platform access token](/a
 | **Navigators** | `/insights/navigators/{navigator_id}/info`, `/insights/navigators/{navigator_id}/breakdown` |
 | **Tool discovery** | `/insights/proxy-tools` (counts of `suggest_tools`, `get_tool_info`, and `invoke_tools` calls), `/insights/proxy-tools/suggest-tools` |
 | **Code Mode** | `/insights/code-mode`, `/insights/code-mode-graph`: Code Mode runs, the tool calls made from code, run success and duration, and tool output kept out of context |
+| **Data retention** | `/insights/telemetry-window`: where stored telemetry starts (see [How far back data goes](#how-far-back-data-goes)) |
 
 See the [REST API Reference](https://developers.caylex.ai/) for each endpoint's exact parameters and response schema.
 
@@ -98,6 +99,12 @@ Use an absolute range for reports that must be reproducible, such as "all of Sep
 </Tip>
 
 Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/active-users`, `/insights/reliability`) compare against the period of equal length immediately before the one you asked for. `/insights/heroes/global/stats` takes `comparison_period` (`rolling_hour`, `rolling_day`, `rolling_week`, `rolling_month`) instead of `window`, and also accepts `start`/`end`, which take precedence.
+
+### How far back data goes
+
+Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. `/insights/reliability`, `/insights/reliability-breakdown`, and the Code Mode run counts read stored tool call records instead, which cover any range. For a range that starts before the oldest telemetry, telemetry-based endpoints return only the part they still hold, without an error.
+
+Call `/insights/telemetry-window` to find where telemetry starts. It takes no parameters and returns `available_from`, the start of complete telemetry, plus `earliest_metric` and `earliest_span`. All three are `null` when no telemetry is stored. Start reproducible reports at or after `available_from`.
 
 ## Choose a bucket size
 
