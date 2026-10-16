@@ -35,7 +35,8 @@
               "navigator/overview",
               "navigator/tool-suggestions",
               "navigator/context-maps",
-              "navigator/in-chat-authentication"
+              "navigator/in-chat-authentication",
+              "navigator/code-mode"
             ]
           },
           {
