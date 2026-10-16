@@ -29,11 +29,12 @@ All endpoints are `GET` requests authenticated with a [platform access token](/a
 | **Errors** | `/insights/error-rate-graph`, `/insights/error-types-graph`, `/insights/reliability`, `/insights/reliability-breakdown` |
 | **Performance** | `/insights/average-tool-call-latency` (latency), `/insights/average-tool-call-runtime` (MCP server time), `/insights/average-tool-calls-per-query`, and their `-graph` time series |
 | **Rankings** | `/insights/top-tools`, `/insights/top-servers`, `/insights/top-server-instances`, `/insights/top-projects`, `/insights/top-navigators`, `/insights/top-navigator-instances`, `/insights/tools`, `/insights/servers`, `/insights/users/top`, `/insights/navigator-tool-connections` |
-| **Users** | `/insights/active-users`, `/insights/projects/{project_id}/users/summary`, `/insights/projects/{project_id}/users/{user_id}` |
+| **Users** | `/insights/active-users`, `/insights/active-users-graph`, `/insights/users/inactive`, `/insights/projects/{project_id}/users/summary`, `/insights/projects/{project_id}/users/{user_id}` |
 | **Servers** | `/insights/server-instances`: every server instance in your workspace with its project and the `server_id` to filter by |
 | **Navigators** | `/insights/navigators/{navigator_id}/info`, `/insights/navigators/{navigator_id}/breakdown` |
 | **Tool discovery** | `/insights/proxy-tools` (counts of `suggest_tools`, `get_tool_info`, and `invoke_tools` calls), `/insights/proxy-tools/suggest-tools` |
 | **Code Mode** | `/insights/code-mode`, `/insights/code-mode-graph`: Code Mode runs, the tool calls made from code, run success and duration, and tool output kept out of context |
+| **Server Foundry** | `/insights/foundry`, `/insights/foundry-graph`, `/insights/foundry/stalled`, `/insights/foundry-usage`: builds started and finished, where builds stop, test runs, stalled builds, and tool calls to the servers you built. The build endpoints read stored records and cover the whole workspace; `/insights/foundry-usage` reads telemetry and takes `project_id` |
 | **Assistants** | `/insights/assistants`, `/insights/assistants-graph`, `/insights/assistants-breakdown`: chat sessions with your assistants, their messages and tool calls (see [Assistants](#assistants)) |
 
 See the [REST API Reference](https://developers.caylex.ai/) for each endpoint's exact parameters and response schema.
@@ -57,7 +58,7 @@ A failed count is the total minus the successful calls, and is never negative. `
 
 ### Navigator requests
 
-`/insights/users/top`, `/insights/active-users`, and the users summary count **navigator requests**, not tool calls. A navigator request is one call your agent makes to one of the [Navigator's own MCP tools](/navigator/overview), such as `suggest_tools`, `get_tool_schemas`, `invoke_tools`, `execute_tools_in_code`, or `get_context_map`. One `invoke_tools` or `execute_tools_in_code` request can run several tool calls, so a user's `tool_count` won't match tool call counts elsewhere. An active user is a person who made at least one navigator request in the period.
+`/insights/users/top` and the users summary count **navigator requests**, not tool calls. A navigator request is one call your agent makes to one of the [Navigator's own MCP tools](/navigator/overview), such as `suggest_tools`, `get_tool_schemas`, `invoke_tools`, `execute_tools_in_code`, or `get_context_map`. One `invoke_tools` or `execute_tools_in_code` request can run several tool calls, so a user's `tool_count` won't match tool call counts elsewhere. `/insights/active-users` counts anyone who used Caylex in the period: a person who made at least one navigator request or chatted with an assistant (in the playground, through agent tasks, or in your widgets and API clients), matched by email so they count once.
 
 ### Latency and MCP server time
 
@@ -82,7 +83,7 @@ The assistant endpoints report on chat sessions with your assistants: the Caylex
 - **Messages** are the messages people sent; tool results are not messages. `estimated_tokens` estimates the tokens in every message of the period from its stored content, at about four characters per token. It is not billed usage, which Administration > Usage reports.
 - **Tool calls** are the calls the assistant made, including local tools, with `failed_tool_calls` for those that returned an error.
 
-`/insights/assistants` returns the totals for the range plus `previous_sessions`, `previous_messages`, and `previous_tool_calls` for the period before it. `/insights/assistants-graph` returns one point per bucket with `sessions`, `messages`, `tool_calls`, and `failed_tool_calls`, and takes `frequency` like the other graphs. `/insights/assistants-breakdown` takes `group_by`:
+`/insights/assistants` returns the totals for the range plus `previous_sessions`, `previous_messages`, and `previous_tool_calls` for the period before it. `users` counts the distinct people behind those sessions, workspace members and the users of your widgets and API clients alike, matched by email, with `previous_users` for the period before. `/insights/assistants-graph` returns one point per bucket with `sessions`, `messages`, `tool_calls`, and `failed_tool_calls`, and takes `frequency` like the other graphs. `/insights/assistants-breakdown` takes `group_by`:
 
 | `group_by` | Groups |
 | --- | --- |
@@ -97,8 +98,10 @@ It returns the top 20 groups, most sessions first (most tool calls for `tool`).
 
 `/insights/users/top` and `/insights/servers` return up to `limit` rows (100 by default), sorted by `tool_count` in the order set by `sort_order` (`desc` by default). Two fields describe everything in the range, not just the rows returned:
 
-- `total_count` is the number of people or server instances with activity in the range, including any past the limit. On `/insights/users/top` it equals `active_count` from `/insights/active-users` for the same range and filters.
+- `total_count` is the number of people or server instances with activity in the range, including any past the limit. On `/insights/users/top` it counts the people with navigator requests, so it can be lower than `active_count` from `/insights/active-users`, which also counts assistant users.
 - `total_tool_count` is the sum of `tool_count` across all of them, so `tool_count / total_tool_count` gives a row's share of the range.
+
+`/insights/users/inactive` lists the project users (people you've given access to a project's navigators) who neither sent a navigator request nor chatted with an assistant in those projects in the range, with `user_count`, `inactive_count`, and up to `limit` users (default 100) by email, each with the names of their `projects`. A person with access to several projects is one user, and playground access is left out. It takes `project_id` and the time range. Navigator requests come from telemetry, so someone last active before the retention period counts as inactive.
 
 Each row from `/insights/users/top` also describes the person's tool calls in the range: `sessions` (sessions in which a tool was called for them), `tool_calls` and `failed_tool_calls` (every attempt, like everywhere else), `error_rate` (`null` without tool calls), `project_count` (projects they were active in), and `last_active` (their latest navigator request or tool call, in UTC).
 
@@ -124,7 +127,7 @@ Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/acti
 
 ### How far back data goes
 
-Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The Code Mode run counts and the assistant endpoints read stored records instead, which cover any range. For a range that starts before the oldest telemetry, telemetry-based endpoints return only the part they still hold, without an error.
+Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The assistant endpoints read stored chat records instead, which cover any range. For a range that starts before the retention period, telemetry-based endpoints count from the start of the retention period, without an error, so every telemetry endpoint covers the same span of time.
 
 ## Choose a bucket size
 
@@ -169,7 +172,7 @@ Some data only reaches back to when Caylex started recording it. How far depends
 
 - **Usage metrics** back the overview, volume, error rate, MCP server time, tool calls per session, ranking, user, and tool-discovery endpoints, and the tool call counts on `/insights/reliability`. On these, user filters cover activity from July 2026 onward, and navigator filters from late April 2026 onward. A `navigator_id` filter matches the navigator recorded with each call, so it includes activity from instances you've since removed.
 - **Tool call traces** back latency, `/insights/error-types-graph`, session success on `/insights/reliability`, and `/insights/reliability-breakdown`. Traces start in June 2026, so these endpoints have no earlier data, filtered or not, and user and navigator filters reach back that far too. A navigator filter matches the navigator's current instances, so activity from instances you've since removed isn't included.
-- On the **Code Mode** endpoints, a navigator filter also matches the navigator's current instances.
+- On the **Code Mode** endpoints, which read traces too, a navigator filter matches the navigator's current instances.
 
 The per-user endpoint, `/insights/projects/{project_id}/users/{user_id}`, always filters by user, so its error data starts in June 2026 and the rest in July 2026.
 </Note>
