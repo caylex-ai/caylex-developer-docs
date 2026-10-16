@@ -53,7 +53,7 @@ To tell successful and failed calls apart, use these fields:
 | `/insights/tool-calls-processed-graph` | `value` (all tool calls), `successful`, and `failed` on each point |
 | `/insights/projects/{project_id}/users/{user_id}` | `total_tool_calls` and `successful_tool_calls` |
 
-A failed count is the total minus the successful calls, and is never negative. The error graphs and reliability endpoints count failures from their own sources (tool call traces and stored tool call records), so their numbers can differ slightly from these.
+A failed count is the total minus the successful calls, and is never negative. `/insights/error-rate-graph` and the tool call counts on `/insights/reliability` use these same numbers. Session success, the error types graph, and the failing lists on `/insights/reliability-breakdown` count failures from tool call traces instead, so their totals can differ slightly.
 
 ### Navigator requests
 
@@ -124,7 +124,7 @@ Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/acti
 
 ### How far back data goes
 
-Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. `/insights/reliability`, `/insights/reliability-breakdown`, the Code Mode run counts, and the assistant endpoints read stored records instead, which cover any range. For a range that starts before the oldest telemetry, telemetry-based endpoints return only the part they still hold, without an error.
+Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The Code Mode run counts and the assistant endpoints read stored records instead, which cover any range. For a range that starts before the oldest telemetry, telemetry-based endpoints return only the part they still hold, without an error.
 
 ## Choose a bucket size
 
@@ -159,7 +159,7 @@ Narrow any query with these parameters. Combine them to drill down: results must
 Every ID must belong to your workspace. Not every endpoint accepts every filter: each one only offers the filters its data supports, and the [REST API Reference](https://developers.caylex.ai/) lists them per endpoint.
 
 <Warning>
-An endpoint **silently ignores** a filter it doesn't accept, and returns unfiltered results with no error. For example, `/insights/reliability` ignores `tool_name` and `user_email`, and `/insights/top-tools` ignores `server_instance_id`. Check the reference before relying on a filter.
+An endpoint **silently ignores** a filter it doesn't accept, and returns unfiltered results with no error. For example, `/insights/code-mode` ignores `tool_name` and `user_email`, and `/insights/top-tools` ignores `server_instance_id`. Check the reference before relying on a filter.
 </Warning>
 
 User counts (`/insights/active-users`, `/insights/users/top`, and the users summary) count **people**, so a user who works in several of your projects counts once.
@@ -167,9 +167,9 @@ User counts (`/insights/active-users`, `/insights/users/top`, and the users summ
 <Note>
 Some data only reaches back to when Caylex started recording it. How far depends on where the endpoint reads from:
 
-- **Usage metrics** back the overview, volume, MCP server time, tool calls per session, ranking, user, and tool-discovery endpoints. On these, user filters cover activity from July 2026 onward, and navigator filters from late April 2026 onward. A `navigator_id` filter matches the navigator recorded with each call, so it includes activity from instances you've since removed.
-- **Tool call traces** back latency and the error graphs (`/insights/error-rate-graph` and `/insights/error-types-graph`). Traces start in June 2026, so these endpoints have no earlier data, filtered or not, and user and navigator filters reach back that far too. A navigator filter matches the navigator's current instances, so activity from instances you've since removed isn't included.
-- On the **reliability and Code Mode** endpoints, a navigator filter also matches the navigator's current instances.
+- **Usage metrics** back the overview, volume, error rate, MCP server time, tool calls per session, ranking, user, and tool-discovery endpoints, and the tool call counts on `/insights/reliability`. On these, user filters cover activity from July 2026 onward, and navigator filters from late April 2026 onward. A `navigator_id` filter matches the navigator recorded with each call, so it includes activity from instances you've since removed.
+- **Tool call traces** back latency, `/insights/error-types-graph`, session success on `/insights/reliability`, and `/insights/reliability-breakdown`. Traces start in June 2026, so these endpoints have no earlier data, filtered or not, and user and navigator filters reach back that far too. A navigator filter matches the navigator's current instances, so activity from instances you've since removed isn't included.
+- On the **Code Mode** endpoints, a navigator filter also matches the navigator's current instances.
 
 The per-user endpoint, `/insights/projects/{project_id}/users/{user_id}`, always filters by user, so its error data starts in June 2026 and the rest in July 2026.
 </Note>
