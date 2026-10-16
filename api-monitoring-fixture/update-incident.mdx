@@ -25,6 +25,7 @@ See [Authentication](/api-monitoring-fixture/authentication) for the API key hea
 | `status` | `open`, `acknowledged` | Current state. |
 | `service_id` | string or `null` | Active service to associate, or `null` to clear the association. |
 | `metadata` | object of strings | Labels to add or replace. |
+| `external_ticket_url` | URL string or `null` | Link to the related support ticket, or `null` to remove the link. |
 
 At least one field is required. Unspecified fields stay unchanged. Keys sent in `metadata` are merged with existing labels.
 
@@ -32,6 +33,7 @@ At least one field is required. Unspecified fields stay unchanged. Keys sent in 
 {
   "severity": "critical",
   "status": "acknowledged",
+  "external_ticket_url": "https://support.example.com/tickets/4821",
   "metadata": { "on_call_team": "payments" }
 }
 ```
