@@ -77,22 +77,25 @@ Latency includes MCP server time, so the gap between the two is the time the Nav
 
 ### Assistants
 
-The assistant endpoints report on chat sessions with your assistants: the Caylex playground, agent tasks, and the embedded widgets and API clients you build on them. They read stored chat records, so they cover any range, and accept the `project_id`, `navigator_id`, `navigator_instance_id`, and `user_email` filters.
+The assistant endpoints report on chat sessions with your assistants: the Caylex playground, agent tasks, and the embedded widgets and API clients you build on them. Sessions, messages, tokens, users, and other tool calls come from stored chat records, so they cover any range. MCP tool calls come from telemetry instead: the Navigator's tool spans, matched to the chat sessions by id, so they count the same way as the tool calls elsewhere in Insights and reach back as far as the retention period. The endpoints accept the `project_id`, `navigator_id`, `navigator_instance_id`, and `user_email` filters.
 
 - A **session** counts in a period when it has at least one message in that period, so a long conversation counts in every period it is active.
 - **Messages** are the messages people sent; tool results are not messages. `estimated_tokens` estimates the tokens in every message of the period from its stored content, at about four characters per token. It is not billed usage, which Administration > Usage reports.
 - **Tool calls** are the calls the assistant made, including local tools, with `failed_tool_calls` for those that returned an error. `tool_calls` counts stored calls, so an `invoke_tools` batch is one call. They split into two kinds:
-  - `mcp_tool_calls` counts the tools the assistant ran on MCP servers: each tool in an `invoke_tools` batch, and any MCP tool called directly. `failed_mcp_tool_calls` and `mcp_tool_error_rate` cover their failures. Tools called from Code Mode runs aren't stored with the chat, so they aren't counted.
+  - `mcp_tool_calls` counts the tools the assistant ran on MCP servers, one per tool execution, including the calls made from Code Mode runs and the playground. `failed_mcp_tool_calls` and `mcp_tool_error_rate` cover their failures, and `average_mcp_tool_latency_ms` their duration. `playground_mcp_tool_calls` and `failed_playground_mcp_tool_calls` are the playground's part. The rest is comparable with the tool call counts elsewhere in Insights, which leave the playground out.
   - `other_tool_calls` counts everything else: `navigator_lookups` (the Navigator's tool searches, lookups, context and skill tools, such as `suggest_tools` and `get_tool_info`), `code_mode_runs`, and `local_tool_calls`.
 
-`/insights/assistants` returns the totals for the range plus `previous_sessions`, `previous_messages`, `previous_tool_calls`, `previous_mcp_tool_calls`, and `previous_other_tool_calls` for the period before it. `users` counts the distinct people behind those sessions, workspace members and the users of your widgets and API clients alike, matched by email, with `previous_users` for the period before. `/insights/assistants-graph` returns one point per bucket with `sessions`, `messages`, `tool_calls`, `failed_tool_calls`, `mcp_tool_calls`, `failed_mcp_tool_calls`, and `other_tool_calls`, and takes `frequency` like the other graphs. `/insights/assistants-breakdown` takes `group_by`:
+`/insights/assistants` returns the totals for the range plus `previous_sessions`, `previous_messages`, `previous_tool_calls`, `previous_mcp_tool_calls`, `previous_playground_mcp_tool_calls`, and `previous_other_tool_calls` for the period before it. `users` counts the distinct people behind those sessions, workspace members and the users of your widgets and API clients alike, matched by email, with `previous_users` for the period before. `/insights/assistants-graph` returns one point per bucket with `sessions`, `messages`, `tool_calls`, `failed_tool_calls`, `mcp_tool_calls`, `failed_mcp_tool_calls`, `playground_mcp_tool_calls`, `failed_playground_mcp_tool_calls`, and `other_tool_calls`, and takes `frequency` like the other graphs. `/insights/assistants-breakdown` takes `group_by`:
 
 | `group_by` | Groups |
 | --- | --- |
 | `navigator` (default) | One row per navigator, across projects |
 | `model` | One row per model; sessions on the assistant's default model show as "Default model" |
 | `surface` | `playground`, `task` (sessions an agent task ran), and `client` (everything else, such as widgets and API clients) |
-| `tool` | One row per tool, with `average_tool_latency_ms`; `sessions` and `messages` are `null` |
+| `tool` | One row per MCP tool (from telemetry) or local tool (from chat records), with `average_tool_latency_ms`; the Navigator's own tools are left out, and `sessions` and `messages` are `null` |
+| `server` | One row per server, with the sessions that called it; `messages` is `null` |
+
+In every grouping, `tool_calls`, `failed_tool_calls`, and `average_tool_latency_ms` count MCP tool calls from telemetry (plus local tools, for `tool`).
 
 It returns the top 20 groups, most sessions first (most tool calls for `tool`).
 
@@ -129,7 +132,7 @@ Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/acti
 
 ### How far back data goes
 
-Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The assistant endpoints read stored chat records instead, which cover any range. For a range that starts before the retention period, telemetry-based endpoints count from the start of the retention period, without an error, so every telemetry endpoint covers the same span of time.
+Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The assistant endpoints read stored chat records instead, which cover any range, except for their MCP tool calls, which come from telemetry. For a range that starts before the retention period, telemetry-based endpoints count from the start of the retention period, without an error, so every telemetry endpoint covers the same span of time.
 
 ## Choose a bucket size
 
