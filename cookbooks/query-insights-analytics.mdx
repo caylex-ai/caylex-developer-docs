@@ -128,11 +128,11 @@ A range can be at most **366 days** long, relative or absolute. Most responses e
 Use an absolute range for reports that must be reproducible, such as "all of September". A relative window moves every time you call it.
 </Tip>
 
-Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/active-users`, `/insights/reliability`) compare against the period of equal length immediately before the one you asked for. `/insights/heroes/global/stats` takes `comparison_period` (`rolling_hour`, `rolling_day`, `rolling_week`, `rolling_month`) instead of `window`, and also accepts `start`/`end`, which take precedence.
+Endpoints that compare periods (`/insights/heroes/global/stats`, `/insights/active-users`, `/insights/reliability`, `/insights/foundry-usage`, and the MCP tool calls of `/insights/assistants`) compare against the period of equal length immediately before the one you asked for. When that previous period starts before the telemetry retention period, its telemetry-based values (and `percent_change`) are `null` rather than a count over a shorter span. `/insights/heroes/global/stats` takes `comparison_period` (`rolling_hour`, `rolling_day`, `rolling_week`, `rolling_month`) instead of `window`, and also accepts `start`/`end`, which take precedence.
 
 ### How far back data goes
 
-Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The assistant endpoints read stored chat records instead, which cover any range, except for their MCP tool calls, which come from telemetry. For a range that starts before the retention period, telemetry-based endpoints count from the start of the retention period, without an error, so every telemetry endpoint covers the same span of time.
+Most endpoints read **telemetry** (metrics and traces), which Caylex keeps for a limited retention period. The assistant endpoints read stored chat records instead, which cover any range, except for their MCP tool calls, which come from telemetry. For a range that starts before the retention period, telemetry-based endpoints count from the start of the retention period, without an error, so every telemetry endpoint covers the same span of time. `/insights/telemetry-retention` returns the configured `retention` and `telemetry_start`, the oldest moment telemetry queries read, so you can tell whether a period lies within it.
 
 ## Choose a bucket size
 
