@@ -82,7 +82,8 @@ controls, and never commit exports to source control.
   </Step>
   <Step title="Wait for each run">
     Poll `GET /sync-task/{sync_id}` until `status` is `completed`, `incomplete`,
-    or `failed`. A large wiki can take several minutes.
+    `failed`, or `cancelled`. A large wiki can take several minutes. To stop a
+    run early, [stop it](/background-tasks/background-sync#stop-a-run).
   </Step>
   <Step title="Download the export">
     Page through `GET /sync-task/{sync_id}/export` with `limit=500`. If
@@ -113,7 +114,7 @@ INSTRUCTIONS = (
     "rows. Include page comments. Skip anything under Archive."
 )
 USER_EMAILS = ["alex@example.com", "sam@example.com"]
-FINISHED = {"completed", "incomplete", "failed"}
+FINISHED = {"completed", "incomplete", "failed", "cancelled"}
 
 client = httpx.Client(
     base_url="https://api.caylex.ai/api/v1",
@@ -400,5 +401,6 @@ Use `content_hash` to skip pages you already have, and run a full sync without
 | Source status `authentication_required` | The agent reported that Notion asked the user to sign in again. Have them reconnect, then trigger again. |
 | Source status `no_results` | The agent found nothing your instructions cover. [Read the transcript](/background-tasks/background-sync#read-a-transcript) to see what it searched for, then name a clearer starting page. |
 | Run status `incomplete` | The agent ran out of iterations or didn't finish deciding. [Continue the run](/background-tasks/background-sync#continue-a-run) with a message such as "Continue with the remaining sub-pages." |
+| Run status `cancelled` | Someone [stopped the run](/background-tasks/background-sync#stop-a-run). The export holds what it collected before it stopped; trigger the config again for a full sync. |
 | Entries in `undecided` | The agent read pages without deciding whether they belong. Tighten the instructions so every page it reads clearly falls in or out. |
 | `skipped_unchanged` is high with `since` | Those pages were last edited before `since`, or Notion gave no edit time for them. See [Incremental syncs](#incremental-syncs). |

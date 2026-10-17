@@ -9,7 +9,7 @@ icon: "arrows-rotate"
 Each trigger starts one [background agent](/background-tasks/agent-tasks) per user and server. The agent finds and reads the content your instructions describe, as that user, and decides which resources belong in the export. The export contains the content exactly as the service returned it, not an agent's summary of it.
 
 <Note>
-Background sync is a premium feature. A tenant admin turns it on under **Administration > Premium Features**. Creating, editing, and triggering configs requires it. Reading configs, runs, transcripts, and exports, and deleting configs, keep working when it's off.
+Background sync is a premium feature. A tenant admin turns it on under **Administration > Premium Features**. Creating, editing, and triggering configs requires it. Reading configs, runs, transcripts, and exports, deleting configs, and [stopping runs](#stop-a-run) keep working when it's off.
 </Note>
 
 ## Concepts
@@ -17,7 +17,7 @@ Background sync is a premium feature. A tenant admin turns it on under **Adminis
 | Term | What it is |
 | --- | --- |
 | **Sync config** | A saved sync in a project: its servers, its users (a list, or every project user), and the instructions the agent follows. |
-| **Trigger** | One `POST /sync-task` call. It creates one sync run per user and returns a `trigger_id` that groups them. Use the `trigger_id` only to [list those runs](#track-the-runs-in-a-trigger); the status, export, transcript, and continue calls take a run's `sync_id`. |
+| **Trigger** | One `POST /sync-task` call. It creates one sync run per user and returns a `trigger_id` that groups them. Use the `trigger_id` only to [list those runs](#track-the-runs-in-a-trigger); the status, export, transcript, continue, and stop calls take a run's `sync_id`. |
 | **Sync run** | One user's sync. Identified by `sync_id`, with one source per server that user can access. |
 | **Source** | One server within a run, labelled by its type (for example `notion`). Each source has its own agent, status, and transcript. |
 | **Export** | The uniform JSON for a run: every resource the agents included, in one format across services. |
@@ -347,15 +347,16 @@ A run's status summarizes its sources:
 | `running` | At least one source is still running. |
 | `completed` | Every source completed. |
 | `incomplete` | Every source finished and at least one is `INCOMPLETE`. You can [continue](#continue-a-run) it. |
-| `failed` | Every source finished, none is `INCOMPLETE`, and at least one `FAILED`. |
+| `cancelled` | Every source finished, none is `INCOMPLETE`, and at least one was [stopped](#stop-a-run). |
+| `failed` | Every source finished, none is `INCOMPLETE` or `CANCELLED`, and at least one `FAILED`. |
 
-Each source's `status` is `PENDING`, `RUNNING`, `COMPLETED`, `INCOMPLETE`, or `FAILED`. A source is `INCOMPLETE` when the agent stopped before it finished, for example because it ran out of iterations, or when it read content but included none of it and left some undecided. A `FAILED` source hit an error; see `error`.
+Each source's `status` is `PENDING`, `RUNNING`, `COMPLETED`, `INCOMPLETE`, `FAILED`, or `CANCELLED`. A source is `INCOMPLETE` when the agent stopped before it finished, for example because it ran out of iterations, or when it read content but included none of it and left some undecided. A `FAILED` source hit an error; see `error`. A `CANCELLED` source was stopped before it finished, and its `error` says who stopped it.
 
 ### Track the runs in a trigger
 
 A trigger has no status of its own. Its `trigger_id` only groups the runs it created, one per user, and each run finishes independently. The `status` in the trigger response is always `pending` and isn't updated afterwards.
 
-Use a run's `sync_id` to check or act on that user's sync. The status, export, transcript, and continue endpoints all take a `sync_id`. Passing a `trigger_id` to them returns `404`. Keep each `sync_id` from the trigger response's `runs`, along with its `user_email`.
+Use a run's `sync_id` to check or act on that user's sync. The status, export, transcript, continue, and stop endpoints all take a `sync_id`. Passing a `trigger_id` to them returns `404`. Keep each `sync_id` from the trigger response's `runs`, along with its `user_email`.
 
 To check every run in a trigger with one call, filter the run list by `trigger_id`:
 
@@ -394,10 +395,10 @@ GET https://api.caylex.ai/api/v1/sync-task?trigger_id={trigger_id}&size=100
 
 Each item is one run, with the run and source `status` values described above. The response is trimmed: each item also has the run's `instructions`, `since`, and `created_at`. The list doesn't include a source's `summary`, `error`, or timestamps; call `GET /sync-task/{sync_id}` for those. Runs are listed newest first. A trigger can create up to 500 runs and `size` is at most 100, so pass `meta.next_cursor` as `cursor` while `meta.has_next` is `true`. The list also gives you each run's `sync_id` again if you didn't keep the trigger response.
 
-You don't need to wait for the whole trigger. As each run reaches `completed`, `incomplete`, or `failed`, use its `sync_id` to [fetch its export](#6-fetch-the-export), [continue](#continue-a-run) it if it's `incomplete`, or read its sources' `error` with `GET /sync-task/{sync_id}` if it `failed`. The trigger is done when every run has finished. This loop does that with the `client` from the [example](#example):
+You don't need to wait for the whole trigger. As each run reaches `completed`, `incomplete`, `failed`, or `cancelled`, use its `sync_id` to [fetch its export](#6-fetch-the-export), [continue](#continue-a-run) it if it's `incomplete`, or read its sources' `error` with `GET /sync-task/{sync_id}` if it `failed`. The trigger is done when every run has finished. This loop does that with the `client` from the [example](#example):
 
 ```python
-FINISHED = {"completed", "incomplete", "failed"}
+FINISHED = {"completed", "incomplete", "failed", "cancelled"}
 
 
 def trigger_runs(client: httpx.Client, trigger_id: str) -> list[dict]:
@@ -440,7 +441,7 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}/export?offset=0&limit=100
 | `offset` | `0` | Index of the first resource to return. |
 | `limit` | `100` | Resources per page, up to 500. |
 
-Without `source`, the export covers every source and is available once the run's status is `completed`, `incomplete`, or `failed`. Until then it returns `409`, with each source's status in `detail.sources`.
+Without `source`, the export covers every source and is available once the run's status is `completed`, `incomplete`, `failed`, or `cancelled`. Until then it returns `409`, with each source's status in `detail.sources`. A stopped source exports what it collected before it stopped.
 
 Resources are sorted by `key`. Pass `page.next_offset` as `offset` until it's `null`. The `excluded`, `undecided`, `unresolved_requests`, and `unmatched_tool_calls` arrays are returned only on the first page (`offset=0`).
 
@@ -626,7 +627,46 @@ POST https://api.caylex.ai/api/v1/sync-task/{sync_id}/continue
 }
 ```
 
-Continuing resumes the source with its transcript intact, so the agent keeps what it already collected and adds to it. Poll the run again and fetch a fresh export when it finishes. Runs stay continuable after you delete their config. The endpoint returns `409` when there's nothing to continue or the named source is still running or failed.
+Continuing resumes the source with its transcript intact, so the agent keeps what it already collected and adds to it. Poll the run again and fetch a fresh export when it finishes. Runs stay continuable after you delete their config. The endpoint returns `409` when there's nothing to continue or the named source is still running, failed, or was stopped.
+
+## Stop a Run
+
+To stop a run before it finishes, for example because you triggered the wrong config, stop every source that's still running, or name one:
+
+```
+POST https://api.caylex.ai/api/v1/sync-task/{sync_id}/cancel
+```
+
+```json
+{
+  "source": "google_drive"
+}
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `source` | No | Stop only this source. Omit it, or send `{}`, to stop every source that hasn't finished. |
+
+```json
+{
+  "sync_id": "9d2a4f6b-8ea3-4c17-9f5b-2a4c6e8d0f51",
+  "cancelled": [
+    {
+      "source": "google_drive",
+      "task_id": "cf5d7c9e-b1d6-4f4a-828e-5d7f9b1a3c84",
+      "status": "CANCELLED"
+    }
+  ]
+}
+```
+
+Stopped sources move to `CANCELLED` straight away. Their agents stop within about 30 seconds, and a tool call already in progress may still complete. Stopping is final:
+
+- A stopped source can't be [continued](#continue-a-run). Trigger the config again to collect more.
+- Its export keeps what it collected before it stopped, so you can still [fetch the export](#6-fetch-the-export) once the run finishes.
+- Sources that already finished keep their status and export.
+
+The endpoint returns `409` when every source has already finished, or the named source has, and `404` for an unknown run or source. Stopping works even after Background Sync is turned off for the tenant, so you can always stop a run that's in progress.
 
 ## Read a Transcript
 
@@ -672,7 +712,7 @@ This example triggers a config, waits for every run to finish, and pages through
 
     CAYLEX_API_URL = "https://api.caylex.ai/api/v1"
     PLATFORM_TOKEN = "your_platform_access_token"
-    FINISHED = {"completed", "incomplete", "failed"}
+    FINISHED = {"completed", "incomplete", "failed", "cancelled"}
 
 
     def run_sync(sync_config_id: str, since: str | None = None) -> dict[str, list[dict]]:
@@ -723,7 +763,7 @@ This example triggers a config, waits for every run to finish, and pages through
     ```typescript backgroundSync.ts
     const CAYLEX_API_URL = "https://api.caylex.ai/api/v1";
     const PLATFORM_TOKEN = process.env.CAYLEX_PLATFORM_TOKEN!;
-    const FINISHED = new Set(["completed", "incomplete", "failed"]);
+    const FINISHED = new Set(["completed", "incomplete", "failed", "cancelled"]);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

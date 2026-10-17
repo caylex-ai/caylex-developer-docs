@@ -21,7 +21,7 @@ Every recipe follows the same steps. Only the last one depends on the source:
    only recent changes. Caylex starts one sync run per user and returns a
    `trigger_id` for the whole trigger plus a `sync_id` for each run.
 4. **Poll each run** with `GET /sync-task/{sync_id}` until it's `completed`,
-   `incomplete`, or `failed`. To check every run at once, list them with
+   `incomplete`, `failed`, or `cancelled`. To check every run at once, list them with
    `GET /sync-task?trigger_id={trigger_id}`. The `trigger_id` has no status
    of its own, and the per-run endpoints accept only a `sync_id`.
 5. **Download the export** by paging through
@@ -48,6 +48,7 @@ your normal retention controls, and never commit exports to source control.
 | `GET /api/v1/sync-task/{sync_id}` | Poll a run's status. |
 | `GET /api/v1/sync-task/{sync_id}/export` | Page through the run's export. |
 | `POST /api/v1/sync-task/{sync_id}/continue` | Resume sources that stopped short. |
+| `POST /api/v1/sync-task/{sync_id}/cancel` | [Stop a run](/background-tasks/background-sync#stop-a-run), or one of its sources. |
 
 ## Loading an export
 
