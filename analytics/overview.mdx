@@ -15,10 +15,10 @@ The analytics dashboard is accessible from the main navigation in the Caylex pla
 | Metric | Description |
 | --- | --- |
 | **Sessions processed** | Total number of sessions processed |
-| **Tool calls** | Total number of individual tool calls executed |
+| **Tool calls** | Total number of tool calls, including failed ones (the successful and failed counts are shown alongside) |
 | **Error rate** | Percentage of tool calls that resulted in errors |
-| **Average latency** | Average time for the Navigator to process a tool call |
-| **Average runtime** | Average execution time of tool calls on external servers |
+| **Average latency** | Average end-to-end time of a tool call: resolving credentials, security checks, the MCP server's time, and processing the result. The p95 is shown too |
+| **MCP server time** | Average time spent with the MCP server per tool call: connecting to it and running the call |
 | **Active users** | Weekly active users (WAU) and monthly active users (MAU) |
 | **Tool calls per session** | Average number of tool calls per session (indicates session complexity) |
 
@@ -32,8 +32,8 @@ The dashboard includes interactive graphs for:
 - **Tool calls over time** — track tool execution volume
 - **Error rate over time** — monitor error trends and spikes
 - **Error types over time** — see the breakdown of error categories (authentication, rate limit, timeout, execution errors)
-- **Latency over time** — track Navigator processing time trends
-- **Runtime over time** — monitor external server response times
+- **Latency over time**: track end-to-end tool call time
+- **MCP server time over time**: monitor how long MCP servers take to respond
 - **Tool calls per session over time** — observe session complexity trends
 
 <Tip>
@@ -61,6 +61,10 @@ All analytics can be filtered by:
 | **Time window** | Select the date range to analyze |
 
 Combine filters to drill down into specific areas. For example, filter by a specific navigator and server to see how that navigator uses a particular integration.
+
+## Query analytics with the API
+
+Every metric on this page is also available from the Insights API (`/insights/*`) with a [platform access token](/auth/platform-authentication). The API accepts a relative window or an exact start and end date, and filters by project, navigator, server, tool, or user. Use it to build your own dashboards or export reports. See [Query analytics with the Insights API](/cookbooks/query-insights-analytics) for the parameters and worked examples.
 
 ## Session logs
 
