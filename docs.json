@@ -113,6 +113,12 @@
             ]
           },
           {
+            "group": "Administration",
+            "pages": [
+              "administration/telemetry-destinations"
+            ]
+          },
+          {
             "group": "Server Foundry",
             "pages": [
               "server-foundry/overview",
@@ -233,6 +239,7 @@
           "cookbooks/search-skills-by-tag",
           "cookbooks/get-session-messages",
           "cookbooks/query-insights-analytics",
+          "cookbooks/correlate-traces-and-logs",
           "cookbooks/programmatic-chat-sessions",
           "cookbooks/set-server-base-url-override",
           {
