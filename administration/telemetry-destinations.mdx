@@ -100,7 +100,7 @@ Check your provider's OTLP documentation for the exact URL for your region or ac
 | --- | --- |
 | **Traces** | Navigator spans for each request and tool call, and assistant spans for every run, turn, model call, tool call, and approval. This is the main signal. |
 | **Logs** | Log records: the Navigator's `caylex.tool.invoked`, `caylex.tool.completed`, and `caylex.tool.failed` events for each tool call, and every [run content](#run-content) record. Turn this on if you enable any run content. |
-| **Metrics** | Service metrics tagged with your workspace and project. |
+| **Metrics** | Tool call, tool suggestion, Navigator connection, assistant run, phase and approval metrics, tagged with your workspace and project. |
 
 Run content records are logs that point at the span they belong to. If **Logs** is off, the destination receives no run content at all. If **Traces** is off, it receives the content records, but not the spans they belong to. The form warns you in both cases.
 
@@ -128,13 +128,25 @@ Run content comes only from Caylex Assistants. Navigator traffic from your own a
 Run content can contain anything your users and tools handle, including personal data. Only turn on the types you need, and only for endpoints your organization is allowed to send that data to.
 </Warning>
 
+## Which spans and metrics are sent
+
+Caylex sends the spans and metrics that describe your users' work, and keeps its own internals out:
+
+| Sent | Not sent |
+| --- | --- |
+| Assistant runs, turns and their phases (`assistant.agent.*`, `assistant.turn`, `assistant.phase.*`), model calls (`assistant.llm.*`), tool batches and calls (`assistant.tool.*`, `assistant.mcp.call_tool`), approvals and reviews, and background task passes (`assistant.worker.task.process`) | Database queries, caches and persistence |
+| Navigator requests and meta-tools (`proxy.mcp.*`), tool discovery and calls (`proxy.navigator.*`, `tool.<name>`), and the calls to your servers (`proxy.downstream_mcp.*`, `proxy.code_execution`) | Authentication, billing and security checks, embeddings, and background housekeeping |
+| Tool call, suggestion, connection, run, phase and approval metrics | Cache, HTTP and other service-health metrics, and LLM tracing spans from Caylex's own monitoring tools |
+
+The spans that connect these, such as each turn's phases, are kept, so every trace stays one connected tree. Log records, including [run content](#run-content), aren't affected.
+
 ## What Caylex removes before sending
 
 Every destination gets these protections, whether or not run content is on:
 
 - **Secrets are masked.** Text that looks like an API key, access token, JWT, or bearer token is replaced with `[REDACTED]` in attribute values, error messages, span status messages, and run content. The check works on the shape of the text, so occasionally a non-secret value of the same shape, such as a 40-character commit hash, is masked too.
 - **Stack traces become fingerprints.** An exception event's `exception.stacktrace` is replaced with `{"size_bytes": …, "sha256": "…"}`. The exception type and message are kept, with secrets masked.
-- **Internal identifiers are removed**, such as Caylex's internal registry ids.
+- **Internal identifiers are removed**, such as Caylex's internal registry ids, along with attributes that monitoring tools add to every span (`user.id`, `session.id`, `langfuse.*`). Use `caylex.user.id` and `caylex.session.id` instead.
 - **Raw payload attributes are fingerprinted.** Span attributes that hold whole tool inputs and outputs or model prompts and completions (`tool.arguments`, `tool.return_value`, `gen_ai.prompt`, `gen_ai.completion`) are replaced with their size and SHA-256. To receive that text, use [run content](#run-content) instead.
 - **Other workspaces' data never reaches your destination.** Each destination receives only your workspace's telemetry, and only from the projects you selected.
 
