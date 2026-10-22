@@ -101,7 +101,6 @@ Check your provider's OTLP documentation for the exact URL for your region or ac
 | **Traces** | Navigator spans for each request and tool call, and assistant spans for every run, turn, model call, tool call, and approval. This is the main signal. |
 | **Logs** | Log records: the Navigator's `caylex.tool.invoked`, `caylex.tool.completed`, and `caylex.tool.failed` events for each tool call, and every [run content](#run-content) record. Turn this on if you enable any run content. |
 | **Metrics** | Service metrics tagged with your workspace and project. |
-| **Events** | Caylex sends its events as log records, which **Logs** covers. This toggle has no effect today. |
 
 Run content records are logs that point at the span they belong to. If **Logs** is off, the destination receives no run content at all. If **Traces** is off, it receives the content records, but not the spans they belong to. The form warns you in both cases.
 
@@ -139,6 +138,18 @@ Every destination gets these protections, whether or not run content is on:
 - **Raw payload attributes are fingerprinted.** Span attributes that hold whole tool inputs and outputs or model prompts and completions (`tool.arguments`, `tool.return_value`, `gen_ai.prompt`, `gen_ai.completion`) are replaced with their size and SHA-256. To receive that text, use [run content](#run-content) instead.
 - **Other workspaces' data never reaches your destination.** Each destination receives only your workspace's telemetry, and only from the projects you selected.
 
+## Filter attributes
+
+To keep specific attributes out of a destination, or send only the ones you use, set the destination's `attribute_deny` and `attribute_allow` lists through the [API](#manage-destinations-with-the-api). They aren't in the Caylex Platform UI yet.
+
+- Each entry is an exact attribute key, such as `caylex.session.title`, or a prefix ending in `*`, such as `caylex.navigator.*`.
+- **`attribute_deny`** removes matching attributes.
+- **`attribute_allow`**, when set, sends only matching attributes, plus the ids Caylex needs to route and correlate records: `service.name`, `caylex.tenant.id`, `caylex.project.id`, `caylex.session.id`, `caylex.query.id`, `caylex.content.class`, `assistant.run.id`, `assistant.turn.index`, and `gen_ai.tool.call.id`.
+- Deny wins: a key matched by both lists is removed, including the ids above if you deny them explicitly.
+- The lists apply to every attribute set Caylex sends: span, log record, and metric data point attributes, resource attributes, and span event and link attributes. They don't apply to a log record's body, so they can't trim run content text. Use the run content toggles for that.
+
+For example, `"attribute_deny": ["caylex.session.title"]` stops sending session titles while keeping everything else.
+
 ## Projects
 
 Leave **Projects** empty to forward telemetry from every project in your workspace. Select projects to forward only those. Records that don't belong to any project, such as some service-level metrics, are only sent to destinations that cover all projects.
@@ -166,6 +177,59 @@ A passing test proves the logs URL and credentials work. If you use a per-signal
 - **Edit** changes any setting. Open it from the row menu or with **Edit** on the details panel. Every save asks you to agree to the DPA again, and that agreement covers the new settings, including new URLs and run content, so the destination keeps forwarding after the edit.
 - **Disable** pauses forwarding and keeps all settings. Telemetry produced while a destination is disabled isn't sent later.
 - **Delete** permanently removes the destination, its stored credentials, and its audit history. To stop temporarily, disable instead.
+
+## Manage destinations with the API
+
+Everything on this page is also available through the Platform API, so you can create and update destinations from scripts or CI. Authenticate with a [platform access token](/auth/platform-authentication) that has the admin role.
+
+```
+Base URL:  https://api.caylex.ai/api/v1
+Header:    Authorization: Bearer <platform_access_token>
+```
+
+| Method and path | What it does |
+| --- | --- |
+| `GET /telemetry-destinations` | List destinations (`page`, `page_size` up to 200). |
+| `POST /telemetry-destinations` | Create a destination. |
+| `GET /telemetry-destinations/{id}` | Get one destination. |
+| `PATCH /telemetry-destinations/{id}` | Change any fields; omitted fields are left as they are. |
+| `DELETE /telemetry-destinations/{id}` | Delete permanently. To pause, `PATCH` `{"enabled": false}`. |
+| `POST /telemetry-destinations/{id}/test` | Send a test event. Returns `502` with the endpoint's status if delivery fails. |
+| `GET /telemetry-destinations/{id}/audit` | The destination's change history, newest first. |
+
+For example, to create a PostHog destination that sends traces and logs with all run content except reasoning:
+
+```bash
+curl -X POST "https://api.caylex.ai/api/v1/telemetry-destinations" \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "PostHog",
+    "endpoint_url": "https://us.i.posthog.com/i",
+    "auth_kind": "bearer",
+    "auth_secret": "'"$POSTHOG_PROJECT_KEY"'",
+    "signals": {"traces": true, "logs": true, "metrics": false},
+    "content_capture": {
+      "user_messages": true, "assistant_messages": true,
+      "tool_arguments": true, "tool_results": true,
+      "task_list": true, "approvals": true, "reasoning": false
+    },
+    "attribute_deny": ["caylex.session.title"],
+    "dpa_acknowledged": true,
+    "content_acknowledged": true
+  }'
+```
+
+Things the UI handles for you that a script needs to send itself:
+
+- **Consent.** `dpa_acknowledged: true` accepts the data processing addendum; without it the destination is created disabled. `content_acknowledged: true` is required to turn on any run content type.
+- **New hosts reset consent.** If a `PATCH` makes the destination send to a host it didn't send to before, through `endpoint_url` or `signal_endpoints`, Caylex clears both acknowledgments, disables the destination, and turns off its run content, unless the same request sends `dpa_acknowledged: true` and `content_acknowledged: true`.
+- **Secrets are write-only.** `auth_secret` is never returned; responses show `auth_secret_set` instead. Send a new `auth_secret` to rotate it.
+- **Per-signal URLs** go in `signal_endpoints` (`{"traces": "https://…"}`). On `PATCH`, the object replaces all overrides; send `{}` to clear them.
+
+Changes made with a platform token appear in the audit history with the token's id (`actor_platform_token_id`) instead of a user.
+
+See the [REST API Reference](https://developers.caylex.ai/) for every field.
 
 ## Delivery
 
