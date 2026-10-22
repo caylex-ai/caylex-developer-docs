@@ -1,14 +1,25 @@
 ---
 title: "Telemetry Destinations"
-description: "Send traces, logs, and metrics from your Caylex Assistants to your own OpenTelemetry backend."
+description: "Send traces, logs, and metrics from your Navigators and Caylex Assistants to your own OpenTelemetry backend."
 icon: "satellite-dish"
 ---
 
-A **telemetry destination** forwards your workspace's OpenTelemetry (OTel) data to an OTLP/HTTP endpoint you run or subscribe to, such as PostHog, Honeycomb, Grafana Cloud, New Relic, or your own OpenTelemetry Collector. Use it to see what your assistants did on each run, in the same tool where you watch the rest of your product.
+A **telemetry destination** forwards your workspace's [OpenTelemetry](https://opentelemetry.io/) (OTel) data to an OTLP/HTTP endpoint you run or subscribe to, such as PostHog, Honeycomb, Grafana Cloud, New Relic, or your own OpenTelemetry Collector. Use it to see what your agents and assistants did, in the same tool where you watch the rest of your product.
 
-Out of the box, a destination receives **metadata**: spans with timings, ids, token counts, tool names, error types, and counts. It doesn't receive what was said or what tools returned. You can opt in to that separately, one type at a time, with [run content](#run-content).
+A destination receives telemetry from two sources:
 
-To see how the spans and logs fit together for a single conversation, read the [Correlate traces and logs](/cookbooks/correlate-traces-and-logs) cookbook.
+| Source | What it covers |
+| --- | --- |
+| **Navigator** | Every request an MCP client makes through a [Navigator](/navigator/overview): your own agents, Claude, the OpenAI Agents SDK, and Caylex Assistants alike. Spans cover tool discovery, each tool call to your servers, connections to those servers, and [Code Mode](/navigator/code-mode) runs. |
+| **Caylex Assistants** | Each assistant run: its turns, model calls, tool calls, approvals, and background task passes. |
+
+Out of the box, a destination receives **metadata** from both: spans with timings, ids, token counts, tool and server names, error types, and counts. It doesn't receive what was said or what tools returned. For Caylex Assistants, you can opt in to that separately, one type at a time, with [run content](#run-content).
+
+<Note>
+Navigator tool spans include a session title, `caylex.session.title`, so you can recognize a session at a glance. For Caylex Assistants it's the conversation's title. For other MCP clients it's a short summary of what the session is for, which Caylex generates from the requests. Either way it's derived from the conversation, so treat it like other conversation text.
+</Note>
+
+To see how the spans and logs fit together for a single conversation, including the Navigator calls an assistant makes, read the [Correlate traces and logs](/cookbooks/correlate-traces-and-logs) cookbook.
 
 ## Before you start
 
@@ -87,8 +98,8 @@ Check your provider's OTLP documentation for the exact URL for your region or ac
 
 | Signal | What it carries |
 | --- | --- |
-| **Traces** | Spans for every assistant run, turn, model call, tool call, and approval. This is the main signal. |
-| **Logs** | Log records, including every [run content](#run-content) record. Turn this on if you enable any run content. |
+| **Traces** | Navigator spans for each request and tool call, and assistant spans for every run, turn, model call, tool call, and approval. This is the main signal. |
+| **Logs** | Log records: the Navigator's `caylex.tool.invoked`, `caylex.tool.completed`, and `caylex.tool.failed` events for each tool call, and every [run content](#run-content) record. Turn this on if you enable any run content. |
 | **Metrics** | Service metrics tagged with your workspace and project. |
 | **Events** | Caylex sends its events as log records, which **Logs** covers. This toggle has no effect today. |
 
@@ -96,7 +107,7 @@ Run content records are logs that point at the span they belong to. If **Logs** 
 
 ## Run content
 
-Run content is the actual text of a run. It's off by default. Each type is a separate toggle, and **Enable all** / **Disable all** switches every type at once:
+Run content is the actual text of a Caylex Assistants run. It's off by default. Each type is a separate toggle, and **Enable all** / **Disable all** switches every type at once:
 
 | Type | What's sent | Attached to |
 | --- | --- | --- |
@@ -109,6 +120,8 @@ Run content is the actual text of a run. It's off by default. Each type is a sep
 | **Approvals** | What users were asked to approve, and what they decided. | The approval wait span |
 
 There's no separate consent step for run content: the data processing addendum you agree to when you save the destination covers it.
+
+Run content comes only from Caylex Assistants. Navigator traffic from your own agents and other MCP clients is always sent as metadata: its spans name the tools and servers called, with timings and outcomes, but never carry tool inputs or outputs.
 
 **Size limit per field** caps each text field; the default is 32 KB, and you can choose from 4 KB to 256 KB. A longer value is cut to the limit, and the record keeps the original size and a SHA-256 of the full value. That lets you tell whether two truncated values were the same. When several destinations cover the same project, the largest of their limits applies.
 
@@ -129,6 +142,8 @@ Every destination gets these protections, whether or not run content is on:
 ## Projects
 
 Leave **Projects** empty to forward telemetry from every project in your workspace. Select projects to forward only those. Records that don't belong to any project, such as some service-level metrics, are only sent to destinations that cover all projects.
+
+Navigator traffic belongs to the project of the Navigator that handled it. Requests that fail authentication, for example because of a wrong API key, aren't attributed to your workspace, so they're never forwarded.
 
 ## Test a destination
 

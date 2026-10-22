@@ -24,6 +24,7 @@ Everything here comes from the data your destination receives. You don't need th
 | `gen_ai.tool.call.id` | Tool spans and tool content records | One tool call. |
 | Span links with `caylex.link.kind` | Approval clicks and background task passes | A pointer from a span in one trace to the span in another trace it continues. |
 | `span_id` on log records | Run content records | The span a record belongs to. |
+| `caylex.query.id` | Navigator tool spans and tool events | The session the Navigator saw the call in. For calls from Caylex Assistants it equals the conversation's `caylex.session.id`. See [Navigator tool calls](#navigator-tool-calls). |
 
 The short version: **filter by `caylex.session.id` to get a whole conversation, by `assistant.run.id` to get one answer, and by `trace_id` plus `span_id` to place each log record under its span.**
 
@@ -270,6 +271,37 @@ Every pass of a task shares one `assistant.run.id` (the task's id) and the task'
 
 When an assistant hands work to a sub-assistant, the sub-assistant's run is an `assistant.agent.subassistant` span inside the parent's `invoke_subassistant` tool span, in the same trace and with the same `assistant.run.id`. It has its own turns and its own totals and fingerprint. Its reasoning and messages carry `assistant.subassistant=true`, so you can show or hide them.
 
+## Navigator tool calls
+
+An assistant reaches your servers through the Navigator, and the Navigator records its own side of each call: which server and tool ran, how long the server took, and whether it failed. Those spans **don't share the assistant's trace**. Each Navigator request starts its own trace, with no span link back to the assistant.
+
+They join on the session instead. The assistant tells the Navigator which conversation a call belongs to, and the Navigator stamps that id on its tool spans as `caylex.query.id`. For the example above, every Navigator tool span has `caylex.query.id=5b2e…`, the same value as `caylex.session.id` on the assistant's spans.
+
+For each tool the Navigator runs, it records:
+
+```text
+tool.search_deals                 380 ms   caylex.query.id=5b2e…  caylex.tool.name=search_deals
+                                           caylex.server.name=crm  caylex.server.instance.id=…
+                                           caylex.navigator.name=sales-navigator  caylex.tool.call.id=…
+                                           caylex.session.title="Acme renewal update"
+```
+
+It also emits `caylex.tool.invoked` when the call starts and `caylex.tool.completed` or `caylex.tool.failed` when it ends, as log records on that span. They carry the same attributes, plus the outcome (`caylex.tool.status`, `caylex.tool.is_error`, `caylex.tool.duration_ms`) and, on failure, `error.type` and the exception message. They never carry the tool's inputs or outputs.
+
+To line an assistant's tool call up with the Navigator's record of it:
+
+1. Take the assistant's `assistant.tool.execute` span for `invoke_tools` and its `caylex.session.id`.
+2. Find Navigator `tool.<name>` spans whose `caylex.query.id` matches.
+3. Match on the tool name (`caylex.tool.name` against the `tool_name` entries in the call's tool arguments) and on time: the Navigator's span runs inside the assistant's tool span.
+
+That tells you, for example, whether a slow `invoke_tools` call was slow because of the server (a long `tool.<name>` span) or because of something before or after it.
+
+<Note>
+`caylex.tool.call.id` is the Navigator's own id for the call. It isn't the same as the assistant's `gen_ai.tool.call.id`, so match on session, tool name, and time as above.
+</Note>
+
+Navigator traffic from your own agents and other MCP clients looks the same. There, `caylex.query.id` is the session id your client sends (for example in the `x-caylex-session-id` header), or a fresh id per request if it sends none.
+
 ## Recipes
 
 ### Rebuild the conversation
@@ -344,6 +376,7 @@ Use `assistant.time.approval_wait_ms` on run spans for the total per run, `assis
 
 | Span | What it is |
 | --- | --- |
+| `tool.<tool name>` | The Navigator's record of one tool call to your server, in its own trace. Joins the assistant by `caylex.query.id`. |
 | `assistant.agent.chat` | One assistant run for a user message. `assistant.agent.resume` when a streaming run picks up after an interruption, `assistant.agent.subassistant` for a sub-assistant. |
 | `assistant.turn` | One loop iteration. `assistant.turn.stop_reason` is `tool_calls`, `final`, `approval_required`, `output_token_limit`, `no_response`, or `error`. |
 | `assistant.llm.chat_stream`, `assistant.llm.chat` | One model call, with `gen_ai.request.model`, `gen_ai.response.model`, and `gen_ai.usage.*` token counts. |
