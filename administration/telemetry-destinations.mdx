@@ -23,23 +23,26 @@ To see how the spans and logs fit together for a single conversation, read the [
     In the Caylex Platform UI, go to **Administration → Telemetry Destinations** and click **Add Destination**.
   </Step>
   <Step title="Name it and enter the endpoint">
-    Give the destination a **Name** (unique in your workspace), then enter the **OTLP Endpoint URL**. This is your provider's OTLP base URL: Caylex adds `/v1/traces`, `/v1/logs`, or `/v1/metrics` for each signal. See [Endpoint URLs](#endpoint-urls) for how that works and when to use per-signal endpoints.
+    Give the destination a **Name** (unique in your workspace), then enter the **OTLP Endpoint URL**. This is your provider's OTLP base URL: Caylex adds `/v1/traces`, `/v1/logs`, or `/v1/metrics` for each signal. See [Endpoint URLs](#endpoint-urls) for how that works.
   </Step>
   <Step title="Choose how to authenticate">
     - **Bearer Token**: paste the token only. Caylex sends `Authorization: Bearer <token>`. The token is stored encrypted and is never shown again; leave the field blank when editing to keep it.
     - **Custom headers**: add each header your provider needs, for example `x-honeycomb-team` or `api-key`. Use this for Basic auth too (`Authorization: Basic <base64>`).
   </Step>
-  <Step title="Pick signals and projects">
-    Turn on the **Signals To Forward** you want (see [Signals](#signals)). Under **Projects**, pick the projects to forward, or leave it empty to forward every project in your workspace.
+  <Step title="Pick signals and check their URLs">
+    Turn on the **Signals To Forward** you want (see [Signals](#signals)). Below them, **Per-signal URLs** shows where each enabled signal will be sent. Leave them as they are unless your provider uses a different URL for a signal; see [Per-signal URLs](#per-signal-urls).
+  </Step>
+  <Step title="Pick projects">
+    Under **Projects**, pick the projects to forward, or leave it empty to forward every project in your workspace.
   </Step>
   <Step title="Choose run content (optional)">
-    Leave **Run Content** off to send metadata only, or turn on the types you want. See [Run content](#run-content).
+    Leave **Run Content** off to send metadata only, or turn on the types you want. **Enable all** turns on every type at once. See [Run content](#run-content).
   </Step>
   <Step title="Agree to the DPA and create">
-    Check the data processing addendum box and click **Create Destination**. The destination starts forwarding right away.
+    Check the data processing addendum box and click **Create Destination**. Agreeing to the DPA also covers any run content you turned on. The destination starts forwarding right away.
   </Step>
   <Step title="Send a test event">
-    In the destination's row menu, click **Send test event**, then look for it in your provider. See [Test a destination](#test-a-destination).
+    Click **Send test event**, in the destination's row menu or its details panel, then look for it in your provider. See [Test a destination](#test-a-destination).
   </Step>
 </Steps>
 
@@ -55,16 +58,18 @@ Most providers take all three signals on one OTLP base URL. Enter that base, and
 
 If the URL you paste already ends in `/v1/traces`, `/v1/logs`, or `/v1/metrics`, Caylex swaps that ending for each signal instead of adding a second one. So pasting your provider's traces URL still sends logs to its logs URL.
 
-### Per-signal endpoints
+### Per-signal URLs
 
-Some providers take each signal at a different host or path. Open **Per-signal endpoints (optional)** under the endpoint URL and enter a full URL for each signal that needs one. These follow the same rule as the OpenTelemetry SDKs' `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`:
+Some providers take each signal at a different host or path. **Per-signal URLs (optional)**, below **Signals To Forward**, has a field for each enabled signal among Metrics, Logs, and Traces. Each field starts out showing the URL derived from the OTLP Endpoint URL, so you can see exactly where that signal will go.
 
-- A per-signal URL is used **exactly as you enter it**. Nothing is added to it.
-- A signal without one goes to the OTLP Endpoint URL with `/v1/<signal>` added, as above.
-- Each field shows, as its placeholder, the URL that signal will use if you leave it blank.
+- **To send a signal somewhere else**, edit its field and enter the full URL. It's used **exactly as you enter it**; nothing is added to it. This is the same rule the OpenTelemetry SDKs use for `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`.
+- **To go back to the derived URL**, clear the field, or change it back to the derived URL.
+- **Fields you don't edit follow the endpoint URL.** If you later change the OTLP Endpoint URL, they update to match.
 - All URLs share the destination's authentication.
 
-For example, with the endpoint URL `https://otlp.example.com` and only a logs override of `https://logs.example.com/ingest`, logs go to `https://logs.example.com/ingest`, while traces still go to `https://otlp.example.com/v1/traces`.
+For example, with the endpoint URL `https://otlp.example.com` and the Logs field changed to `https://logs.example.com/ingest`, logs go to `https://logs.example.com/ingest`, while traces still go to `https://otlp.example.com/v1/traces`.
+
+The destination's details panel lists the URL for each enabled signal, marked **Configured** when you set it or **Derived** when it comes from the endpoint URL.
 
 ### Provider examples
 
@@ -91,7 +96,7 @@ Run content records are logs that point at the span they belong to. If **Logs** 
 
 ## Run content
 
-Run content is the actual text of a run. It's off by default, and each type is a separate toggle:
+Run content is the actual text of a run. It's off by default. Each type is a separate toggle, and **Enable all** / **Disable all** switches every type at once:
 
 | Type | What's sent | Attached to |
 | --- | --- | --- |
@@ -103,7 +108,7 @@ Run content is the actual text of a run. It's off by default, and each type is a
 | **Task list** | The assistant's plan each time it updates it (the `update_task_list` tool). | The tool span |
 | **Approvals** | What users were asked to approve, and what they decided. | The approval wait span |
 
-Turning on any type asks you to acknowledge that run content can include customer data and will be sent to this endpoint. This is separate from the DPA, and you only need to do it once per destination.
+There's no separate consent step for run content: the data processing addendum you agree to when you save the destination covers it.
 
 **Size limit per field** caps each text field; the default is 32 KB, and you can choose from 4 KB to 256 KB. A longer value is cut to the limit, and the record keeps the original size and a SHA-256 of the full value. That lets you tell whether two truncated values were the same. When several destinations cover the same project, the largest of their limits applies.
 
@@ -127,7 +132,7 @@ Leave **Projects** empty to forward telemetry from every project in your workspa
 
 ## Test a destination
 
-Click **Send test event** in the destination's row menu. Caylex sends one OTLP log record straight to the destination's logs URL (its per-signal logs URL if you set one), and shows the HTTP status and latency.
+Click **Send test event** in the destination's row menu. Caylex sends one OTLP log record straight to the destination's logs URL (the Logs URL shown on its details panel), and shows the HTTP status and latency.
 
 The test record has:
 
@@ -143,8 +148,7 @@ A passing test proves the logs URL and credentials work. If you use a per-signal
 
 ## Edit, disable, and delete
 
-- **Edit** changes any setting. Every edit asks you to re-confirm the DPA.
-- **New hosts need new consent.** If an edit makes the destination send to a host it didn't send to before (through the endpoint URL or a per-signal URL), Caylex clears both acknowledgments unless you re-confirm them in the same edit. Without them, the destination is disabled and its run content is turned off. Changing only the path doesn't count as a new host.
+- **Edit** changes any setting. Open it from the row menu or with **Edit** on the details panel. Every save asks you to agree to the DPA again, and that agreement covers the new settings, including new URLs and run content, so the destination keeps forwarding after the edit.
 - **Disable** pauses forwarding and keeps all settings. Telemetry produced while a destination is disabled isn't sent later.
 - **Delete** permanently removes the destination, its stored credentials, and its audit history. To stop temporarily, disable instead.
 
@@ -165,10 +169,10 @@ A passing test proves the logs URL and credentials work. If you use a per-signal
     The logs URL is wrong. Compare the URL in the error with your provider's OTLP logs URL. If your provider puts OTLP under a path (such as `/otlp` or `/i`), include it in the endpoint URL.
   </Accordion>
   <Accordion title="Logs arrive but traces don't">
-    Check that **Traces** is on. If your provider's traces URL isn't the base URL plus `/v1/traces`, set a per-signal traces URL. If you limited **Projects**, make sure the assistant you're testing runs in one of them.
+    Check that **Traces** is on. Then check the Traces URL on the destination's details panel against your provider's OTLP traces URL, and edit it under **Per-signal URLs** if they differ. If you limited **Projects**, make sure the assistant you're testing runs in one of them.
   </Accordion>
   <Accordion title="Spans arrive but run content doesn't">
-    Run content is sent as logs, so turn on **Logs**, and turn on the content types you want. Content capture is cleared when the destination starts sending to a new host, so check it's still on after you change URLs.
+    Run content is sent as logs, so turn on **Logs**, and turn on the content types you want. If you set a per-signal Logs URL, check that it's the URL your provider uses for logs.
   </Accordion>
   <Accordion title="A value shows as [REDACTED]">
     It matched a secret pattern. See [What Caylex removes before sending](#what-caylex-removes-before-sending).
