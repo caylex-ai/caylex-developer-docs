@@ -1,0 +1,271 @@
+---
+title: "Telemetry Destinations"
+description: "Send traces, logs, and metrics from your Navigators and Caylex Assistants to your own OpenTelemetry backend."
+icon: "satellite-dish"
+---
+
+A **telemetry destination** forwards your workspace's [OpenTelemetry](https://opentelemetry.io/) (OTel) data to an OTLP/HTTP endpoint you run or subscribe to, such as PostHog, Honeycomb, Grafana Cloud, New Relic, or your own OpenTelemetry Collector. Use it to see what your agents and assistants did, in the same tool where you watch the rest of your product.
+
+A destination receives telemetry from two sources:
+
+| Source | What it covers |
+| --- | --- |
+| **Navigator** | Every request an MCP client makes through a [Navigator](/navigator/overview): your own agents, Claude, the OpenAI Agents SDK, and Caylex Assistants alike. Spans cover tool discovery, each tool call to your servers, connections to those servers, and [Code Mode](/navigator/code-mode) runs. |
+| **Caylex Assistants** | Each assistant run: its turns, model calls, tool calls, approvals, and background task passes. |
+
+Out of the box, a destination receives **metadata** from both: spans with timings, ids, token counts, tool and server names, error types, and counts. It doesn't receive what was said or what tools returned. For Caylex Assistants, you can opt in to that separately, one type at a time, with [run content](#run-content).
+
+<Note>
+Navigator tool spans include a session title, `caylex.session.title`, so you can recognize a session at a glance. For Caylex Assistants it's the conversation's title. For other MCP clients it's a short summary of what the session is for, which Caylex generates from the requests. Either way it's derived from the conversation, so treat it like other conversation text.
+</Note>
+
+To see how the spans and logs fit together for a single conversation, including the Navigator calls an assistant makes, read the [Correlate traces and logs](/cookbooks/correlate-traces-and-logs) cookbook.
+
+## Before you start
+
+- You need the **admin** role in your Caylex workspace.
+- You need an endpoint that accepts **OTLP over HTTP with protobuf** (`application/x-protobuf`) on `https://`. Caylex doesn't send OTLP over gRPC or plain `http://`.
+- You need the credentials your provider expects: a bearer token, or one or more HTTP headers such as an API key.
+
+## Add a destination
+
+<Steps>
+  <Step title="Open Telemetry Destinations">
+    In the Caylex Platform UI, go to **Administration → Telemetry Destinations** and click **Add Destination**.
+  </Step>
+  <Step title="Name it and enter the endpoint">
+    Give the destination a **Name** (unique in your workspace), then enter the **OTLP Endpoint URL**. This is your provider's OTLP base URL: Caylex adds `/v1/traces`, `/v1/logs`, or `/v1/metrics` for each signal. See [Endpoint URLs](#endpoint-urls) for how that works.
+  </Step>
+  <Step title="Choose how to authenticate">
+    - **Bearer Token**: paste the token only. Caylex sends `Authorization: Bearer <token>`. The token is stored encrypted and is never shown again; leave the field blank when editing to keep it.
+    - **Custom headers**: add each header your provider needs, for example `x-honeycomb-team` or `api-key`. Use this for Basic auth too (`Authorization: Basic <base64>`).
+  </Step>
+  <Step title="Pick signals and check their URLs">
+    Turn on the **Signals To Forward** you want (see [Signals](#signals)). Below them, **Per-signal URLs** shows where each enabled signal will be sent. Leave them as they are unless your provider uses a different URL for a signal; see [Per-signal URLs](#per-signal-urls).
+  </Step>
+  <Step title="Pick projects">
+    Under **Projects**, pick the projects to forward, or leave it empty to forward every project in your workspace.
+  </Step>
+  <Step title="Choose run content (optional)">
+    Leave **Run Content** off to send metadata only, or turn on the types you want. **Enable all** turns on every type at once. See [Run content](#run-content).
+  </Step>
+  <Step title="Agree to the DPA and create">
+    Check the data processing addendum box and click **Create Destination**. Agreeing to the DPA also covers any run content you turned on. The destination starts forwarding right away.
+  </Step>
+  <Step title="Send a test event">
+    Click **Send test event**, in the destination's row menu or its details panel, then look for it in your provider. See [Test a destination](#test-a-destination).
+  </Step>
+</Steps>
+
+## Endpoint URLs
+
+Most providers take all three signals on one OTLP base URL. Enter that base, and Caylex sends each signal to it with the standard OTLP path:
+
+| You enter | Traces go to | Logs go to |
+| --- | --- | --- |
+| `https://otlp.example.com` | `https://otlp.example.com/v1/traces` | `https://otlp.example.com/v1/logs` |
+| `https://otlp.example.com/otlp` | `https://otlp.example.com/otlp/v1/traces` | `https://otlp.example.com/otlp/v1/logs` |
+| `https://otlp.example.com/otlp/v1/logs` | `https://otlp.example.com/otlp/v1/traces` | `https://otlp.example.com/otlp/v1/logs` |
+
+If the URL you paste already ends in `/v1/traces`, `/v1/logs`, or `/v1/metrics`, Caylex swaps that ending for each signal instead of adding a second one. So pasting your provider's traces URL still sends logs to its logs URL.
+
+### Per-signal URLs
+
+Some providers take each signal at a different host or path. **Per-signal URLs (optional)**, below **Signals To Forward**, has a field for each enabled signal among Metrics, Logs, and Traces. Each field starts out showing the URL derived from the OTLP Endpoint URL, so you can see exactly where that signal will go.
+
+- **To send a signal somewhere else**, edit its field and enter the full URL. It's used **exactly as you enter it**; nothing is added to it. This is the same rule the OpenTelemetry SDKs use for `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`.
+- **To go back to the derived URL**, clear the field, or change it back to the derived URL.
+- **Fields you don't edit follow the endpoint URL.** If you later change the OTLP Endpoint URL, they update to match.
+- All URLs share the destination's authentication.
+
+For example, with the endpoint URL `https://otlp.example.com` and the Logs field changed to `https://logs.example.com/ingest`, logs go to `https://logs.example.com/ingest`, while traces still go to `https://otlp.example.com/v1/traces`.
+
+The destination's details panel lists the URL for each enabled signal, marked **Configured** when you set it or **Derived** when it comes from the endpoint URL.
+
+### Provider examples
+
+Check your provider's OTLP documentation for the exact URL for your region or account.
+
+| Provider | OTLP Endpoint URL | Authentication |
+| --- | --- | --- |
+| PostHog (US) | `https://us.i.posthog.com/i` | Bearer Token: your project API key |
+| Honeycomb (US) | `https://api.honeycomb.io` | Custom header `x-honeycomb-team`: your ingest key |
+| Grafana Cloud | `https://otlp-gateway-<zone>.grafana.net/otlp` | Custom header `Authorization`: `Basic <base64 of instanceId:token>` |
+| New Relic (US) | `https://otlp.nr-data.net` | Custom header `api-key`: your license key |
+| Your own Collector | `https://collector.your-company.com` | Whatever your Collector's receiver expects |
+
+## Signals
+
+| Signal | What it carries |
+| --- | --- |
+| **Traces** | Navigator spans for each request and tool call, and assistant spans for every run, turn, model call, tool call, and approval. This is the main signal. |
+| **Logs** | Log records: the Navigator's `caylex.tool.invoked`, `caylex.tool.completed`, and `caylex.tool.failed` events for each tool call, and every [run content](#run-content) record. Turn this on if you enable any run content. |
+| **Metrics** | Tool call, tool suggestion, Navigator connection, assistant run, phase and approval metrics, tagged with your workspace and project. |
+
+Run content records are logs that point at the span they belong to. If **Logs** is off, the destination receives no run content at all. If **Traces** is off, it receives the content records, but not the spans they belong to. The form warns you in both cases.
+
+## Run content
+
+Run content is the actual text of a Caylex Assistants run. It's off by default. Each type is a separate toggle, and **Enable all** / **Disable all** switches every type at once:
+
+| Type | What's sent | Attached to |
+| --- | --- | --- |
+| **User messages** | What users send: chat messages, background task prompts and follow-ups, context updates, voice transcripts. Attachments are sent as name, size, and SHA-256 only, never their contents. | The run span |
+| **Assistant messages** | The assistant's replies, including interim text it writes before calling tools. | The turn span |
+| **Tool arguments** | The inputs the assistant passed to each tool call. | The tool span |
+| **Tool results** | What each tool returned, including error output. | The tool span |
+| **Reasoning** | The model's reasoning, as full text or a summary, when the model provider returns it. Encrypted reasoning is never sent. | The turn span |
+| **Task list** | The assistant's plan each time it updates it (the `update_task_list` tool). | The tool span |
+| **Approvals** | What users were asked to approve, and what they decided. | The approval wait span |
+
+There's no separate consent step for run content: the data processing addendum you agree to when you save the destination covers it.
+
+Run content comes only from Caylex Assistants. Navigator traffic from your own agents and other MCP clients is always sent as metadata: its spans name the tools and servers called, with timings and outcomes, but never carry tool inputs or outputs.
+
+**Size limit per field** caps each text field; the default is 32 KB, and you can choose from 4 KB to 256 KB. A longer value is cut to the limit, and the record keeps the original size and a SHA-256 of the full value. That lets you tell whether two truncated values were the same. When several destinations cover the same project, the largest of their limits applies.
+
+<Warning>
+Run content can contain anything your users and tools handle, including personal data. Only turn on the types you need, and only for endpoints your organization is allowed to send that data to.
+</Warning>
+
+## Which spans and metrics are sent
+
+Caylex sends the spans and metrics that describe your users' work, and keeps its own internals out:
+
+| Sent | Not sent |
+| --- | --- |
+| Assistant runs, turns and their phases (`assistant.agent.*`, `assistant.turn`, `assistant.phase.*`), model calls (`assistant.llm.*`), tool batches and calls (`assistant.tool.*`, `assistant.mcp.call_tool`), approvals and reviews, and background task passes (`assistant.worker.task.process`) | Database queries, caches and persistence |
+| Navigator requests and meta-tools (`proxy.mcp.*`), tool discovery and calls (`proxy.navigator.*`, `tool.<name>`), and the calls to your servers (`proxy.downstream_mcp.*`, `proxy.code_execution`) | Authentication, billing and security checks, embeddings, and background housekeeping |
+| Tool call, suggestion, connection, run, phase and approval metrics | Cache, HTTP and other service-health metrics, and LLM tracing spans from Caylex's own monitoring tools |
+
+The spans that connect these, such as each turn's phases, are kept, so every trace stays one connected tree. Log records, including [run content](#run-content), aren't affected.
+
+## What Caylex removes before sending
+
+Every destination gets these protections, whether or not run content is on:
+
+- **Secrets are masked.** Text that looks like an API key, access token, JWT, or bearer token is replaced with `[REDACTED]` in attribute values, error messages, span status messages, and run content. The check works on the shape of the text, so occasionally a non-secret value of the same shape, such as a 40-character commit hash, is masked too.
+- **Stack traces become fingerprints.** An exception event's `exception.stacktrace` is replaced with `{"size_bytes": …, "sha256": "…"}`. The exception type and message are kept, with secrets masked.
+- **Internal identifiers are removed**, such as Caylex's internal registry ids, along with attributes that monitoring tools add to every span (`user.id`, `session.id`, `langfuse.*`). Use `caylex.user.id` and `caylex.session.id` instead.
+- **Raw payload attributes are fingerprinted.** Span attributes that hold whole tool inputs and outputs or model prompts and completions (`tool.arguments`, `tool.return_value`, `gen_ai.prompt`, `gen_ai.completion`) are replaced with their size and SHA-256. To receive that text, use [run content](#run-content) instead.
+- **Other workspaces' data never reaches your destination.** Each destination receives only your workspace's telemetry, and only from the projects you selected.
+
+## Filter attributes
+
+To keep specific attributes out of a destination, or send only the ones you use, set the destination's `attribute_deny` and `attribute_allow` lists through the [API](#manage-destinations-with-the-api). They aren't in the Caylex Platform UI yet.
+
+- Each entry is an exact attribute key, such as `caylex.session.title`, or a prefix ending in `*`, such as `caylex.navigator.*`.
+- **`attribute_deny`** removes matching attributes.
+- **`attribute_allow`**, when set, sends only matching attributes, plus the ids Caylex needs to route and correlate records: `service.name`, `caylex.tenant.id`, `caylex.project.id`, `caylex.session.id`, `caylex.query.id`, `caylex.content.class`, `assistant.run.id`, `assistant.turn.index`, and `gen_ai.tool.call.id`.
+- Deny wins: a key matched by both lists is removed, including the ids above if you deny them explicitly.
+- The lists apply to every attribute set Caylex sends: span, log record, and metric data point attributes, resource attributes, and span event and link attributes. They don't apply to a log record's body, so they can't trim run content text. Use the run content toggles for that.
+
+For example, `"attribute_deny": ["caylex.session.title"]` stops sending session titles while keeping everything else.
+
+## Projects
+
+Leave **Projects** empty to forward telemetry from every project in your workspace. Select projects to forward only those. Records that don't belong to any project, such as some service-level metrics, are only sent to destinations that cover all projects.
+
+Navigator traffic belongs to the project of the Navigator that handled it. Requests that fail authentication, for example because of a wrong API key, aren't attributed to your workspace, so they're never forwarded.
+
+## Test a destination
+
+Click **Send test event** in the destination's row menu. Caylex sends one OTLP log record straight to the destination's logs URL (the Logs URL shown on its details panel), and shows the HTTP status and latency.
+
+The test record has:
+
+- Event name `caylex.destination.test` (attribute `caylex.event.name`).
+- Body text that starts with "Caylex destination test event".
+- Resource attribute `service.name` set to `caylex-analytics`.
+
+The test makes a single attempt with a 10-second timeout, and works even while the destination is disabled, so you can check credentials before turning it on. A failed test shows the status your endpoint returned (for example, `401` for a wrong token or `404` for a wrong path).
+
+<Tip>
+A passing test proves the logs URL and credentials work. If you use a per-signal traces URL, check that traces arrive too after your next assistant run.
+</Tip>
+
+## Edit, disable, and delete
+
+- **Edit** changes any setting. Open it from the row menu or with **Edit** on the details panel. Every save asks you to agree to the DPA again, and that agreement covers the new settings, including new URLs and run content, so the destination keeps forwarding after the edit.
+- **Disable** pauses forwarding and keeps all settings. Telemetry produced while a destination is disabled isn't sent later.
+- **Delete** permanently removes the destination, its stored credentials, and its audit history. To stop temporarily, disable instead.
+
+## Manage destinations with the API
+
+Everything on this page is also available through the Platform API, so you can create and update destinations from scripts or CI. Authenticate with a [platform access token](/auth/platform-authentication) that has the admin role.
+
+```
+Base URL:  https://api.caylex.ai/api/v1
+Header:    Authorization: Bearer <platform_access_token>
+```
+
+| Method and path | What it does |
+| --- | --- |
+| `GET /telemetry-destinations` | List destinations (`page`, `page_size` up to 200). |
+| `POST /telemetry-destinations` | Create a destination. |
+| `GET /telemetry-destinations/{id}` | Get one destination. |
+| `PATCH /telemetry-destinations/{id}` | Change any fields; omitted fields are left as they are. |
+| `DELETE /telemetry-destinations/{id}` | Delete permanently. To pause, `PATCH` `{"enabled": false}`. |
+| `POST /telemetry-destinations/{id}/test` | Send a test event. Returns `502` with the endpoint's status if delivery fails. |
+| `GET /telemetry-destinations/{id}/audit` | The destination's change history, newest first. |
+
+For example, to create a PostHog destination that sends traces and logs with all run content except reasoning:
+
+```bash
+curl -X POST "https://api.caylex.ai/api/v1/telemetry-destinations" \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "PostHog",
+    "endpoint_url": "https://us.i.posthog.com/i",
+    "auth_kind": "bearer",
+    "auth_secret": "'"$POSTHOG_PROJECT_KEY"'",
+    "signals": {"traces": true, "logs": true, "metrics": false},
+    "content_capture": {
+      "user_messages": true, "assistant_messages": true,
+      "tool_arguments": true, "tool_results": true,
+      "task_list": true, "approvals": true, "reasoning": false
+    },
+    "attribute_deny": ["caylex.session.title"],
+    "dpa_acknowledged": true,
+    "content_acknowledged": true
+  }'
+```
+
+Things the UI handles for you that a script needs to send itself:
+
+- **Consent.** `dpa_acknowledged: true` accepts the data processing addendum; without it the destination is created disabled. `content_acknowledged: true` is required to turn on any run content type.
+- **New hosts reset consent.** If a `PATCH` makes the destination send to a host it didn't send to before, through `endpoint_url` or `signal_endpoints`, Caylex clears both acknowledgments, disables the destination, and turns off its run content, unless the same request sends `dpa_acknowledged: true` and `content_acknowledged: true`.
+- **Secrets are write-only.** `auth_secret` is never returned; responses show `auth_secret_set` instead. Send a new `auth_secret` to rotate it.
+- **Per-signal URLs** go in `signal_endpoints` (`{"traces": "https://…"}`). On `PATCH`, the object replaces all overrides; send `{}` to clear them.
+
+Changes made with a platform token appear in the audit history with the token's id (`actor_platform_token_id`) instead of a user.
+
+See the [REST API Reference](https://developers.caylex.ai/) for every field.
+
+## Delivery
+
+- **Retries.** Caylex retries timeouts, connection errors, `429`, and `5xx` responses a few times with backoff. Other `4xx` responses, such as `400`, `401`, `403`, and `404`, aren't retried, because retrying won't fix them.
+- **Outages.** If an endpoint keeps failing, Caylex pauses sending to that host for about 30 seconds at a time instead of retrying every batch. Hosts are tracked separately, so a failing per-signal traces URL doesn't hold up logs going to another host.
+- **No redelivery.** Data that can't be delivered isn't redelivered later. Fix the endpoint or credentials, and new telemetry flows again.
+- **Sampling.** A destination can carry a sample rate below 1, shown in its details. Sampling keeps or drops whole traces, so a trace's spans and its run content records arrive together. Metrics are never sampled.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="The test event fails with 401 or 403">
+    The endpoint rejected the credentials. For bearer tokens, paste only the token: Caylex adds `Bearer `. For providers that use a header, make sure the header name matches their docs exactly.
+  </Accordion>
+  <Accordion title="The test event fails with 404">
+    The logs URL is wrong. Compare the URL in the error with your provider's OTLP logs URL. If your provider puts OTLP under a path (such as `/otlp` or `/i`), include it in the endpoint URL.
+  </Accordion>
+  <Accordion title="Logs arrive but traces don't">
+    Check that **Traces** is on. Then check the Traces URL on the destination's details panel against your provider's OTLP traces URL, and edit it under **Per-signal URLs** if they differ. If you limited **Projects**, make sure the assistant you're testing runs in one of them.
+  </Accordion>
+  <Accordion title="Spans arrive but run content doesn't">
+    Run content is sent as logs, so turn on **Logs**, and turn on the content types you want. If you set a per-signal Logs URL, check that it's the URL your provider uses for logs.
+  </Accordion>
+  <Accordion title="A value shows as [REDACTED]">
+    It matched a secret pattern. See [What Caylex removes before sending](#what-caylex-removes-before-sending).
+  </Accordion>
+</AccordionGroup>
