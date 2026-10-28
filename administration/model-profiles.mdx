@@ -1,0 +1,156 @@
+---
+title: "Model Profiles"
+description: "Let Caylex pick a model per request from a set you define, at the cost, service tier and provider preference you choose."
+icon: "layer-group"
+---
+
+A **model profile** is a named set of rules for picking a model per request. Instead of pinning one model, you list the models a request may use (by id or pattern), leave some out, and set a cost tier. Each request is then routed to one of the matching models.
+
+Use a profile anywhere you'd pass a model: pass its `model_id`, `profile/<id>`, as `model` on [widget session-init](/widget/agent/model-selection), [`POST /agent-task`](/background-tasks/agent-tasks), or a [Background Sync](/background-tasks/background-sync) config.
+
+## What a Profile Sets
+
+| Setting | What it picks | Values |
+| --- | --- | --- |
+| `allowed_models` | The models requests can use. Model ids or patterns where `*` matches anything, such as `anthropic/*` or `openai/gpt-5*`. Empty allows every model. | Up to 100 patterns |
+| `excluded_models` | Models to leave out. Always wins over `allowed_models`. | Up to 100 patterns |
+| `cost_tier` | **Which model** each request goes to: the price band it picks from among the allowed models. | `low`, `medium` (default), `high`, `xhigh`, `max` |
+| `service_tier` | **Which capacity tier** serves the request. | `flex`, `priority`, or `null` for the standard tier |
+| `optimize_for` | **Which provider** of the chosen model to prefer. | `throughput`, `latency`, `price`, or `null` to balance load |
+
+Only models an agent can run on count, the same ones [`GET /agent-models`](/widget/agent/model-selection#available-models) lists, and a profile must leave at least one. Patterns keep working as the catalog changes: a new model that matches `anthropic/*` joins the profile when it appears.
+
+### Service Tier
+
+| `service_tier` | Behavior | Billed at |
+| --- | --- | --- |
+| `null` (standard) | The provider's regular tier. | The standard rate |
+| `flex` | Cheaper, lower-priority capacity. A request can fail when no flex capacity can take it. | The flex rate |
+| `priority` | Faster, higher-priority capacity. Falls back to the standard tier when priority capacity is busy. | The priority rate, or the standard rate after a fallback |
+
+Requests are billed at the rate of the tier that actually served them. Not every model offers flex or priority capacity; a model without it is served at the standard tier.
+
+### Optimize For
+
+`optimize_for` chooses among the providers that serve the same model:
+
+| `optimize_for` | Prefers |
+| --- | --- |
+| `null` (balanced) | Spreads requests across the model's providers. |
+| `throughput` | The providers that generate tokens fastest. |
+| `latency` | The providers that start answering soonest. |
+| `price` | The cheapest providers of the model. |
+
+## How Requests Are Routed
+
+- Each request goes to one of the profile's models within its `cost_tier`. A conversation tends to stay on one model, and when the agent calls a tool, the follow-up after the tool result goes to the model that made the call.
+- A session on a profile budgets its context for the **smallest** context window and output limit among the profile's models, so any model it routes to can take the conversation.
+- If none of the profile's models can serve a request, Caylex retries it once on the agent's default model instead of failing the turn.
+- If a profile can't be used when a session or task starts (for example, the catalog no longer has any of its models), the session runs on the agent's default model.
+- Edits apply from the next model request of every session, task and sync that uses the profile.
+
+Background Sync run details and Insights show which models actually answered.
+
+## API
+
+All endpoints take a [platform access token](/auth/platform-authentication) or an admin session:
+
+```
+GET    https://api.caylex.ai/api/v1/model-profiles          # the workspace's profiles, by name
+POST   https://api.caylex.ai/api/v1/model-profiles          # create
+GET    https://api.caylex.ai/api/v1/model-profiles/{id}     # one profile
+PUT    https://api.caylex.ai/api/v1/model-profiles/{id}     # replace
+DELETE https://api.caylex.ai/api/v1/model-profiles/{id}     # delete
+```
+
+### Create or Replace
+
+```json
+{
+  "name": "Fast and frugal",
+  "allowed_models": ["anthropic/*", "openai/gpt-5*"],
+  "excluded_models": ["openai/gpt-5.4-mini"],
+  "cost_tier": "medium",
+  "service_tier": "priority",
+  "optimize_for": "throughput"
+}
+```
+
+`name` is required and unique within your workspace. Everything else is optional: an empty `allowed_models` allows every model, `cost_tier` defaults to `medium`, and `service_tier` and `optimize_for` default to `null`. `PUT` replaces the whole profile.
+
+| Status | When |
+| --- | --- |
+| `201` / `200` | Created / replaced. Returns the profile. |
+| `409` | Another profile already has this name. |
+| `422` | A pattern isn't a model id or pattern, or the rules leave no model an agent can run on. |
+| `503` | The model catalog can't be read right now. Try again shortly. |
+
+### Response
+
+```json
+{
+  "id": "6c1f3e0a-2b7d-4a51-9a3e-0c4b2d9f8e11",
+  "model_id": "profile/6c1f3e0a-2b7d-4a51-9a3e-0c4b2d9f8e11",
+  "name": "Fast and frugal",
+  "allowed_models": ["anthropic/*", "openai/gpt-5*"],
+  "excluded_models": ["openai/gpt-5.4-mini"],
+  "cost_tier": "medium",
+  "service_tier": "priority",
+  "optimize_for": "throughput",
+  "model_count": 9,
+  "used_by_sync_configs": 1,
+  "used_by_widget_designs": 0,
+  "sessions_last_30_days": 42,
+  "created_by": "jane@example.com",
+  "updated_by": "jane@example.com",
+  "created_at": "2026-10-20T10:00:00Z",
+  "updated_at": "2026-10-27T16:30:00Z"
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `model_id` | Pass this as `model` to use the profile. |
+| `model_count` | How many models requests can route to right now; `null` when the catalog can't be read. |
+| `used_by_sync_configs`, `used_by_widget_designs` | Saved configurations that use the profile. |
+| `sessions_last_30_days` | Widget, assistant and task sessions on the profile active in the last 30 days. |
+
+`GET /model-profiles` returns `{"profiles": [...]}`.
+
+### Delete
+
+`DELETE` returns `204`, or `409` while a sync config or widget design uses the profile: point them at another model first. Sessions and tasks already running on a deleted profile keep running on it.
+
+## Listing Profiles With Models
+
+[`GET /agent-models`](/widget/agent/model-selection#available-models) returns your profiles next to the catalog models, so one picker can offer both:
+
+```json
+{
+  "models": [ ... ],
+  "model_profiles": [
+    {
+      "id": "profile/6c1f3e0a-2b7d-4a51-9a3e-0c4b2d9f8e11",
+      "label": "Fast and frugal",
+      "cost_tier": "medium",
+      "service_tier": "priority",
+      "optimize_for": "throughput",
+      "model_count": 9,
+      "context_window": 400000,
+      "max_output_tokens": 64000,
+      "pricing": {
+        "min_input_usd_per_1m": 0.3,
+        "max_input_usd_per_1m": 5.5,
+        "min_output_usd_per_1m": 1.2,
+        "max_output_usd_per_1m": 27.5
+      }
+    }
+  ]
+}
+```
+
+`context_window` and `max_output_tokens` are the smallest among the profile's models, and `pricing` is the range of your billed rates across them (`null` when pricing isn't configured). A profile's actual cost depends on which model each request is routed to.
+
+## In the Caylex App
+
+Manage profiles under **Administration → Model Profiles**. Model pickers across the app list your profiles above the catalog models, and the **Model Profiles** view in Insights shows each profile's calls, the models that answered, and estimated cost next to the agent's default models.

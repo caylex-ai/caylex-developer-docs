@@ -115,6 +115,7 @@
           {
             "group": "Administration",
             "pages": [
+              "administration/model-profiles",
               "administration/telemetry-destinations"
             ]
           },
