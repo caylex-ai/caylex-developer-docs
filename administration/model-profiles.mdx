@@ -47,6 +47,7 @@ With a `service_tier` set, the tier is applied first: its endpoints are tried be
 ## How Requests Are Routed
 
 - Each request goes to one of the profile's models within its `cost_tier`. A conversation tends to stay on one model, and when the agent calls a tool, the follow-up after the tool result goes to the model that made the call.
+- The profile's `service_tier` and `optimize_for` apply to every request it routes, including the follow-up after a tool call and the retry on the agent's default model.
 - A session on a profile budgets its context for the **smallest** context window and output limit among the profile's models, so any model it routes to can take the conversation.
 - If none of the profile's models can serve a request, Caylex retries it once on the agent's default model instead of failing the turn.
 - If a profile can't be used when a session or task starts (for example, the catalog no longer has any of its models), the session runs on the agent's default model.
