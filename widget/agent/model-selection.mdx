@@ -6,6 +6,8 @@ icon: "robot"
 
 The Caylex agent runs on its default model. **Model selection** lets your backend override that on a per-session basis by passing an optional `model` when it starts an agent session, so you can match the model to the use case (for example, a faster, cheaper model for lightweight chat, or a larger model for complex work).
 
+Alongside the model you can pass `model_options` to choose a [service tier and what to optimize for](#service-tier-and-optimize-for), or pass a [model profile](/administration/model-profiles) as the `model` to let Caylex pick a model per request.
+
 ## Overview
 
 The model is chosen server-side, at the same place you already start a session: the `POST /widget/agent-session-init` call. Caylex checks the requested model against [OpenRouter's model catalog](#available-models), signs it into the short-lived widget token, and the agent uses it for the turns the widget sends with that token.
@@ -24,23 +26,24 @@ sequenceDiagram
     participant Caylex as Caylex API
     participant Widget as Widget (browser)
 
-    Backend->>Caylex: POST /widget/agent-session-init {caylex_api_key, user_email, model?}
+    Backend->>Caylex: POST /widget/agent-session-init {caylex_api_key, user_email, model?, model_options?}
     Caylex->>Caylex: Check model against the OpenRouter catalog
-    Caylex-->>Backend: {token, model, model_warning?}
+    Caylex-->>Backend: {token, model, model_options, model_warning?}
     Backend->>Widget: widget token
     Widget->>Caylex: Open session -> agent runs on the selected model
 ```
 
 The selected model is recorded on the chat session, along with the model's context window and output limit, and later turns reuse them until the model changes.
 
-Send the same `model` every time you mint a token for a user, including the call your backend makes when the widget's `refreshToken` callback asks for a new token, unless you want the session to switch models.
+Send the same `model` (and `model_options`) every time you mint a token for a user, including the call your backend makes when the widget's `refreshToken` callback asks for a new token, unless you want the session to switch models.
 
 ### Changing the Model Mid-Session
 
 Each turn runs on the model in the token the widget sends with it. When the widget picks up a token minted for a different `model`, the session's next turn switches to that model and the conversation carries on. A turn that's already running finishes on the model it started with.
 
 - If a later token has no `model`, a session on a model you chose goes back to the agent's default model.
-- If the later token's `model` was ignored (the response had a `model_warning`), the session keeps the model it's on.
+- If the later token's `model` was ignored (the response had a `model_warning`), the session keeps the model it's on, and its `model_options`.
+- A later token's `model_options` apply from the next turn too. A token without them returns the session to the defaults.
 - Switching to a model with a smaller context window can compact the conversation on the next turn. Caylex summarizes older turns to fit, and in very long sessions the oldest detail can be dropped from the summary.
 - Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
 - [Agent tasks](/background-tasks/agent-tasks) and [background sync](/background-tasks/background-sync) runs keep the model they started with.
@@ -55,13 +58,31 @@ Add an optional `model` to the session-init body:
 {
   "caylex_api_key": "ck_your_navigator_api_key",
   "user_email": "jane@example.com",
-  "model": "anthropic/claude-opus-4.8"
+  "model": "anthropic/claude-opus-4.8",
+  "model_options": { "service_tier": "priority", "optimize_for": "throughput" }
 }
 ```
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models). Omit to use the Caylex agent's default model. Unsupported values are ignored (the agent keeps its default model) and return a `model_warning`. |
+| `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models), or a [model profile](/administration/model-profiles) id (`profile/<id>`). Omit to use the Caylex agent's default model. Unsupported values are ignored (the agent keeps its default model) and return a `model_warning`. |
+| `model_options` | No | `service_tier` and `optimize_for` for the session's model: the one you pass, or the agent's default model when you pass none. See [Service Tier and Optimize For](#service-tier-and-optimize-for). |
+
+### Service Tier and Optimize For
+
+`model_options` has two optional fields. Leave either out (or `null`) for the default.
+
+| Field | Values | Picks |
+| --- | --- | --- |
+| `service_tier` | `flex`, `priority`, `ultrafast`, or `null` (standard) | **Which capacity tier** serves each request. `null` is standard routing: the provider's regular tier, where priority endpoints of open-weight models can also serve a request. `flex` is cheaper and lower priority; when no flex capacity can take a request, it goes only to an endpoint priced at or below flex, and fails if none can. `priority` is faster and costs more, falling back to the standard tier when priority capacity is busy. `ultrafast` is the fastest and costs the most, falling back to priority, then standard. |
+| `optimize_for` | `throughput`, `latency`, `price`, or `null` (balanced) | **Which provider** of the model to prefer: the one that generates tokens fastest, starts answering soonest, or costs least. `null` spreads requests across the model's providers. |
+
+With a `service_tier` set, the tier is applied first: its endpoints are tried before the fallbacks (for `ultrafast`: ultrafast, then priority, then standard), and `optimize_for` only orders the providers within each of those groups. For example, `priority` with `price` tries the cheapest priority endpoint first, not the cheapest endpoint overall. With no `service_tier`, `optimize_for` orders all of the model's providers in standard routing, including priority endpoints of open-weight models.
+
+Requests are billed at the rate of the tier that actually served them. Not every model offers flex, priority or ultrafast capacity; a model without the chosen tier is served at the standard tier (or as `priority`, for `ultrafast`).
+
+- `model_options` are ignored when the session's model is a [model profile](/administration/model-profiles), whether you pass it or it's the agent's default model: a profile sets its own service tier and `optimize_for`. The response's `model_options` is then `null`.
+- Unknown fields or values return `422`.
 
 ## Response
 
@@ -70,7 +91,8 @@ Add an optional `model` to the session-init body:
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "expires_at": "2026-06-16T15:30:00+00:00",
   "model": "anthropic/claude-opus-4.8",
-  "model_warning": null
+  "model_warning": null,
+  "model_options": { "service_tier": "priority", "optimize_for": "throughput" }
 }
 ```
 
@@ -78,6 +100,7 @@ Add an optional `model` to the session-init body:
 | --- | --- |
 | `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's default model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
 | `model_warning` | `null` on success. Set to a message when the requested model was ignored: it says why and points to `GET /agent-models` and this page. |
+| `model_options` | The service tier and `optimize_for` the session uses, or `null` for the defaults (also when the session's model is a model profile, which sets its own). |
 
 ## Available Models
 
@@ -141,6 +164,8 @@ GET https://api.caylex.ai/api/v1/agent-models
 | `recommended` | `true` for models with a context window of 1M tokens or more. |
 | `pricing` | What your organization is billed per million input and output tokens on this model. `priced_at_fallback` is `true` when Caylex has no rate for the model yet, so the default rate applies. `null` when pricing isn't configured. |
 
+The response also has a `model_profiles` list: your workspace's [model profiles](/administration/model-profiles#listing-profiles-with-models), whose `id` you can pass as `model` too.
+
 The list follows OpenRouter: new models appear when OpenRouter lists them, and models OpenRouter retires or changes so they no longer qualify drop out. Read the list when you build a picker rather than hard-coding ids.
 
 If `model` is omitted, the session uses the **Caylex agent's default model**, falling back to the platform default **`anthropic/claude-sonnet-4.6`** when none is set. Passing `model` only overrides that for the session when you explicitly request a model from the list.
@@ -182,7 +207,11 @@ Add the optional `model` to your existing backend token call, and use the same c
     PLATFORM_TOKEN = "your_platform_access_token"
     CAYLEX_API_KEY = "ck_your_navigator_api_key"
 
-    async def mint_widget_token(user_email: str, model: str | None = None) -> str:
+    async def mint_widget_token(
+        user_email: str,
+        model: str | None = None,
+        model_options: dict | None = None,
+    ) -> str:
         payload = {
             "caylex_api_key": CAYLEX_API_KEY,
             "user_email": user_email,
@@ -190,6 +219,9 @@ Add the optional `model` to your existing backend token call, and use the same c
         if model:
             # Optional; omit to use the agent's default model.
             payload["model"] = model
+        if model_options:
+            # Optional, e.g. {"service_tier": "priority", "optimize_for": "throughput"}.
+            payload["model_options"] = model_options
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -211,9 +243,15 @@ Add the optional `model` to your existing backend token call, and use the same c
     const PLATFORM_TOKEN = process.env.CAYLEX_PLATFORM_TOKEN!;
     const CAYLEX_API_KEY = process.env.CAYLEX_NAVIGATOR_API_KEY!;
 
+    type ModelOptions = {
+      service_tier?: "flex" | "priority" | "ultrafast" | null;
+      optimize_for?: "throughput" | "latency" | "price" | null;
+    };
+
     export async function mintWidgetToken(
       userEmail: string,
       model?: string,
+      modelOptions?: ModelOptions,
     ): Promise<string> {
       const response = await fetch(`${CAYLEX_API_URL}widget/agent-session-init`, {
         method: "POST",
@@ -225,6 +263,7 @@ Add the optional `model` to your existing backend token call, and use the same c
           caylex_api_key: CAYLEX_API_KEY,
           user_email: userEmail,
           model, // optional; omit to use the agent's default model
+          model_options: modelOptions, // optional
         }),
       });
 
@@ -256,7 +295,7 @@ The frontend integration is unchanged — pass the returned `token` to the widge
 
 ## Widget Design Space
 
-The chat widget's design space in the Caylex app has a **Model** picker. Its preview sessions run on the model you pick, the generated backend snippet includes it as `model` in the `POST /widget/agent-session-init` body, and saved designs remember it.
+The chat widget's design space in the Caylex app has a **Model** picker, with **Service tier** and **Optimize for** controls under it (hidden when you pick a model profile, which sets its own). Preview sessions run with what you pick, the generated backend snippet includes it as `model` and `model_options` in the `POST /widget/agent-session-init` body, and saved designs remember it.
 
 ## Background Tasks and Syncs
 
@@ -266,3 +305,5 @@ The same models work outside the widget:
 - **[Background Sync](/background-tasks/background-sync)**: save `model` on the sync config. Every task a trigger starts runs on it. Saving a model that isn't on the list returns `422`. If a saved model later drops off the list, a trigger runs the tasks on the agent's default model and returns a `model_warning`.
 
 In both cases, subassistants follow the chosen model, as they do in widget sessions.
+
+Background tasks and sync configs don't take `model_options`. To set a service tier or `optimize_for` for them, pass a [model profile](/administration/model-profiles) as the `model`: the profile's own settings apply.

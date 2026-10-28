@@ -147,7 +147,7 @@ POST https://api.caylex.ai/api/v1/sync-configs
 | `server_instance_ids` | Yes | One to ten server instances from `GET /sync-configs/sources`. |
 | `all_users` | No | `true` syncs every user of the project, resolved each time you trigger. Defaults to `false`. Playground users are never included. |
 | `user_emails` | When `all_users` is `false` | Users to sync. Each must already be a user of the project. Leave it empty when `all_users` is `true`. |
-| `model` | No | A model id from [`GET /agent-models`](/widget/agent/model-selection#available-models). Every task a trigger starts runs on it, and so do the subassistants those tasks delegate to. Omit it to use the agent's default model. |
+| `model` | No | A model id from [`GET /agent-models`](/widget/agent/model-selection#available-models), or a [model profile](/administration/model-profiles) id (`profile/<id>`) to pick a model per request with the profile's cost tier, service tier and `optimize_for`. Every task a trigger starts runs on it, and so do the subassistants those tasks delegate to. Omit it to use the agent's default model. |
 
 The response is the saved config, with each server's `source_type` and an `available` flag. `available` turns `false` if a server is later paused or stops supporting Background Sync, and triggers skip that server.
 
@@ -338,6 +338,8 @@ GET https://api.caylex.ai/api/v1/sync-task/{sync_id}
 The response above is trimmed. Each source also repeats its `source_type`, `server_name`, `server_instance_id`, `resolved_by`, and `config_warnings`, and `summary` carries the full `counts` and `diagnostics` described in [Export format](#export-format). `summary` is set once the source finishes.
 
 Each source's `model` is the model its task ran on. Before the task starts, it's the config's model as of the trigger, or `null` when the task will use the agent's default model.
+
+When `model` is a model profile, each source also has `answered_models`: the models that actually answered its requests, most calls first, as `{model, label, calls, share, output_tokens, fallback_calls}`. `fallback_calls` counts requests the profile couldn't route, which the agent's default model answered instead. The list is empty until the task's first turn ends, and for a single model. The run carries the same list summed over its sources.
 
 A run's status summarizes its sources:
 
