@@ -25,7 +25,7 @@ Only models an agent can run on count, the same ones [`GET /agent-models`](/widg
 | `service_tier` | Behavior | Billed at |
 | --- | --- | --- |
 | `null` (standard) | The provider's regular tier. | The standard rate |
-| `flex` | Cheaper, lower-priority capacity. A request can fail when no flex capacity can take it. | The flex rate |
+| `flex` | Cheaper, lower-priority capacity. When no flex capacity can take a request, it goes to an endpoint priced at or below flex. | The flex rate, or the rate of the endpoint that served it |
 | `priority` | Faster, higher-priority capacity. Falls back to the standard tier when priority capacity is busy. | The priority rate, or the standard rate after a fallback |
 
 Requests are billed at the rate of the tier that actually served them. Not every model offers flex or priority capacity; a model without it is served at the standard tier.
