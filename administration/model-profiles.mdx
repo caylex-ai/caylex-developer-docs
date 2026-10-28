@@ -42,6 +42,8 @@ Requests are billed at the rate of the tier that actually served them. Not every
 | `latency` | The providers that start answering soonest. |
 | `price` | The cheapest providers of the model. |
 
+With a `service_tier` set, the tier is applied first: its endpoints are tried before the fallbacks (for `ultrafast`: ultrafast, then priority, then standard), and `optimize_for` only orders the providers within each of those groups. For example, `priority` with `price` tries the cheapest priority endpoint first, not the cheapest endpoint overall. With no `service_tier`, `optimize_for` orders all of the model's providers.
+
 ## How Requests Are Routed
 
 - Each request goes to one of the profile's models within its `cost_tier`. A conversation tends to stay on one model, and when the agent calls a tool, the follow-up after the tool result goes to the model that made the call.
