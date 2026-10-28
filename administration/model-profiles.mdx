@@ -15,7 +15,7 @@ Use a profile anywhere you'd pass a model: pass its `model_id`, `profile/<id>`, 
 | `allowed_models` | The models requests can use. Model ids or patterns where `*` matches anything, such as `anthropic/*` or `openai/gpt-5*`. Empty allows every model. | Up to 100 patterns |
 | `excluded_models` | Models to leave out. Always wins over `allowed_models`. | Up to 100 patterns |
 | `cost_tier` | **Which model** each request goes to: the price band it picks from among the allowed models. | `low`, `medium` (default), `high`, `xhigh`, `max` |
-| `service_tier` | **Which capacity tier** serves the request. | `flex`, `priority`, or `null` for the standard tier |
+| `service_tier` | **Which capacity tier** serves the request. | `flex`, `priority`, `ultrafast`, or `null` for the standard tier |
 | `optimize_for` | **Which provider** of the chosen model to prefer. | `throughput`, `latency`, `price`, or `null` to balance load |
 
 Only models an agent can run on count, the same ones [`GET /agent-models`](/widget/agent/model-selection#available-models) lists, and a profile must leave at least one. Patterns keep working as the catalog changes: a new model that matches `anthropic/*` joins the profile when it appears.
@@ -25,10 +25,11 @@ Only models an agent can run on count, the same ones [`GET /agent-models`](/widg
 | `service_tier` | Behavior | Billed at |
 | --- | --- | --- |
 | `null` (standard) | The provider's regular tier. | The standard rate |
-| `flex` | Cheaper, lower-priority capacity. When no flex capacity can take a request, it goes to an endpoint priced at or below flex. | The flex rate, or the rate of the endpoint that served it |
+| `flex` | Cheaper, lower-priority capacity. When no flex capacity can take a request, it goes only to an endpoint priced at or below flex, and fails if none can take it. | The flex rate, or the rate of the endpoint that served it |
 | `priority` | Faster, higher-priority capacity. Falls back to the standard tier when priority capacity is busy. | The priority rate, or the standard rate after a fallback |
+| `ultrafast` | The fastest capacity. Falls back to priority, then the standard tier. A model without ultrafast capacity is served as `priority`. | The ultrafast rate, or the rate of the tier it fell back to |
 
-Requests are billed at the rate of the tier that actually served them. Not every model offers flex or priority capacity; a model without it is served at the standard tier.
+Requests are billed at the rate of the tier that actually served them. Not every model offers flex, priority or ultrafast capacity; a model without the chosen tier is served at the standard tier (or as `priority`, for `ultrafast`).
 
 ### Optimize For
 
