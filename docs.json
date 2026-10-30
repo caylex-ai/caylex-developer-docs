@@ -87,7 +87,8 @@
                   "widget/agent/session-management",
                   "widget/agent/pending-context",
                   "widget/agent/auto-authentication",
-                  "widget/agent/model-selection"
+                  "widget/agent/model-selection",
+                  "widget/agent/worker-agents"
                 ]
               },
               {
