@@ -48,7 +48,7 @@ Each turn runs on the model in the token the widget sends with it. When the widg
 - Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
 - [Agent tasks](/background-tasks/agent-tasks) and [background sync](/background-tasks/background-sync) runs keep the model they started with.
 
-When a session runs on a model you chose, any subassistants its agent delegates work to run on that model too. When you don't pass `model`, each subassistant keeps its own default model.
+[Worker agents](/widget/agent/worker-agents), the sub-agents the agent delegates work to, run on `subassistant_model` when you pass one. Otherwise they run on the session's model when you chose one, or on their own default model when you didn't. A [worker agent definition](/widget/agent/worker-agents#defining-worker-agents) can also set its own model, which takes precedence over all of these.
 
 ## Request
 
@@ -67,6 +67,8 @@ Add an optional `model` to the session-init body:
 | --- | --- | --- |
 | `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models), or a [model profile](/administration/model-profiles) id (`profile/<id>`). Omit to use the Caylex agent's default model. Unsupported values are ignored (the agent keeps its default model) and return a `model_warning`. |
 | `model_options` | No | `service_tier` and `optimize_for` for the session's model: the one you pass, or the agent's default model when you pass none. See [Service Tier and Optimize For](#service-tier-and-optimize-for). |
+| `subassistant_model` | No | Model id or model profile id for the session's [worker agents](/widget/agent/worker-agents). It's checked like `model`; an unsupported value is ignored and returns a `subassistant_model_warning`. Each chat keeps the value it was created with. |
+| `subassistant_model_options` | No | `service_tier` and `optimize_for` for `subassistant_model`. Ignored when it's a model profile. |
 
 ### Service Tier and Optimize For
 
@@ -101,6 +103,9 @@ Requests are billed at the rate of the tier that actually served them. Not every
 | `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's default model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
 | `model_warning` | `null` on success. Set to a message when the requested model was ignored: it says why and points to `GET /agent-models` and this page. |
 | `model_options` | The service tier and `optimize_for` the session uses, or `null` for the defaults (also when the session's model is a model profile, which sets its own). |
+| `subassistant_model` | The worker agent model applied, or `null` when none was requested or it was ignored. |
+| `subassistant_model_warning` | Set when the requested `subassistant_model` was ignored. |
+| `subassistant_model_options` | The service tier and `optimize_for` applied to `subassistant_model`, or `null`. |
 
 ## Available Models
 
