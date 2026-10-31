@@ -301,6 +301,8 @@ Omit a queued approval from `decisions` to leave it pending for a later review.
 
 The agent can hand off parts of a task to [worker agents](/widget/agent/worker-agents) that run in parallel, as it does in the chat widget. Pass `subassistant_model` to choose their model and `subassistants` to define your own workers; both work as described on that page, with the same definition format. The task's definitions are fixed when you submit it and apply to continuations too.
 
+Workers follow the task's [`approval_mode`](#tool-approval): with `exclude` or `auto_approve`, tools that require approval are handled for them exactly as for the agent. With `human` or `deferred_human`, workers don't get tools that require approval; the agent makes those calls itself, so they go through your review.
+
 ## Skills
 
 To point the agent at a specific [skill](/platform/projects), pass its name or slug as `skill_ref`. The reference is validated against the project when you submit the task (you get a `404` if it doesn't exist), and the agent is given a mandatory instruction to load that skill (by its resolved id) and follow it before doing any work. Omit `skill_ref` to let the agent discover and use skills on its own.
