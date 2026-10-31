@@ -39,13 +39,17 @@ sequenceDiagram
 
 Users see each worker as a card in the chat with its title and status. While workers run, a pill above the message box shows how many are working; it expands to list them, each with a **Stop** button, and has a **Stop All** button. When the agent is waiting on its workers, the chat shows "Waiting for N worker agents to finish...".
 
-Clicking a worker opens its own chat, which streams live and is read-only. Its first message is the agent's instructions to it, labeled **Sent by parent agent**. A banner links back to the main chat.
+Clicking a worker's **View** opens its own chat, which streams live and is read-only. Its first message is the agent's instructions to it, labeled **Sent by parent agent**. The back arrow in the banner returns to the main chat, at the same scroll position.
+
+While workers run, the agent keeps its replies to short status lines. Once the last worker reports back, it writes one final reply that combines their results, and the work before it collapses into **Worked for …**, like any other turn.
 
 Worker chats don't appear in the saved sessions list. They're reached from the chat that started them.
 
 ### Tool Approvals
 
 Tool calls made by workers follow the same approval rules as the agent's own. When a worker needs an approval, only that worker pauses; the agent and the other workers keep going. The pill above the message box glows and reads **N pending actions need your approval**. Expanding it highlights the workers waiting on the user, and the worker's card in the chat shows **Needs your approval**. The approval card itself is in the worker's chat. If the agent has nothing else to do meanwhile, the chat shows **Waiting for your approval...**. If nobody answers, the request times out like any other and the agent is told.
+
+During a live voice conversation, users aren't looking at worker chats, so a worker's approval appears in the main chat instead, labeled with the worker that asked, and the voice assistant mentions it. Requests from different workers each get their own card, in the order they arrived.
 
 ## Choosing a Model
 
@@ -117,16 +121,19 @@ body.subassistants = subassistants;
 | `when_to_use` | Yes | What the agent reads to decide when to pick this worker. Say when to use it, and when not to. |
 | `system_prompt` | Yes | Instructions for the worker's role. They're added to the worker's own system prompt, so they stay in force for its whole run. |
 | `model` | No | Model id or model profile id. An unsupported model is dropped with a warning, and the worker falls back as described in [Choosing a Model](#choosing-a-model). |
-| `recommended_tools` | No | Tools the worker will likely need, as `server_name` and `tool_name`. |
+| `recommended_tools` | No | Tools the worker will likely need, as `server_name` and `tool_name`. Use the server's name in Caylex and the tool's name as the agent sees it. |
 | `recommended_skills` | No | Skill ids, slugs or names the worker will likely need. |
 
-You can define up to 20 workers. Invalid definitions fail the request with `422`. Problems that don't, such as an unsupported model, come back in `subassistant_warnings`.
+You can define up to 20 workers. Invalid definitions fail the request with `422`. Problems that don't, such as an unsupported model or a skill the agent can't see, come back in `subassistant_warnings`.
 
 ### Recommended Tools and Skills
 
-Recommended tools and skills are checked when a worker starts. The ones that exist are listed in the worker's instructions, so it can skip searching for them; the worker still reads each tool's details and each skill before using it. Ones that don't exist are left out. They're suggestions, not limits: a worker can still use any other tool the agent can.
+Recommendations save a worker from searching for what it needs. When a worker starts, its recommended tools and skills are listed at the end of the agent's instructions to it, and its first step is to load them: it reads each tool's details and each skill in one go, then gets to work.
 
-When the agent starts one of your workers, it can recommend more tools and skills for that task; they're added to the definition's.
+- **Skills** are matched when Caylex stores your definitions, against the skills the agent can see, and kept as their ids. One that doesn't match is dropped and reported in `subassistant_warnings`.
+- **Tools** aren't checked in advance. If a recommended tool doesn't exist, or doesn't fit the task, the worker finds the right one itself, at the cost of a search.
+
+Recommendations are suggestions, not limits: a worker can still use any other tool the agent can. When the agent starts one of your workers, it can recommend more tools and skills for that task; they're added to the definition's.
 
 ### When Definitions Apply
 
