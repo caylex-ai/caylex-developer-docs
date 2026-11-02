@@ -1,10 +1,10 @@
 ---
-title: "Background Sync"
-description: "Collect content from connected services with Background Sync and load the export into your indexes, data pipelines, and knowledge bases."
+title: "Data Sync"
+description: "Collect content from connected services with Data Sync and load the export into your indexes, data pipelines, and knowledge bases."
 icon: "arrows-rotate"
 ---
 
-[Background Sync](/background-tasks/background-sync) collects content from connected services and returns it as one uniform JSON export.
+[Data Sync](/background-tasks/data-sync) collects content from connected services and returns it as one uniform JSON export.
 These recipes show how to run it from your backend and load the results into a
 search index, RAG pipeline, or knowledge base.
 
@@ -13,7 +13,7 @@ search index, RAG pipeline, or knowledge base.
 Every recipe follows the same steps. Only the last one depends on the source:
 
 1. **Find the servers you can sync** with `GET /sync-configs/sources`. Only
-   servers that support Background Sync are listed.
+   servers that support Data Sync are listed.
 2. **Create or update a sync config** naming the servers, the users to sync
    as, and what to collect. Look the config up by name first so the recipe is
    safe to re-run.
@@ -39,7 +39,7 @@ your normal retention controls, and never commit exports to source control.
 
 | Method & path | Purpose |
 | --- | --- |
-| `GET /api/v1/sync-configs/sources` | List the project's servers that support Background Sync. |
+| `GET /api/v1/sync-configs/sources` | List the project's servers that support Data Sync. |
 | `GET /api/v1/sync-configs` | Find an existing config by name. |
 | `POST /api/v1/sync-configs` | Create a config. |
 | `PUT /api/v1/sync-configs/{id}` | Replace a config's servers, users, and instructions. |
@@ -70,7 +70,7 @@ across sources:
   after a full sync, without `since`, where the run is `completed` and every
   source is `ok`.
 
-The [export format](/background-tasks/background-sync#export-format) reference
+The [export format](/background-tasks/data-sync#export-format) reference
 describes every field.
 
 ## Available recipes
@@ -80,7 +80,7 @@ describes every field.
     Collect Notion pages, databases, rows, and comments, then turn the export
     into index records.
   </Card>
-  <Card title="Background Sync reference" icon="book" href="/background-tasks/background-sync">
+  <Card title="Data Sync reference" icon="book" href="/background-tasks/data-sync">
     Every endpoint, status, limit, and export field.
   </Card>
 </CardGroup>

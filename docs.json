@@ -104,7 +104,7 @@
             "group": "Background Tasks",
             "pages": [
               "background-tasks/agent-tasks",
-              "background-tasks/background-sync"
+              "background-tasks/data-sync"
             ]
           },
           {
@@ -245,9 +245,9 @@
           "cookbooks/programmatic-chat-sessions",
           "cookbooks/set-server-base-url-override",
           {
-            "group": "Background Sync",
+            "group": "Data Sync",
             "pages": [
-              "cookbooks/background-sync",
+              "cookbooks/data-sync",
               "cookbooks/background-agent-file-sync"
             ]
           }
