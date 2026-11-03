@@ -1,0 +1,184 @@
+---
+title: "Calling a Public Connector"
+description: "Connect an AI client to a public connector and use its list tool, enabled tools and agent tasks."
+icon: "plug"
+---
+
+This page is for whoever sets up the AI client that uses a [public connector](/public-connectors/overview): your users, or you when you build the client. The AI itself learns the same rules from the connector's server instructions and tool descriptions, so most clients need no extra prompting.
+
+## Connect
+
+A connector is reached like any navigator: endpoint `https://navigator.caylex.ai/mcp`, Streamable HTTP, with two headers. See [Connecting Your Agent](/integration/connecting).
+
+| Header | Value |
+| --- | --- |
+| `x-api-key` | The connector's API key (`ck_…`). |
+| `x-user-email` | The user's email. Agent task runs and tool calls use this user's sign-ins. |
+
+For example, in Claude Desktop's `claude_desktop_config.json` (see [Claude Desktop](/integration/claude-desktop)):
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "acme-support": {
+      "url": "https://navigator.caylex.ai/mcp",
+      "headers": {
+        "x-api-key": "ck_abc123.your-connector-key",
+        "x-user-email": "you@example.com"
+      }
+    }
+  }
+}
+```
+
+On `initialize`, the connector's server instructions tell the AI to start with its list tool, run agent tasks with `run_agent_task`, and call tools with `get_tool_info` and `invoke_tools`.
+
+## Which tools a connector offers
+
+| Tool | Offered when |
+| --- | --- |
+| `<api_name>_list_tools` | Always. |
+| `run_agent_task`, `get_agent_task_result`, `decide_agent_task_approval`, `continue_agent_task` | The connector has at least one enabled agent task. |
+| `get_tool_info`, `get_tool_schemas`, `invoke_tools` | At least one tool is enabled on the connector. |
+| `get_authentication_status_and_link` | [In-Chat Authentication](/navigator/in-chat-authentication) is on for the connector. |
+| `list_skills`, `read_skills`, `read_skill`, `read_skill_file` | The project has skills. Only skills enabled on the connector are visible. |
+
+`suggest_tools`, query sessions, Code Mode's `execute_tools_in_code` and `get_context_map` are never offered. Calling a tool the connector doesn't offer returns: "The tool '…' is not available on this connector. Call &lt;api_name&gt;_list_tools to see what it offers."
+
+## `<api_name>_list_tools`
+
+Lists the connector's agent tasks and enabled tools. The name comes from the connector's name: lowercased, with other characters turned into `_`. A connector named "Acme Support" offers `acme_support_list_tools`. Names are cut to 64 characters, the limit MCP clients accept.
+
+It takes no parameters and returns:
+
+```json
+{
+  "agent_tasks": {
+    "how_to_run": "run_agent_task(task=<name>, prompt=<what you need>)",
+    "tasks": [
+      {
+        "name": "reconcile_accounts",
+        "description": "Reconciles a customer's accounts and reports discrepancies. Include the customer name and the period."
+      }
+    ],
+    "related_tools": {
+      "get_agent_task_result": "Keep waiting for a run's report.",
+      "decide_agent_task_approval": "Pass on the user's approval decision.",
+      "continue_agent_task": "Send a follow-up to a finished run."
+    }
+  },
+  "tools": {
+    "how_to_call": "get_tool_info for schemas, then invoke_tools",
+    "tools": [
+      { "server_name": "zendesk", "tool_name": "search_tickets", "description": "Search support tickets" }
+    ]
+  }
+}
+```
+
+Each key appears only when it has entries. A connector with neither returns `{"message": "This connector has no agent tasks or tools enabled yet."}`.
+
+Enabled tools are called the same way as on any navigator: `get_tool_info` (or [`get_tool_schemas`](/navigator/overview#get_tool_schemas)) for schemas, then [`invoke_tools`](/navigator/overview#invoke_tools). Only enabled tools have schemas; any other tool reads as unknown.
+
+## `run_agent_task`
+
+Starts an agent task run and waits briefly for its result.
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `prompt` | Yes | What the user needs, in full. The agent sees nothing else from the conversation. |
+| `task` | No | The agent task name. Optional when the connector has exactly one task. |
+
+The call waits up to about 20 seconds. It returns as soon as the run finishes or needs the user, and otherwise returns the run so far with a `next_step`:
+
+```json
+{
+  "run_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "RUNNING",
+  "task": "reconcile_accounts",
+  "next_step": "Call get_agent_task_result with this run_id to keep waiting."
+}
+```
+
+A finished run carries the report:
+
+```json
+{
+  "run_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "status": "COMPLETED",
+  "task": "reconcile_accounts",
+  "report": "Reconciled 3 accounts for Acme for October. One discrepancy: ..."
+}
+```
+
+| Field | When |
+| --- | --- |
+| `run_id`, `status`, `task` | Always. |
+| `report`, `error` | The run finished (`COMPLETED`, `INCOMPLETE`, `FAILED` or `CANCELLED`) and has them. |
+| `pending_approval` | `AWAITING_APPROVAL`: `{batch_id, items, expires_at}`. See [`decide_agent_task_approval`](#decide_agent_task_approval). |
+| `auth_warnings` | The user isn't signed in to some servers the task's navigator uses: `{servers, message}`. |
+| `auth_url` | With `auth_warnings`, or when the run ended `INCOMPLETE`. A link where the user signs in. |
+| `next_step` | The run is still going. |
+| `resumed` | `true` when the call picked up an earlier run (see below). |
+
+**Retries are safe.** If the call times out in the client, call `run_agent_task` again with the same `task` and `prompt` within 15 minutes. It picks up the same run instead of starting the work again, and returns `resumed: true`.
+
+**Limit.** A user can have 3 unfinished runs per connector, across all its tasks. Over the limit the call fails with: "You already have 3 agent task runs in progress. Wait for one to finish (get_agent_task_result) and try again."
+
+Errors name the problem, for example "Pass `task`: one of reconcile_accounts, refund_order." or "Unknown agent task 'refunds'. Available: …".
+
+## `get_agent_task_result`
+
+Waits for, and returns, the result of a run the same user started from this connector. Runs started by other users or from other connectors read as "Agent task run not found."
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `run_id` | Yes | From `run_agent_task`. |
+| `wait` | No | Defaults to `true`. `false` returns the current state at once. |
+
+Returns the same fields as `run_agent_task`. While the run is still going, `next_step` is "Still running. Call get_agent_task_result again."
+
+## `decide_agent_task_approval`
+
+Passes the user's decision on the actions a run is waiting on. The AI should call it only with the user's explicit decision.
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `run_id` | Yes | The waiting run. |
+| `batch_id` | Yes | `pending_approval.batch_id`. |
+| `decisions` | Yes | One entry per item in `pending_approval.items`: `{"approval_id": "...", "action": "approved" \| "rejected"}`. An approved entry may add `"trust_scope": "session"` to approve that tool for the rest of the run. |
+
+Each item in `pending_approval.items` describes one action: `approval_id`, `tool_name`, `server_name`, `intent`, `tool_params`, `tool_impact_level` and `server_logo_url`.
+
+```json
+{
+  "run_id": "f55a0be6-dd20-4f37-96c8-b7b8119797ba",
+  "batch_id": "2d7e4c1a-5b3f-4a9e-8c6d-7f1e2b3a4c5d",
+  "decisions": [
+    { "approval_id": "call_1", "action": "approved" }
+  ]
+}
+```
+
+Items left out of `decisions` are rejected. On success the result is `{"run_id", "status": "ok", "next_step": "Call get_agent_task_result to wait for the run to finish."}`. A batch already decided, or past its `expires_at` (7 days), returns `status: "already_resolved"`.
+
+## `continue_agent_task`
+
+Sends a follow-up to a finished run (`COMPLETED` or `INCOMPLETE`). The agent continues in the same session, with everything it did before, and returns a new report.
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `run_id` | Yes | The finished run. |
+| `message` | Yes | The follow-up. |
+
+It returns the same fields as `run_agent_task` and counts toward the 3-run limit. A run whose task was disabled, deleted or moved to another navigator can't be continued: "This agent task is no longer available."
+
+## Run statuses
+
+| Status | What the AI does next |
+| --- | --- |
+| `PENDING`, `RUNNING` | Call `get_agent_task_result` with the `run_id`. |
+| `AWAITING_APPROVAL` | Show the user `pending_approval.items`, then call `decide_agent_task_approval`. |
+| `COMPLETED` | Use the `report`. Optionally `continue_agent_task`. |
+| `INCOMPLETE` | The agent couldn't finish, for example because the user isn't signed in somewhere. Share `auth_url` if present, then `continue_agent_task`. |
+| `FAILED`, `CANCELLED` | Read `error`. Start a new run if it makes sense. |

@@ -1,0 +1,155 @@
+---
+title: "Connector Agent Tasks"
+description: "Add the jobs a public connector's users can hand off to a Caylex agent running on one of your standard navigators."
+icon: "robot"
+---
+
+An **agent task** is a named job a [public connector](/public-connectors/overview) offers. The user's AI picks a task by name, describes what it needs, and gets back a written report. Behind it, Caylex runs a full agent on the standard navigator you chose, with that navigator's tools and skills.
+
+Agent tasks let you offer multi-step work (research, reconciliation, updates across several systems) without exposing the underlying tools to the user's AI.
+
+## How a run works
+
+- The run is a [background agent task](/background-tasks/agent-tasks) on the task's standard navigator, in the connector's project.
+- It runs **as the calling user**: the email in the caller's `x-user-email` header. The agent uses that user's own sign-ins, so the user must be signed in to the servers the navigator uses. If they aren't, the result includes an `auth_url` to share with them.
+- The agent sees only the caller's `prompt`, not the rest of the caller's conversation.
+- The caller gets the report, never the agent's raw tool results.
+
+## Add an agent task
+
+<Steps>
+  <Step title="Open the connector's instance">
+    In the project's **Navigators** tab, open the public connector. The drawer opens on **Agent Tasks**.
+  </Step>
+  <Step title="Add the task">
+    Click **Add Agent Task** and fill in the form:
+
+    | Field | Description |
+    | --- | --- |
+    | **Name** | What callers pass to `run_agent_task`. Lowercase letters, digits, `_` or `-`, up to 64 characters, unique within the connector. For example `reconcile_accounts`. |
+    | **Description** | Shown to the caller's AI so it knows when to run this task. Write it for an AI reader: what the task does and what to include in the prompt. |
+    | **Standard navigator** | The agent runs on this navigator, with its tools and skills. Must be a standard navigator in the same project. |
+    | **Show transcript in chat widget** | On by default. See [Transcript visibility](#transcript-visibility). |
+  </Step>
+  <Step title="Create it">
+    Click **Create Task**. The task is active right away and appears in the connector's list tool on the next call.
+  </Step>
+</Steps>
+
+Each task card shows **Runs On** (its standard navigator) and **Chat Transcript** (**Visible** or **Hidden**). Its menu has **Disable**/**Enable**, **Edit Details** and **Delete**. A disabled task is hidden from callers until you enable it again.
+
+## Transcript visibility
+
+**Show transcript in chat widget** controls what the connector's [Agent Widget](/widget/agent/embed) shows for a run:
+
+| Setting | Widget shows | Approvals |
+| --- | --- | --- |
+| On (default) | The agent's messages and tool calls, plus status and report | The user can decide in the widget's Background Tasks inbox, or in their AI client |
+| Off | Only status and report | Only in the user's AI client, through `decide_agent_task_approval` |
+
+MCP callers only ever receive the report, whatever this setting says.
+
+## Approvals
+
+When the agent wants to use a tool that requires approval on its standard navigator, the run pauses as `AWAITING_APPROVAL`. The caller's result includes `pending_approval` with the waiting actions. The user's AI shows them to the user and passes the decision to [`decide_agent_task_approval`](/public-connectors/mcp-tools#decide_agent_task_approval). Approval batches expire after 7 days; an expired batch counts as rejected.
+
+Which tools require approval is set in the standard navigator's [tool permissions](/platform/navigators#configure-tool-permissions), not on the connector.
+
+## Change or remove a task
+
+You can rename a task, edit its description, switch transcript visibility, or enable and disable it at any time.
+
+Moving a task to another standard navigator (changing **Standard navigator** in **Edit Details**) and deleting it are refused while the task has runs in progress (`PENDING`, `RUNNING`, `AWAITING_APPROVAL` or `AWAITING_REVIEW`):
+
+> This agent task has 2 run(s) in progress. Disable it so no new runs start, then retarget it once they finish
+
+To make the change, **Disable** the task, wait for its runs to finish, then retarget or delete it.
+
+Deleting a task stops users of the connector from running it. Its past runs stay in [Insights](/analytics/overview).
+
+## REST API
+
+Manage agent tasks from your backend with the [Platform API](/cookbooks/overview): base URL `https://api.caylex.ai/api/v1` and a platform access token (`Authorization: Bearer <platform_access_token>`). `{navigator_instance_id}` is the connector's instance in the project.
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /navigator-instances/{navigator_instance_id}/agent-task-targets` | Standard navigators in the same project that tasks can run on. |
+| `GET /navigator-instances/{navigator_instance_id}/agent-tasks` | List the connector's agent tasks, by name. |
+| `POST /navigator-instances/{navigator_instance_id}/agent-tasks` | Create an agent task. |
+| `PATCH /navigator-instances/{navigator_instance_id}/agent-tasks/{agent_task_id}` | Update, retarget, enable or disable a task. |
+| `DELETE /navigator-instances/{navigator_instance_id}/agent-tasks/{agent_task_id}` | Delete a task. Returns `204`. |
+
+### Find a target navigator
+
+```bash
+curl https://api.caylex.ai/api/v1/navigator-instances/{navigator_instance_id}/agent-task-targets \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN"
+```
+
+```json
+{
+  "targets": [
+    {
+      "navigator_instance_id": "5b0f7a52-8d1e-4c43-9a3f-2f5c1d9e8b10",
+      "navigator_id": "0e6d2c8b-1f4a-4b7e-9c5d-3a2b1c0d9e8f",
+      "navigator_name": "Finance Navigator"
+    }
+  ]
+}
+```
+
+### Create a task
+
+```bash
+curl -X POST https://api.caylex.ai/api/v1/navigator-instances/{navigator_instance_id}/agent-tasks \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "reconcile_accounts",
+    "description": "Reconciles a customer'\''s accounts and reports discrepancies. Include the customer name and the period.",
+    "navigator_instance_id": "5b0f7a52-8d1e-4c43-9a3f-2f5c1d9e8b10"
+  }'
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | 1-64 characters. Caylex lowercases it, turns other characters into `_` and trims leading and trailing `_` or `-`; the result must start with a letter or digit and be unique within the connector. |
+| `description` | Yes | 1-2000 characters, shown to the caller's AI. |
+| `navigator_instance_id` | Yes | The standard navigator instance the task runs on, from `agent-task-targets`. |
+| `enabled` | No | Defaults to `true`. |
+| `show_transcript` | No | Defaults to `true`. See [Transcript visibility](#transcript-visibility). |
+
+The `PATCH` body takes the same fields, all optional. Send only what changes; a new `navigator_instance_id` retargets the task.
+
+### Response
+
+Create, update and each entry of the list (`{"agent_tasks": [...]}`) return:
+
+```json
+{
+  "id": "9c3b6f1e-2a4d-4e8b-8f7a-1d2c3b4a5e6f",
+  "name": "reconcile_accounts",
+  "description": "Reconciles a customer's accounts and reports discrepancies. Include the customer name and the period.",
+  "enabled": true,
+  "show_transcript": true,
+  "target": {
+    "navigator_instance_id": "5b0f7a52-8d1e-4c43-9a3f-2f5c1d9e8b10",
+    "navigator_id": "0e6d2c8b-1f4a-4b7e-9c5d-3a2b1c0d9e8f",
+    "navigator_name": "Finance Navigator"
+  },
+  "created_at": "2026-11-03T10:00:00Z",
+  "updated_at": "2026-11-03T10:00:00Z"
+}
+```
+
+### Errors
+
+| Status | Detail | Cause |
+| --- | --- | --- |
+| `400` | Agent tasks are only available on public connector navigators | `{navigator_instance_id}` is a standard navigator. |
+| `400` | The target must be a standard navigator in the same project | The target is a connector, in another project, or the connector itself. |
+| `400` | Name must be 1-64 characters: lowercase letters, digits, '_' or '-' | Nothing usable is left after normalizing `name`. |
+| `404` | Navigator instance not found | Unknown instance, or one outside your tenant. |
+| `404` | Agent task not found | The task doesn't belong to this connector instance. |
+| `409` | An agent task with this name already exists | Names are unique per connector. |
+| `409` | This agent task has N run(s) in progress… | Retarget or delete while runs are unfinished. See [Change or remove a task](#change-or-remove-a-task). |

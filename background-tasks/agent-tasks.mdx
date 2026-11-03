@@ -10,6 +10,10 @@ This is ideal for work that takes longer than a request cycle: multi-step resear
 
 Background tasks can also involve a human before running sensitive tools. A task can pause immediately on the first approval-gated action, or it can defer and batch gated actions while the agent continues independent work. The Caylex chat widget surfaces both workflows under **Background Tasks**.
 
+<Tip>
+Your users can start these runs from their own AI client through a [public connector](/public-connectors/agent-tasks), without your backend in the loop.
+</Tip>
+
 ## Overview
 
 A background task is launched server-to-server, authenticated exactly like [agent session init](/widget/agent/model-selection) (a platform access token). Caylex records the task, runs it on a dedicated background worker, and persists progress as it goes so the run is durable: if a worker is interrupted, the task resumes from the last completed step rather than starting over.
