@@ -8,7 +8,7 @@ When your agent is connected to servers that require user-level authentication, 
 
 ## What it does
 
-When enabled, the Navigator exposes a `get_authentication_link` MCP tool to your agent. This tool returns:
+When enabled, the Navigator exposes a `get_authentication_status_and_link` MCP tool to your agent. This tool returns:
 
 - The **authentication status** of the current user — whether they need to authenticate, are fully authenticated, or no authentication is required
 - An **authentication link** the user can click to authenticate with any servers they haven't connected to yet
@@ -35,7 +35,7 @@ The In-Chat Authentication toggle is only available when the project has at leas
 
 1. **Default auth link** — when In-Chat Authentication is enabled, Caylex creates a **default authentication link** for the project. This link includes all user-level server instances in the project and does not expire. It automatically stays in sync as servers are added or removed.
 
-2. **Agent calls `get_authentication_link`** — during a conversation, the agent can call this tool to check if the current user needs to authenticate. The tool looks up the user's authentication status for each user-level server in the project.
+2. **Agent calls `get_authentication_status_and_link`** — during a conversation, the agent can call this tool to check if the current user needs to authenticate. The tool looks up the user's authentication status for each user-level server in the project.
 
 3. **Response to the agent** — the tool returns one of three statuses:
    - `authentication_needed` — the user has not authenticated with one or more servers. The response includes the auth link and the list of unauthenticated server names.
@@ -44,7 +44,7 @@ The In-Chat Authentication toggle is only available when the project has at leas
 
 4. **User authenticates** — the agent shares the link with the user. The user clicks it, signs in, and authenticates with the listed servers through the guided flow.
 
-5. **Verification** — the agent can call `get_authentication_link` again to confirm the user has completed authentication. The unauthenticated servers list will reflect the latest state.
+5. **Verification** — the agent can call `get_authentication_status_and_link` again to confirm the user has completed authentication. The unauthenticated servers list will reflect the latest state.
 
 ## Example conversation flow
 
@@ -52,7 +52,7 @@ The In-Chat Authentication toggle is only available when the project has at leas
 User: Can you check my Slack messages and create a Linear issue?
 
 Agent: Let me check your authentication status first.
-       [calls get_authentication_link]
+       [calls get_authentication_status_and_link]
 
 Agent: It looks like you haven't connected your Slack and Linear accounts yet.
        Please authenticate using this link: https://auth.caylex.ai?auth_link_id=abc-123
@@ -60,7 +60,7 @@ Agent: It looks like you haven't connected your Slack and Linear accounts yet.
 
 User: Done! I've authenticated both.
 
-Agent: [calls get_authentication_link again to verify]
+Agent: [calls get_authentication_status_and_link again to verify]
        Great, you're all set! Let me check your Slack messages now...
 ```
 

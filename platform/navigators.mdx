@@ -6,30 +6,29 @@ icon: "compass"
 
 Navigators in Caylex represent the intelligent MCP layer that your AI agents connect to. You define a Navigator Identity once and deploy it across multiple projects with different configurations.
 
+Navigators come in two [kinds](/core-concepts#navigator-kinds): **standard navigators**, which your own agents connect to, and **public connectors**, which your users add to their own AI client. This page covers both; where they differ, it says so.
+
 ## Create a navigator
 
 <Steps>
-  <Step title="Navigate to Navigators">
-    In the Caylex dashboard, go to the **Navigators** page from the sidebar.
+  <Step title="Open the Navigator Library">
+    In the Caylex dashboard, go to **Navigator Library** from the sidebar and click **New Navigator**.
   </Step>
   <Step title="Create a Navigator Identity">
-    Click **Create Navigator** and provide:
+    On the **Details** step, provide:
 
-    - **Name** (required) — a descriptive name (e.g., "Customer Support Navigator", "Data Analyst Navigator")
-    - **Description** (optional) — what this navigator does
+    - **Navigator Name** (required): a descriptive name (e.g., "Customer Support Navigator", "Data Analyst Navigator")
+    - **Description** (recommended): what this navigator does
+    - **Public Connector**: leave off for a standard navigator. Turn it on to publish the navigator to your users as a connector; see [Public Connectors](/public-connectors/overview). The kind can't be changed later.
 
     This creates a **Navigator Identity** — a reusable template that can be deployed in multiple projects.
   </Step>
-  <Step title="Connect to a project">
-    On the navigator's detail page, click **Add Connection** and select the project where you want to deploy this navigator.
+  <Step title="Connect to projects">
+    On the **Connections** step, select the **Enabled Projects** where you want to deploy this navigator. You can change them later with **Project Connections** on the navigator's card.
 
-    This creates a **Navigator Instance** — a project-scoped deployment of the navigator with its own API key and permissions.
+    This creates a **Navigator Instance** in each project: a project-scoped deployment of the navigator with its own API key and permissions.
   </Step>
 </Steps>
-
-<Note>
-To publish a navigator to your users as a connector they add to their own AI client, turn on **Public Connector** when you create it. See [Public Connectors](/public-connectors/overview).
-</Note>
 
 ## Generate an API key
 
@@ -59,7 +58,7 @@ You can create multiple API keys per Navigator Instance for key rotation or diff
 
 ## Configure tool permissions
 
-By default, a Navigator Instance has access to **all tools** from all Server Instances in its project. You can restrict access at two levels:
+By default, a standard Navigator Instance has access to **all tools** from all Server Instances in its project. You can restrict access at two levels:
 
 ### Server-level restrictions
 
@@ -81,12 +80,16 @@ Follow the **principle of least privilege** — restrict your navigators to only
 </Tip>
 
 <Info>
-Restrictions work as a deny list. All tools are enabled by default, and you selectively disable the ones you want to restrict.
+On a standard navigator, restrictions work as a deny list. All tools are enabled by default, and you selectively disable the ones you want to restrict.
 </Info>
+
+### Public connectors
+
+A public connector works the other way round: every tool and skill starts **off**, and you enable the ones your users' AI clients may call directly, on the instance's **Tool Permissions** and **Skill Permissions** tabs. Skills added to the project later stay hidden on the connector until you enable them. Most of a connector's work usually goes through [agent tasks](/public-connectors/agent-tasks) instead, which use their standard navigator's permissions.
 
 ## Configure Navigator capabilities
 
-Each Navigator Instance can be configured with additional capabilities that enhance your agent's effectiveness:
+Each Navigator Instance can be configured with additional capabilities that enhance your agent's effectiveness. Public connectors support only In-Chat Authentication; Dynamic Suggestions, Context Maps and Code Mode are standard navigators only.
 
 ### Dynamic tool suggestions
 
@@ -114,7 +117,7 @@ Context Maps require at least 2 server instances with extraction enabled in the 
 
 ### In-Chat Authentication
 
-When enabled, the Navigator exposes the `get_authentication_link` MCP tool. This lets your agent check a user's authentication status and provide an auth link directly within the conversation — so users can connect to servers they haven't authenticated with yet without leaving the chat.
+When enabled, the Navigator exposes the `get_authentication_status_and_link` MCP tool. This lets your agent check a user's authentication status and provide an auth link directly within the conversation — so users can connect to servers they haven't authenticated with yet without leaving the chat.
 
 Toggle **In-Chat Authentication** on the Navigator Instance settings page.
 
