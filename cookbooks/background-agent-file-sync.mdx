@@ -1,6 +1,6 @@
 ---
-title: "Sync Notion Files with Background Sync"
-description: "Collect Notion pages, databases, rows, and comments with a Background Sync config, then turn the export into records for your search index or RAG pipeline."
+title: "Sync Notion Files with Data Sync"
+description: "Collect Notion pages, databases, rows, and comments with a Data Sync config, then turn the export into records for your search index or RAG pipeline."
 icon: "file-export"
 ---
 
@@ -38,14 +38,14 @@ export contains only the pages that user can see.
 
 You need:
 
-- the **Background Sync** toggle turned on under **Administration > Premium
+- the **Data Sync** toggle turned on under **Administration > Premium
   Features** in the Caylex Platform (tenant admins only);
 - a project with the Notion server from the Caylex catalog;
 - users who've connected their Notion account to that project; and
 - a server-side [platform access token](/auth/platform-authentication), sent
   as `Authorization: Bearer <token>`.
 
-[Check user access](/background-tasks/background-sync#3-check-user-access)
+[Check user access](/background-tasks/data-sync#3-check-user-access)
 before the first run. A user who hasn't connected Notion is skipped when you
 trigger.
 
@@ -66,7 +66,7 @@ controls, and never commit exports to source control.
   </Step>
   <Step title="Find the Notion server">
     `GET /sync-configs/sources?project_id=...` lists the project's servers that
-    Background Sync supports. Pick the one whose `source_type` is `notion` and
+    Data Sync supports. Pick the one whose `source_type` is `notion` and
     keep its `server_instance_id`. If Notion isn't listed, the server is paused
     or missing from the project.
   </Step>
@@ -237,7 +237,7 @@ that your instructions cover. Good Notion instructions:
 - **List exclusions.** "Skip anything under Archive" is recorded as an exclusion
   with a reason you can audit in the export's `excluded` list.
 
-See [Writing good instructions](/background-tasks/background-sync#writing-good-instructions)
+See [Writing good instructions](/background-tasks/data-sync#writing-good-instructions)
 for general guidance.
 
 ## What the export contains
@@ -396,9 +396,9 @@ Use `content_hash` to skip pages you already have, and run a full sync without
 
 | What you see | What to do |
 | --- | --- |
-| A user is in `skipped` with `not_accessible` | [Check user access](/background-tasks/background-sync#3-check-user-access). `not_authenticated` means the user must connect Notion through the project's auth link; the admin statuses mean a project or tenant admin has to set up the server. Then trigger again. |
+| A user is in `skipped` with `not_accessible` | [Check user access](/background-tasks/data-sync#3-check-user-access). `not_authenticated` means the user must connect Notion through the project's auth link; the admin statuses mean a project or tenant admin has to set up the server. Then trigger again. |
 | Source status `authentication_required` | The agent reported that Notion asked the user to sign in again. Have them reconnect, then trigger again. |
-| Source status `no_results` | The agent found nothing your instructions cover. [Read the transcript](/background-tasks/background-sync#read-a-transcript) to see what it searched for, then name a clearer starting page. |
-| Run status `incomplete` | The agent ran out of iterations or didn't finish deciding. [Continue the run](/background-tasks/background-sync#continue-a-run) with a message such as "Continue with the remaining sub-pages." |
+| Source status `no_results` | The agent found nothing your instructions cover. [Read the transcript](/background-tasks/data-sync#read-a-transcript) to see what it searched for, then name a clearer starting page. |
+| Run status `incomplete` | The agent ran out of iterations or didn't finish deciding. [Continue the run](/background-tasks/data-sync#continue-a-run) with a message such as "Continue with the remaining sub-pages." |
 | Entries in `undecided` | The agent read pages without deciding whether they belong. Tighten the instructions so every page it reads clearly falls in or out. |
 | `skipped_unchanged` is high with `since` | Those pages were last edited before `since`, or Notion gave no edit time for them. See [Incremental syncs](#incremental-syncs). |

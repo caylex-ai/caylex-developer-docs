@@ -1,15 +1,15 @@
 ---
-title: "Background Sync"
+title: "Data Sync"
 description: "Collect content from connected services into one uniform export, using saved sync configs that run as background agents."
 icon: "arrows-rotate"
 ---
 
-**Background sync** collects content from connected services, such as their Notion pages or Google Drive files, and returns it as one uniform JSON export. You save a **sync config** that names the servers, the users, and what to collect. Then you trigger it from your backend whenever you want fresh content for a search index, RAG pipeline, or knowledge base.
+**Data sync** collects content from connected services, such as their Notion pages or Google Drive files, and returns it as one uniform JSON export. You save a **sync config** that names the servers, the users, and what to collect. Then you trigger it from your backend whenever you want fresh content for a search index, RAG pipeline, or knowledge base.
 
 Each trigger starts one [background agent](/background-tasks/agent-tasks) per user and server. The agent finds and reads the content your instructions describe, as that user, and decides which resources belong in the export. The export contains the content exactly as the service returned it, not an agent's summary of it.
 
 <Note>
-Background sync is a premium feature. A tenant admin turns it on under **Administration > Premium Features**. Creating, editing, and triggering configs requires it. Reading configs, runs, transcripts, and exports, and deleting configs, keep working when it's off.
+Data sync is a premium feature. A tenant admin turns it on under **Administration > Premium Features**. Creating, editing, and triggering configs requires it. Reading configs, runs, transcripts, and exports, and deleting configs, keep working when it's off.
 </Note>
 
 ## Concepts
@@ -44,11 +44,11 @@ sequenceDiagram
     Caylex-->>Backend: {resources[], page}
 ```
 
-You call every Background Sync endpoint with your platform access token; you don't need a navigator or a navigator API key. Sync agents are instructed to only read, and tools that require approval are never available to them.
+You call every Data Sync endpoint with your platform access token; you don't need a navigator or a navigator API key. Sync agents are instructed to only read, and tools that require approval are never available to them.
 
 ### Supported servers
 
-Background Sync works with selected servers from the Caylex catalog. These are supported today:
+Data Sync works with selected servers from the Caylex catalog. These are supported today:
 
 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2rem" }}>
   <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}><img src="https://d338mlbnszozgc.cloudfront.net/logos/notion.svg" alt="" width="24" height="24" style={{ margin: 0 }} noZoom /><strong>Notion</strong></span>
@@ -73,7 +73,7 @@ Only included resources are exported. Anything the agent read but didn't decide 
 
 You need:
 
-- the **Background Sync** toggle turned on under **Administration > Premium Features** in the Caylex Platform (only a tenant admin can change it);
+- the **Data Sync** toggle turned on under **Administration > Premium Features** in the Caylex Platform (only a tenant admin can change it);
 - a server-side [platform access token](/auth/platform-authentication);
 - a [project](/platform/projects) with at least one supported, unpaused server; and
 - users of that project who have [authenticated](/auth/auth-links) with those servers. Project-level shared credentials also count.
@@ -95,7 +95,7 @@ Exports and transcripts contain complete customer documents, database rows, comm
 GET https://api.caylex.ai/api/v1/sync-configs/sources?project_id={project_id}
 ```
 
-This returns the project's unpaused servers that support Background Sync:
+This returns the project's unpaused servers that support Data Sync:
 
 ```json
 {
@@ -149,7 +149,7 @@ POST https://api.caylex.ai/api/v1/sync-configs
 | `user_emails` | When `all_users` is `false` | Users to sync. Each must already be a user of the project. Leave it empty when `all_users` is `true`. |
 | `model` | No | A model id from [`GET /agent-models`](/widget/agent/model-selection#available-models), or a [model profile](/administration/model-profiles) id (`profile/<id>`) to pick a model per request with the profile's cost tier, service tier and `optimize_for`. Every task a trigger starts runs on it, and so do the subassistants those tasks delegate to. Omit it to use the agent's default model. |
 
-The response is the saved config, with each server's `source_type` and an `available` flag. `available` turns `false` if a server is later paused or stops supporting Background Sync, and triggers skip that server.
+The response is the saved config, with each server's `source_type` and an `available` flag. `available` turns `false` if a server is later paused or stops supporting Data Sync, and triggers skip that server.
 
 Creating a config returns `400` for an invalid server or user list, `404` when the project doesn't exist, `409` when the project already has a config with that name, `422` for an unsupported `model`, and `503` when OpenRouter's model catalog is unavailable so `model` can't be checked.
 
@@ -205,7 +205,7 @@ A trigger skips every user and server pair that isn't `accessible`:
 | `not_authenticated` | No | The user needs to authenticate, for example through an [auth link](/auth/auth-links). |
 | `needs_project_admin` | No | A project admin must provide shared credentials. |
 | `needs_tenant_admin` | No | A tenant admin must provide credentials. |
-| `not_syncable` | No | The server was paused or no longer supports Background Sync. |
+| `not_syncable` | No | The server was paused or no longer supports Data Sync. |
 
 `project_user: false` flags a listed user who has left the project.
 
@@ -284,7 +284,7 @@ Each source's `source` label is unique within its run. It's the source type, qua
 | `reason` | Meaning |
 | --- | --- |
 | `not_a_project_user` | A listed user is no longer a user of the project. |
-| `not_syncable` | The server was paused or no longer supports Background Sync. |
+| `not_syncable` | The server was paused or no longer supports Data Sync. |
 | `not_accessible` | The user can't reach the server. `auth_status` says why. |
 
 A trigger returns `400` when no user can access any of the config's servers, or when it would exceed the [limits](#limits). It returns `409` when Caylex can't start the sync; `detail` says why.
@@ -557,7 +557,7 @@ Each entry in `sources` summarizes one source. Its `status`:
 | `ok` | The source exported at least one resource. |
 | `no_results` | The agent included nothing. Check the transcript and your instructions. |
 | `authentication_required` | The source asked the user to authenticate. Have them reconnect, then trigger again. |
-| `degraded` | Caylex couldn't read many of the source's responses, or the agent used tools Background Sync doesn't support for that server. `diagnostics.degraded_reasons` explains why. |
+| `degraded` | Caylex couldn't read many of the source's responses, or the agent used tools Data Sync doesn't support for that server. `diagnostics.degraded_reasons` explains why. |
 | `config_stale` | The server's tools changed, and Caylex can no longer read its content. |
 
 `counts` breaks down what happened:
@@ -667,7 +667,7 @@ This example triggers a config, waits for every run to finish, and pages through
 
 <Tabs>
   <Tab title="Python">
-    ```python background_sync.py
+    ```python data_sync.py
     import time
 
     import httpx
@@ -722,7 +722,7 @@ This example triggers a config, waits for every run to finish, and pages through
   </Tab>
 
   <Tab title="TypeScript">
-    ```typescript backgroundSync.ts
+    ```typescript dataSync.ts
     const CAYLEX_API_URL = "https://api.caylex.ai/api/v1";
     const PLATFORM_TOKEN = process.env.CAYLEX_PLATFORM_TOKEN!;
     const FINISHED = new Set(["completed", "incomplete", "failed"]);

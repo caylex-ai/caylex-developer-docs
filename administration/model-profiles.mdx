@@ -6,7 +6,7 @@ icon: "layer-group"
 
 A **model profile** is a named set of rules for picking a model per request. Instead of pinning one model, you list the models a request may use (by id or pattern), leave some out, and set a cost tier. Each request is then routed to one of the matching models.
 
-Use a profile anywhere you'd pass a model: pass its `model_id`, `profile/<id>`, as `model` on [widget session-init](/widget/agent/model-selection), [`POST /agent-task`](/background-tasks/agent-tasks), or a [Background Sync](/background-tasks/background-sync) config.
+Use a profile anywhere you'd pass a model: pass its `model_id`, `profile/<id>`, as `model` on [widget session-init](/widget/agent/model-selection), [`POST /agent-task`](/background-tasks/agent-tasks), or a [Data Sync](/background-tasks/data-sync) config.
 
 ## What a Profile Sets
 
@@ -53,7 +53,7 @@ With a `service_tier` set, the tier is applied first: its endpoints are tried be
 - If a profile can't be used when a session or task starts (for example, the catalog no longer has any of its models), the session runs on the agent's default model.
 - Edits apply from the next model request of every session, task and sync that uses the profile.
 
-Background Sync run details and Insights show which models actually answered.
+Data Sync run details and Insights show which models actually answered.
 
 ## API
 

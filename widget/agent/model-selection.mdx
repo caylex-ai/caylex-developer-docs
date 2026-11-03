@@ -46,7 +46,7 @@ Each turn runs on the model in the token the widget sends with it. When the widg
 - A later token's `model_options` apply from the next turn too. A token without them returns the session to the defaults.
 - Switching to a model with a smaller context window can compact the conversation on the next turn. Caylex summarizes older turns to fit, and in very long sessions the oldest detail can be dropped from the summary.
 - Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
-- [Agent tasks](/background-tasks/agent-tasks) and [background sync](/background-tasks/background-sync) runs keep the model they started with.
+- [Agent tasks](/background-tasks/agent-tasks) and [data sync](/background-tasks/data-sync) runs keep the model they started with.
 
 [Worker agents](/widget/agent/worker-agents), the sub-agents the agent delegates work to, run on `subassistant_model` when you pass one. Otherwise they run on the session's model when you chose one, or on their own default model when you didn't. A [worker agent definition](/widget/agent/worker-agents#defining-worker-agents) can also set its own model, which takes precedence over all of these.
 
@@ -307,7 +307,7 @@ The chat widget's design space in the Caylex app has a **Model** picker, with **
 The same models work outside the widget:
 
 - **[Background tasks](/background-tasks/agent-tasks)**: pass `model` on `POST /agent-task`. A model that isn't on the list is ignored with a `model_warning`, as it is on session-init.
-- **[Background Sync](/background-tasks/background-sync)**: save `model` on the sync config. Every task a trigger starts runs on it. Saving a model that isn't on the list returns `422`. If a saved model later drops off the list, a trigger runs the tasks on the agent's default model and returns a `model_warning`.
+- **[Data Sync](/background-tasks/data-sync)**: save `model` on the sync config. Every task a trigger starts runs on it. Saving a model that isn't on the list returns `422`. If a saved model later drops off the list, a trigger runs the tasks on the agent's default model and returns a `model_warning`.
 
 In both cases, subassistants follow the chosen model, as they do in widget sessions.
 
