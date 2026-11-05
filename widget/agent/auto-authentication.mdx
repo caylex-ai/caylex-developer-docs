@@ -293,7 +293,7 @@ With `force: true`, Caylex revokes the existing credentials and stores the new o
 
 ## Project-Level Credentials
 
-Some servers are configured for **project-level header auth**: one credential is shared by every user of the project, and Caylex sends it on every call any of them makes to that server. The token-mint call cannot store these credentials, because any end user loading the widget could then overwrite a credential the whole project depends on. Use `POST /widget/project-auto-authenticate` instead.
+Some servers use **project-level header auth**. One credential is shared by every user of the project, and Caylex sends it on every call any of them makes to that server. The token-mint call rejects these servers, because any end user who loads the widget could otherwise overwrite a credential the whole project depends on. Use `POST /widget/project-auto-authenticate` instead.
 
 Call it **once per project** from your backend, for example when you provision the project or when the shared credential changes. Do not call it on every widget load, and never call it from the browser. Like the mint endpoint, it requires a platform access token (or an admin user).
 
@@ -307,7 +307,7 @@ Call it **once per project** from your backend, for example when you provision t
     {
       "server_name": "ShopPilot API",
       "headers": [
-        { "header_name": "Authorization", "header_value": "the-projects-raw-token" }
+        { "header_name": "Authorization", "header_value": "the-projects-raw-credential" }
       ]
     }
   ]
@@ -324,7 +324,7 @@ Call it **once per project** from your backend, for example when you provision t
 | `headers[].header_name` | Yes | The header name, matching the server's configured header (case-insensitive). |
 | `headers[].header_value` | Yes | The **raw** credential value, without the configured prefix. Caylex adds it. |
 
-There is no `user_email`: the credential belongs to the project, not to a user.
+The request has no `user_email`, because the credential belongs to the project and not to a user.
 
 <Tabs>
   <Tab title="Python">
@@ -335,7 +335,7 @@ There is no `user_email`: the credential belongs to the project, not to a user.
     PLATFORM_TOKEN = "your_platform_access_token"
 
     async def authenticate_project(
-        caylex_api_key: str, project_platform_token: str, force: bool = False
+        caylex_api_key: str, project_credential: str, force: bool = False
     ) -> dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -350,8 +350,8 @@ There is no `user_email`: the credential belongs to the project, not to a user.
                             "headers": [
                                 {
                                     "header_name": "Authorization",
-                                    # Raw value — Caylex applies the configured prefix.
-                                    "header_value": project_platform_token,
+                                    # Raw value. Caylex adds the configured prefix.
+                                    "header_value": project_credential,
                                 }
                             ],
                         }
@@ -370,7 +370,7 @@ There is no `user_email`: the credential belongs to the project, not to a user.
 
     export async function authenticateProject(
       caylexApiKey: string,
-      projectPlatformToken: string,
+      projectCredential: string,
       force = false,
     ): Promise<{ results: unknown[] }> {
       const response = await fetch(`${CAYLEX_API_URL}widget/project-auto-authenticate`, {
@@ -388,8 +388,8 @@ There is no `user_email`: the credential belongs to the project, not to a user.
               headers: [
                 {
                   header_name: "Authorization",
-                  // Raw value — Caylex applies the configured prefix.
-                  header_value: projectPlatformToken,
+                  // Raw value. Caylex adds the configured prefix.
+                  header_value: projectCredential,
                 },
               ],
             },
@@ -426,16 +426,21 @@ The response is the same `results` list as the mint call's `auto_authenticate` o
 }
 ```
 
-The `status` values mean the same thing, applied to the project's credential instead of a user's. Each server is handled independently, so if some servers fail the call still returns `200` with per-server results. Only global problems return a `4xx`, such as a malformed `caylex_api_key` (`400`) or an agent that is not in a project (`400`).
+The `status` values mean the same thing, applied to the project's credential instead of a user's. Caylex handles each server on its own, so the call returns `200` with per-server results even when some servers fail.
+
+Errors that affect the whole request return a `4xx` status:
+
+- `400` when `caylex_api_key` is malformed, is a playground key, or belongs to an agent that is not in a project.
+- `404` when no agent matches `caylex_api_key`.
 
 ### Validation and Rotation
 
 - The server must declare a **project-level header auth** requirement. Otherwise its result is `failed` with "Project auto-authenticate only supports servers with project-level header auth".
-- Headers are validated exactly as for user-level servers: the same rules for [missing, unrecognized, and duplicate headers](#multiple-headers), and the same [prefix rule](#header-values-and-prefixes).
-- Without `force`, an existing project credential is kept and the result is `already_authenticated` with detail "Project is already authenticated". Submitted headers are still validated, so a malformed request never hides behind `already_authenticated`.
+- Caylex checks headers with the same rules as for user-level servers. See [Multiple Headers](#multiple-headers) and [Header Values and Prefixes](#header-values-and-prefixes).
+- Without `force`, Caylex keeps an existing project credential and returns `already_authenticated` with the detail "Project is already authenticated". Caylex still checks the submitted headers first, so a misspelled header name returns `failed` even when a credential exists.
 - With `force: true`, Caylex replaces the stored credential.
 
-When a credential is stored, Caylex invalidates the cached project credential for that server, so the next tool call from any user uses the new value. It also starts a tool sync for the server, so the server's tools appear without waiting for the daily sync.
+After Caylex stores a credential, it clears the cached project credential for that server, so the next tool call from any user in the project sends the new value. If the server now has every credential it requires, Caylex also starts a tool sync, so the server's tools appear without waiting for the daily sync.
 
 ## Security Model
 
