@@ -1,6 +1,6 @@
 ---
 title: "Auto-Authentication"
-description: "Silently connect users to your platform's MCP server when the widget loads, without an auth flow."
+description: "Connect widget users to your platform's MCP server without an auth flow, per user or once for the whole project."
 icon: "key"
 ---
 
@@ -9,6 +9,8 @@ When you embed a Caylex widget in your SaaS application, the user is already sig
 **Auto-authentication** removes that step. Your backend already knows who the signed-in user is and can look up their credential, so it submits that credential to Caylex when it mints the widget token. The agent is then connected to your platform's MCP server the moment the widget opens, with no auth flow shown to the user.
 
 The most common use is connecting the user to **your own platform's** MCP server, but the same mechanism works for any **internal** integration whose per-user credential your backend can look up on the user's behalf.
+
+If the server instead uses one credential shared by every user of the project, your backend stores that credential once with a separate endpoint. See [Project-Level Credentials](#project-level-credentials).
 
 ## Overview
 
@@ -23,12 +25,14 @@ It is designed for the common case where:
 This is specifically for integrations where you control the credential. For third-party services the user must authorize themselves (Google, Slack, and so on), use the standard [auth link flow](/auth/auth-links) instead.
 
 <Note>
-Auto-authentication only applies to **user-level**, **header-auth** servers. OAuth, cookie auth, and URL-parameter auth are not supported, and project-level credentials must still go through the standard [auth link flow](/auth/auth-links). Header auth is the most common programmatic access method, so it covers the typical "connect the user to our own API" case.
+Auto-authentication only applies to **header-auth** servers. OAuth, cookie auth, and URL-parameter auth are not supported. Header auth is the most common programmatic access method, so it covers the typical "connect the user to our own API" case.
+
+The widget token-mint call stores **user-level** credentials only. To store a **project-level** header credential, call [`POST /widget/project-auto-authenticate`](#project-level-credentials) from your backend instead.
 </Note>
 
 ## How It Works
 
-Auto-authentication is an optional extension of the same `POST /widget/agent-session-init` call you already make to embed a widget. You do not call a separate endpoint.
+For user-level servers, auto-authentication is an optional extension of the same `POST /widget/agent-session-init` call you already make to embed a widget. You do not call a separate endpoint. Project-level servers use their own endpoint, described in [Project-Level Credentials](#project-level-credentials).
 
 ```mermaid
 sequenceDiagram
@@ -287,10 +291,162 @@ When a user's credential changes on your platform — for example, the user rota
 
 With `force: true`, Caylex revokes the existing credentials and stores the new ones atomically, then invalidates the agent's cached credentials so the next tool call uses the updated value. Because rotation has a small cost, prefer `force: false` for routine widget loads and only set `force: true` when you know the credential changed.
 
+## Project-Level Credentials
+
+Some servers use **project-level header auth**. One credential is shared by every user of the project, and Caylex sends it on every call any of them makes to that server. The token-mint call rejects these servers, because any end user who loads the widget could otherwise overwrite a credential the whole project depends on. Use `POST /widget/project-auto-authenticate` instead.
+
+Call it **once per project** from your backend, for example when you provision the project or when the shared credential changes. Do not call it on every widget load, and never call it from the browser. Like the mint endpoint, it requires a platform access token (or an admin user).
+
+### Request Shape
+
+```json
+{
+  "caylex_api_key": "ck_your_navigator_api_key",
+  "force": false,
+  "servers": [
+    {
+      "server_name": "ShopPilot API",
+      "headers": [
+        { "header_name": "Authorization", "header_value": "the-projects-raw-credential" }
+      ]
+    }
+  ]
+}
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `caylex_api_key` | Yes | The production API key (`ck_…`) of an agent in the project. Caylex stores the credentials on that agent's project. |
+| `force` | No (default `false`) | When `true`, replace any existing project credential for the server. |
+| `servers` | Yes | One or more servers to authenticate. At least one is required. |
+| `servers[].server_name` | Yes | The server's **display name**, matched the same way as for user-level servers (see [Server Name](#server-name)). |
+| `servers[].headers` | Yes | One or more header values to store. At least one is required. |
+| `headers[].header_name` | Yes | The header name, matching the server's configured header (case-insensitive). |
+| `headers[].header_value` | Yes | The **raw** credential value, without the configured prefix. Caylex adds it. |
+
+The request has no `user_email`, because the credential belongs to the project and not to a user.
+
+<Tabs>
+  <Tab title="Python">
+    ```python project_auth.py
+    import httpx
+
+    CAYLEX_API_URL = "https://api.caylex.ai/api/v1/"
+    PLATFORM_TOKEN = "your_platform_access_token"
+
+    async def authenticate_project(
+        caylex_api_key: str, project_credential: str, force: bool = False
+    ) -> dict:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{CAYLEX_API_URL}widget/project-auto-authenticate",
+                headers={"Authorization": f"Bearer {PLATFORM_TOKEN}"},
+                json={
+                    "caylex_api_key": caylex_api_key,
+                    "force": force,
+                    "servers": [
+                        {
+                            "server_name": "ShopPilot API",
+                            "headers": [
+                                {
+                                    "header_name": "Authorization",
+                                    # Raw value. Caylex adds the configured prefix.
+                                    "header_value": project_credential,
+                                }
+                            ],
+                        }
+                    ],
+                },
+            )
+            response.raise_for_status()
+            return response.json()
+    ```
+  </Tab>
+
+  <Tab title="TypeScript">
+    ```typescript projectAuth.ts
+    const CAYLEX_API_URL = "https://api.caylex.ai/api/v1/";
+    const PLATFORM_TOKEN = process.env.CAYLEX_PLATFORM_TOKEN!;
+
+    export async function authenticateProject(
+      caylexApiKey: string,
+      projectCredential: string,
+      force = false,
+    ): Promise<{ results: unknown[] }> {
+      const response = await fetch(`${CAYLEX_API_URL}widget/project-auto-authenticate`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${PLATFORM_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          caylex_api_key: caylexApiKey,
+          force,
+          servers: [
+            {
+              server_name: "ShopPilot API",
+              headers: [
+                {
+                  header_name: "Authorization",
+                  // Raw value. Caylex adds the configured prefix.
+                  header_value: projectCredential,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to authenticate Caylex project");
+      }
+
+      return response.json();
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Response
+
+The response is the same `results` list as the mint call's `auto_authenticate` object, with one entry per requested server:
+
+```json
+{
+  "results": [
+    {
+      "requested_server_name": "ShopPilot API",
+      "server_name": "shoppilot-api",
+      "display_name": "ShopPilot API",
+      "status": "authenticated",
+      "authenticated_at": "2026-06-15T15:00:00+00:00",
+      "detail": null
+    }
+  ]
+}
+```
+
+The `status` values mean the same thing, applied to the project's credential instead of a user's. Caylex handles each server on its own, so the call returns `200` with per-server results even when some servers fail.
+
+Errors that affect the whole request return a `4xx` status:
+
+- `400` when `caylex_api_key` is malformed, is a playground key, or belongs to an agent that is not in a project.
+- `404` when no agent matches `caylex_api_key`.
+
+### Validation and Rotation
+
+- The server must declare a **project-level header auth** requirement. Otherwise its result is `failed` with "Project auto-authenticate only supports servers with project-level header auth".
+- Caylex checks headers with the same rules as for user-level servers. See [Multiple Headers](#multiple-headers) and [Header Values and Prefixes](#header-values-and-prefixes).
+- Without `force`, Caylex keeps an existing project credential and returns `already_authenticated` with the detail "Project is already authenticated". Caylex still checks the submitted headers first, so a misspelled header name returns `failed` even when a credential exists.
+- With `force: true`, Caylex replaces the stored credential.
+
+After Caylex stores a credential, it clears the cached project credential for that server, so the next tool call from any user in the project sends the new value. If the server now has every credential it requires, Caylex also starts a tool sync, so the server's tools appear without waiting for the daily sync.
+
 ## Security Model
 
-- **Auto-authentication is gated to platform administrators.** The mint endpoint requires a platform access token (or an admin user), so only your backend can submit credentials.
-- **Credentials are stored as user-level secrets** in Caylex's tenant-scoped credential store, never returned to the browser.
+- **Auto-authentication is gated to platform administrators.** Both the mint endpoint and `POST /widget/project-auto-authenticate` require a platform access token (or an admin user), so only your backend can submit credentials.
+- **Credentials are stored as user-level or project-level secrets** in Caylex's tenant-scoped credential store, never returned to the browser.
+- **Widget users cannot change project credentials.** The mint call only writes user-level credentials, so loading a widget never overwrites a credential the whole project shares.
 - **The widget token never contains raw credentials** — it only encodes navigator context and the user's identity.
 - **Your platform token, navigator API key, and users' credentials stay server-side.** Always call the mint endpoint from your backend.
 
@@ -301,7 +457,9 @@ With `force: true`, Caylex revokes the existing credentials and stores the new o
 | `400` with "user_email is required" | `auto_authenticate` was sent without `user_email` | Always include `user_email` when auto-authenticating |
 | `failed` result: "Server name is ambiguous" | `server_name` matched multiple servers | Use a more specific name or set distinct display names |
 | `failed` result: "only supports header-auth servers" | The target server uses OAuth, cookie, or URL-param auth | Auto-authentication is for header auth only; use an [auth link](/auth/auth-links) for other methods |
-| `failed` result: "only supports user-level server credentials" | The server is configured for project-level auth | Auto-authentication stores user-level credentials only |
+| `failed` result: "only supports user-level server credentials" | The server is configured for project-level auth | Store the shared credential once with [`POST /widget/project-auto-authenticate`](#project-level-credentials) |
+| `failed` result: "Project auto-authenticate only supports servers with project-level header auth" | `POST /widget/project-auto-authenticate` was called for a server without project-level header auth | Use the mint call's `auto_authenticate` for user-level header-auth servers, or an [auth link](/auth/auth-links) for other methods |
+| `already_authenticated` result: "Project is already authenticated" | The project already has a credential for the server and `force` was `false` | Nothing to do if the credential is current; set `force: true` to replace it |
 | `failed` result about prefixes | The header value already includes the configured prefix | Send the raw value without the prefix; Caylex adds it |
-| `failed` result: "Missing required header value(s)" | Not all configured headers were provided | Submit every header the server's auth config expects |
+| `failed` result: "Missing required header(s)" | Not all configured headers were provided | Submit every header the server's auth config expects |
 | Server still shows as not connected | The credential was stored for a different user | Ensure `user_email` matches the signed-in user who should be connected |
