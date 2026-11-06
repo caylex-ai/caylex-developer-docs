@@ -8,9 +8,9 @@ When your agent is connected to servers that require user-level authentication, 
 
 ## What it does
 
-When enabled, the Navigator exposes a `get_authentication_link` MCP tool to your agent. This tool returns:
+When enabled, the Navigator exposes a `get_authentication_status_and_link` MCP tool to your agent. This tool returns:
 
-- The **authentication status** of the current user — whether they need to authenticate, are fully authenticated, or no authentication is required
+- The **authentication status** of the current user: whether they need to sign in, re-authenticate, finish a browser sign-in, wait for an administrator, are fully authenticated, or need no authentication (see [Statuses](#statuses))
 - An **authentication link** the user can click to authenticate with any servers they haven't connected to yet
 - A list of **unauthenticated servers** so the agent knows which services are not yet available
 
@@ -35,16 +35,28 @@ The In-Chat Authentication toggle is only available when the project has at leas
 
 1. **Default auth link** — when In-Chat Authentication is enabled, Caylex creates a **default authentication link** for the project. This link includes all user-level server instances in the project and does not expire. It automatically stays in sync as servers are added or removed.
 
-2. **Agent calls `get_authentication_link`** — during a conversation, the agent can call this tool to check if the current user needs to authenticate. The tool looks up the user's authentication status for each user-level server in the project.
+2. **Agent calls `get_authentication_status_and_link`** — during a conversation, the agent can call this tool to check if the current user needs to authenticate. The tool looks up the user's authentication status for each user-level server in the project.
 
-3. **Response to the agent** — the tool returns one of three statuses:
-   - `authentication_needed` — the user has not authenticated with one or more servers. The response includes the auth link and the list of unauthenticated server names.
-   - `fully_authenticated` — the user has authenticated with all available user-level servers.
-   - `no_auth_required` — the project has no user-level auth servers (all servers use project-level auth or no auth).
+3. **Response to the agent**: the tool returns a `status`, the `auth_link`, a `message` for the agent, and `auth_statuses` listing server names by state. See [Statuses](#statuses).
 
 4. **User authenticates** — the agent shares the link with the user. The user clicks it, signs in, and authenticates with the listed servers through the guided flow.
 
-5. **Verification** — the agent can call `get_authentication_link` again to confirm the user has completed authentication. The unauthenticated servers list will reflect the latest state.
+5. **Verification** — the agent can call `get_authentication_status_and_link` again to confirm the user has completed authentication. The unauthenticated servers list will reflect the latest state.
+
+## Statuses
+
+When several conditions apply at once, the tool reports the first one in this table. The `message` and `auth_statuses` still cover every server, so the agent can mention the rest.
+
+| `status` | Meaning | What the agent does |
+| --- | --- | --- |
+| `authentication_needed` | The user hasn't signed in to one or more servers. | Share `auth_link`. |
+| `credentials_may_be_stale` | Calls to one or more servers have failed authentication, so the user's credentials may have expired. This doesn't prove they did. | Share `auth_link` so the user can re-authenticate. |
+| `authentication_partially_captured` | A browser sign-in finished, but some of the credentials it needs weren't captured. The tools that do work stay usable. | Share `auth_link`; the user reopens it and uses the missing feature so the rest can be captured. |
+| `admin_auth_needed` | The only servers left are waiting on credentials an administrator sets for the project or tenant. The response has no `auth_link`, since the user can't fix this. | Don't raise it unprompted. If the user asks why something is unavailable, say an administrator has to connect the service. |
+| `fully_authenticated` | The user can use every available server. | Proceed. |
+| `no_auth_required` | No server in the project needs user authentication. The response has no `auth_link`. | Proceed. |
+
+`auth_statuses` always includes `authenticated_servers` and `unauthenticated_servers`. Other lists appear only when they have entries: `needs_reauthentication_servers`, `partial_auth_capture_servers`, `needs_admin_auth_servers`, `needs_full_reauth_servers` (both an administrator's shared credential and the user's own likely need renewing; the administrator goes first) and `shared_auth_servers` (servers the user reaches through credentials an administrator set for everyone). When any of these apply, `auth_type_notes` explains them to the agent.
 
 ## Example conversation flow
 
@@ -52,7 +64,7 @@ The In-Chat Authentication toggle is only available when the project has at leas
 User: Can you check my Slack messages and create a Linear issue?
 
 Agent: Let me check your authentication status first.
-       [calls get_authentication_link]
+       [calls get_authentication_status_and_link]
 
 Agent: It looks like you haven't connected your Slack and Linear accounts yet.
        Please authenticate using this link: https://auth.caylex.ai?auth_link_id=abc-123
@@ -60,7 +72,7 @@ Agent: It looks like you haven't connected your Slack and Linear accounts yet.
 
 User: Done! I've authenticated both.
 
-Agent: [calls get_authentication_link again to verify]
+Agent: [calls get_authentication_status_and_link again to verify]
        Great, you're all set! Let me check your Slack messages now...
 ```
 

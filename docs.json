@@ -108,6 +108,14 @@
             ]
           },
           {
+            "group": "Public Connectors",
+            "pages": [
+              "public-connectors/overview",
+              "public-connectors/agent-tasks",
+              "public-connectors/mcp-tools"
+            ]
+          },
+          {
             "group": "Analytics",
             "pages": [
               "analytics/overview"

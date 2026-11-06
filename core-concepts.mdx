@@ -67,6 +67,26 @@ A **Navigator Instance** is a Navigator Identity deployed in a specific Project.
 **Example:** You deploy your "Support Navigator" to "Customer A" with full tool access and to "Customer B" with restricted access to sensitive tools. That creates two Navigator Instances of the same Navigator Identity.
 </Info>
 
+### Navigator kinds
+
+Every navigator has a kind, chosen when you create it and fixed afterwards. The kind decides who the navigator serves and what it exposes by default.
+
+- **Standard navigator**: the navigator your own agents connect to, from your backend, an agent framework or the [Agent Widget](/widget/overview). It exposes the project's tools and skills, and you restrict what it shouldn't use.
+- **Public connector**: a navigator you publish to your users, who add it to their own AI client (such as Claude Desktop) as an MCP server. It exposes nothing until you enable it, and offers [agent tasks](/public-connectors/agent-tasks): named jobs that run a Caylex agent on a standard navigator in the same project, as the calling user.
+
+| | Standard navigator | Public connector |
+| --- | --- | --- |
+| Who connects | Your agents and the Agent Widget | Your users' AI clients |
+| Tools and skills | On by default, restricted as a deny list | Off by default, enabled one by one |
+| Adaptive Tool Search, Code Mode, Context Maps | Available | Not available |
+| Agent tasks | No | Yes, running on standard navigators |
+
+Both kinds use the same Navigator Identity and Instance model, the same API keys and the same `x-api-key` and `x-user-email` headers. A public connector usually sits next to one or more standard navigators in a project: the standard navigators do the work, and the connector decides which of it your users can reach.
+
+<Card title="Public Connectors" icon="globe" href="/public-connectors/overview">
+  When to publish a connector, and how to set one up.
+</Card>
+
 ## How they work together
 
 When your agent connects to Caylex, two pieces of information identify the context:
@@ -77,7 +97,7 @@ When your agent connects to Caylex, two pieces of information identify the conte
 This gives Caylex the context needed to:
 
 - Show only the tools available to that navigator in that project
-- Apply any tool or server restrictions configured for that navigator
+- Apply the navigator's tool and server permissions, which depend on its [kind](#navigator-kinds)
 - Use the right authentication credentials for each MCP server (based on the user's email for user-level auth)
 - Track usage and provide per-user analytics
 
