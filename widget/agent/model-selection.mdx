@@ -6,7 +6,7 @@ icon: "robot"
 
 The Caylex agent runs on its default model. **Model selection** lets your backend override that on a per-session basis by passing an optional `model` when it starts an agent session, so you can match the model to the use case (for example, a faster, cheaper model for lightweight chat, or a larger model for complex work).
 
-Alongside the model you can pass `model_options` to choose a [service tier and what to optimize for](#service-tier-and-optimize-for), or pass a [model profile](/administration/model-profiles) as the `model` to let Caylex pick a model per request.
+Alongside the model you can pass `model_options` to choose a [service tier and what to optimize for](#service-tier-and-optimize-for) and a [reasoning effort](#reasoning-effort), or pass a [model profile](/administration/model-profiles) as the `model` to let Caylex pick a model per request.
 
 ## Overview
 
@@ -43,7 +43,7 @@ Each turn runs on the model in the token the widget sends with it. When the widg
 
 - If a later token has no `model`, a session on a model you chose goes back to the agent's default model.
 - If the later token's `model` was ignored (the response had a `model_warning`), the session keeps the model it's on, and its `model_options`.
-- A later token's `model_options` apply from the next turn too. A token without them returns the session to the defaults.
+- A later token's `model_options` apply from the next turn too. A token without them returns the session to the defaults. A different `reasoning_effort` means the next turn can't reuse the cached conversation, so its input costs more.
 - Switching to a model with a smaller context window can compact the conversation on the next turn. Caylex summarizes older turns to fit, and in very long sessions the oldest detail can be dropped from the summary.
 - Reasoning a model saved during earlier tool calls is only sent back to that model, never to the one you switch to.
 - [Agent tasks](/background-tasks/agent-tasks) and [data sync](/background-tasks/data-sync) runs keep the model they started with.
@@ -59,20 +59,24 @@ Add an optional `model` to the session-init body:
   "caylex_api_key": "ck_your_navigator_api_key",
   "user_email": "jane@example.com",
   "model": "anthropic/claude-opus-4.8",
-  "model_options": { "service_tier": "priority", "optimize_for": "throughput" }
+  "model_options": {
+    "service_tier": "priority",
+    "optimize_for": "throughput",
+    "reasoning_effort": "high"
+  }
 }
 ```
 
 | Field | Required | Description |
 | --- | --- | --- |
 | `model` | No | OpenRouter model id (`provider/model`) from [`GET /agent-models`](#available-models), or a [model profile](/administration/model-profiles) id (`profile/<id>`). Omit to use the Caylex agent's default model. Unsupported values are ignored (the agent keeps its default model) and return a `model_warning`. |
-| `model_options` | No | `service_tier` and `optimize_for` for the session's model: the one you pass, or the agent's default model when you pass none. See [Service Tier and Optimize For](#service-tier-and-optimize-for). |
+| `model_options` | No | `service_tier`, `optimize_for` and `reasoning_effort` for the session's model: the one you pass, or the agent's default model when you pass none. See [Service Tier and Optimize For](#service-tier-and-optimize-for) and [Reasoning Effort](#reasoning-effort). |
 | `subassistant_model` | No | Model id or model profile id for the session's [worker agents](/widget/agent/worker-agents). It's checked like `model`; an unsupported value is ignored and returns a `subassistant_model_warning`. Each chat keeps the value it was created with. |
-| `subassistant_model_options` | No | `service_tier` and `optimize_for` for `subassistant_model`. Ignored when it's a model profile. |
+| `subassistant_model_options` | No | `service_tier`, `optimize_for` and `reasoning_effort` for `subassistant_model`. Ignored when it's a model profile. |
 
 ### Service Tier and Optimize For
 
-`model_options` has two optional fields. Leave either out (or `null`) for the default.
+`model_options` has three optional fields: `service_tier` and `optimize_for`, below, and [`reasoning_effort`](#reasoning-effort). Leave any of them out (or `null`) for the default.
 
 | Field | Values | Picks |
 | --- | --- | --- |
@@ -83,8 +87,18 @@ With a `service_tier` set, the tier is applied first: its endpoints are tried be
 
 Requests are billed at the rate of the tier that actually served them. Not every model offers flex, priority or ultrafast capacity; a model without the chosen tier is served at the standard tier (or as `priority`, for `ultrafast`).
 
-- `model_options` are ignored when the session's model is a [model profile](/administration/model-profiles), whether you pass it or it's the agent's default model: a profile sets its own service tier and `optimize_for`. The response's `model_options` is then `null`.
+- `model_options` are ignored when the session's model is a [model profile](/administration/model-profiles), whether you pass it or it's the agent's default model: a profile sets its own service tier and `optimize_for`, and uses each model's default reasoning effort. The response's `model_options` is then `null`.
 - Unknown fields or values return `422`.
+
+### Reasoning Effort
+
+`reasoning_effort` sets how much the model reasons before it answers: `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`. Leave it out (or `null`) for the model's default, which differs by model. Some models, such as Claude Sonnet 4.6, don't reason at all by default.
+
+- Higher efforts tend to handle harder requests better, but each turn takes longer and costs more, since reasoning is billed as output tokens.
+- Models offer different levels. A level the model doesn't offer runs at its nearest one, for example `medium` on a model that offers only `low` and `high`.
+- `none` turns reasoning off. Some models always reason; for them `none` is ignored and the model reasons at its default effort.
+- With `high`, `xhigh` or `max`, each response's output limit is raised to at least 32,000 tokens (or the model's own limit, if that's lower), so the model has room to answer after it reasons. Only the tokens the model produces are billed, but the agent sets that much of the context window aside for the response, so long sessions on a smaller-context model compact a little sooner.
+- The effort applies to the agent's turns. Summaries made when a long conversation is compacted use the model's default effort.
 
 ## Response
 
@@ -94,7 +108,11 @@ Requests are billed at the rate of the tier that actually served them. Not every
   "expires_at": "2026-06-16T15:30:00+00:00",
   "model": "anthropic/claude-opus-4.8",
   "model_warning": null,
-  "model_options": { "service_tier": "priority", "optimize_for": "throughput" }
+  "model_options": {
+    "service_tier": "priority",
+    "optimize_for": "throughput",
+    "reasoning_effort": "high"
+  }
 }
 ```
 
@@ -102,10 +120,10 @@ Requests are billed at the rate of the tier that actually served them. Not every
 | --- | --- |
 | `model` | The model selected for the session, or `null` when no override applies — either no `model` was requested, or the requested model was unsupported and ignored. In both cases a new session uses the agent's default model. For a session that's already running, see [Changing the Model Mid-Session](#changing-the-model-mid-session). |
 | `model_warning` | `null` on success. Set to a message when the requested model was ignored: it says why and points to `GET /agent-models` and this page. |
-| `model_options` | The service tier and `optimize_for` the session uses, or `null` for the defaults (also when the session's model is a model profile, which sets its own). |
+| `model_options` | The service tier, `optimize_for` and reasoning effort the session uses, or `null` for the defaults (also when the session's model is a model profile, which sets its own). |
 | `subassistant_model` | The worker agent model applied, or `null` when none was requested or it was ignored. |
 | `subassistant_model_warning` | Set when the requested `subassistant_model` was ignored. |
-| `subassistant_model_options` | The service tier and `optimize_for` applied to `subassistant_model`, or `null`. |
+| `subassistant_model_options` | The service tier, `optimize_for` and reasoning effort applied to `subassistant_model`, or `null`. |
 
 ## Available Models
 
@@ -225,7 +243,7 @@ Add the optional `model` to your existing backend token call, and use the same c
             # Optional; omit to use the agent's default model.
             payload["model"] = model
         if model_options:
-            # Optional, e.g. {"service_tier": "priority", "optimize_for": "throughput"}.
+            # Optional, e.g. {"service_tier": "priority", "reasoning_effort": "high"}.
             payload["model_options"] = model_options
 
         async with httpx.AsyncClient() as client:
@@ -251,6 +269,8 @@ Add the optional `model` to your existing backend token call, and use the same c
     type ModelOptions = {
       service_tier?: "flex" | "priority" | "ultrafast" | null;
       optimize_for?: "throughput" | "latency" | "price" | null;
+      reasoning_effort?:
+        | "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
     };
 
     export async function mintWidgetToken(
@@ -300,7 +320,7 @@ The frontend integration is unchanged — pass the returned `token` to the widge
 
 ## Widget Design Space
 
-The chat widget's design space in the Caylex app has a **Model** picker, with **Service tier** and **Optimize for** controls under it (hidden when you pick a model profile, which sets its own). Preview sessions run with what you pick, the generated backend snippet includes it as `model` and `model_options` in the `POST /widget/agent-session-init` body, and saved designs remember it.
+The chat widget's design space in the Caylex app has a **Model** picker, with **Service tier**, **Optimize for** and **Reasoning effort** controls under it (hidden when you pick a model profile, which sets its own). Preview sessions run with what you pick, the generated backend snippet includes it as `model` and `model_options` in the `POST /widget/agent-session-init` body, and saved designs remember it.
 
 ## Background Tasks and Syncs
 
@@ -311,4 +331,4 @@ The same models work outside the widget:
 
 In both cases, subassistants follow the chosen model, as they do in widget sessions.
 
-Background tasks and sync configs don't take `model_options`. To set a service tier or `optimize_for` for them, pass a [model profile](/administration/model-profiles) as the `model`: the profile's own settings apply.
+Background tasks and sync configs don't take `model_options`. To set a service tier or `optimize_for` for them, pass a [model profile](/administration/model-profiles) as the `model`: the profile's own settings apply. They run at the model's default reasoning effort.
