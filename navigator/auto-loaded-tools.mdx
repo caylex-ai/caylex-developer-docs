@@ -1,0 +1,57 @@
+---
+title: "Auto-loaded Tools"
+description: "Put the tools your agents use most directly into their context, so they skip tool discovery."
+icon: "bolt"
+---
+
+Some tools get used in almost every conversation: searching issues, looking up a customer, sending a message. With **auto-loaded tools**, your agent knows about these tools as soon as it connects, without first searching for them.
+
+## What it does
+
+When a tool is auto-loaded, the Navigator lists it in your agent's context on connect. Each entry has:
+
+- the **server name**
+- the **tool name**
+- the **tool description**, including any extra context you added to the tool
+- whether the tool **requires approval** before it runs
+
+Your agent can skip `suggest_tools` for these tools. To call one, it still fetches the input schema with `get_tool_schemas` and then calls `invoke_tools`. Input schemas are not loaded up front, which keeps the context small even when many tools are auto-loaded.
+
+## How to enable
+
+Auto-loading is set **per server**, on each tool. It applies to every project the server is connected to, and it carries over when you publish a new version of the server.
+
+Mark a tool as auto-loaded with the server tools API, using an admin session or a [platform token](/auth/platform-authentication):
+
+```bash
+curl -X PATCH https://api.caylex.ai/api/v1/servers/$SERVER_ID/tools/$TOOL_ID \
+  -H "Authorization: Bearer $CAYLEX_PLATFORM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"auto_loaded": true}'
+```
+
+Send `{"auto_loaded": false}` to stop auto-loading the tool. `GET /api/v1/servers/{server_id}/tools` returns `auto_loaded` for each tool.
+
+## How it works
+
+Auto-loaded tools are delivered in the description of the Navigator's `navigator_context` tool, next to the Navigator's added context and any auto-loaded skills. MCP clients read tool descriptions when they connect, so your agent sees the list without calling anything.
+
+Auto-loading does not change who can use a tool. A tool appears only when your agent could already use it:
+
+- The server instance is connected to the project and is not paused.
+- The tool is not disabled for the Navigator Instance. A tool that requires approval is listed with `requires_approval` set, and still asks for approval when it runs.
+- The user has authenticated with the server, when the server requires it.
+
+Subagents (worker agents started by a Caylex assistant) do not receive auto-loaded tools.
+
+## When to auto-load a tool
+
+| Scenario | Recommendation |
+| --- | --- |
+| A tool is used in most conversations | **Auto-load**, so the agent reaches for it first |
+| An agent keeps missing the right tool among many similar ones | **Auto-load** the one you want it to prefer |
+| A tool is used rarely or only for niche requests | **Leave it** to `suggest_tools` |
+
+<Note>
+There is no limit on how many tools you can auto-load, but each one adds its description to every session's context. Auto-load the tools that matter most, not everything.
+</Note>
