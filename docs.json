@@ -34,6 +34,7 @@
             "pages": [
               "navigator/overview",
               "navigator/tool-suggestions",
+              "navigator/auto-loaded-tools",
               "navigator/context-maps",
               "navigator/in-chat-authentication"
             ]
